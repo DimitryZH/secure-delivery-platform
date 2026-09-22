@@ -110,7 +110,7 @@ To avoid policy drift between docs and automation, machine-readable artifacts sh
 - `image_digest` (not `image-digest`)
 - `verification_status` (not `verification-status`)
 
-Kubernetes labels or annotations may keep platform-specific naming constraints, but any derived verification output or release record should normalize values back to canonical keys.
+Kubernetes release annotations use the vendor-neutral `release.secure-delivery.dev` namespace. Annotation names use Kubernetes-compatible hyphenated forms such as `commit-sha`, while any derived verification output or release record must normalize values back to the canonical snake_case keys.
 
 ## Validation expectations
 

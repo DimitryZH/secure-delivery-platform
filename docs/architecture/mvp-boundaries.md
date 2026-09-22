@@ -31,7 +31,7 @@ The following areas are deferred until the trusted release path is coherent and 
 - multiple attestors
 - advanced vulnerability management policy
 - custom release catalog or metadata database
-- enterprise approval workflows
+- enterprise change-control workflows
 - organization-wide policy hierarchy
 - sophisticated rollback automation
 

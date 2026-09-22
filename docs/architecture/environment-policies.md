@@ -27,7 +27,7 @@ Verification requirements become stricter as a release moves toward prod. The MV
 | --- | --- | --- |
 | dev | Required fields are present and baseline checks complete | Confirm the candidate is traceable before initial deployment |
 | stage | `verification_status=passed`, immutable `image_digest`, and approved image location are confirmed | Review dev outcome before explicit promotion |
-| prod | Stage expectations remain satisfied and the trust signal reference is reviewable | Approve promotion only after stage runtime review |
+| prod | Stage expectations remain satisfied and the trust signal reference is reviewable | Allow promotion only after stage runtime review |
 
 A failed verification result should stop promotion to stage or prod. Dev may be used to troubleshoot early failures, but it should not normalize bypassing release identity or artifact immutability.
 
@@ -47,7 +47,7 @@ MVP expectations for dev:
 - failures should be visible to operators
 
 Intentionally relaxed in dev:
-- manual approval may not be required
+- a separate promotion gate may not be required
 - Binary Authorization policy may be less strict while the trust path is being developed
 - operational review may be lightweight
 
@@ -83,7 +83,7 @@ Prod should demonstrate controlled delivery without introducing unnecessary ente
 The MVP should prepare for production hardening without implementing every advanced control immediately.
 
 Expected later hardening areas:
-- stronger approval workflows
+- stronger promotion controls
 - richer provenance
 - stricter IAM separation
 - additional Binary Authorization policies

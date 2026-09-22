@@ -12,12 +12,12 @@ spec:
       labels:
         app: sample-service
         app.kubernetes.io/name: sample-service
-        app.kubernetes.io/part-of: gcp-secure-delivery-platform
+        app.kubernetes.io/part-of: secure-delivery-platform
       annotations:
-        release.gcp-secure-delivery.dev/commit-sha: REPLACE_WITH_COMMIT_SHA
-        release.gcp-secure-delivery.dev/build-id: REPLACE_WITH_BUILD_ID
-        release.gcp-secure-delivery.dev/image-digest: REPLACE_WITH_IMAGE_DIGEST
-        release.gcp-secure-delivery.dev/verification-status: REPLACE_WITH_VERIFICATION_STATUS
+        release.secure-delivery.dev/commit-sha: REPLACE_WITH_COMMIT_SHA
+        release.secure-delivery.dev/build-id: REPLACE_WITH_BUILD_ID
+        release.secure-delivery.dev/image-digest: REPLACE_WITH_IMAGE_DIGEST
+        release.secure-delivery.dev/verification-status: REPLACE_WITH_VERIFICATION_STATUS
     spec:
       containers:
         - name: sample-service

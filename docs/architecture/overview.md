@@ -59,7 +59,7 @@ Binary Authorization policy determines deploy eligibility
    ↓
 Cloud Deploy promotes release through environments
    ↓
-GKE receives approved release
+GKE receives policy-eligible release
    ↓
 Cloud Monitoring / Logging expose release health
 ```
@@ -81,6 +81,7 @@ The MVP uses one GKE cluster with separate namespaces for dev, stage, and prod. 
 - [Promotion Semantics](promotion-semantics.md)
 - [Environment Policies](environment-policies.md)
 - [MVP Boundaries](mvp-boundaries.md)
+- [Architecture Diagrams](../diagrams/README.md)
 
 ## Why this is a platform
 

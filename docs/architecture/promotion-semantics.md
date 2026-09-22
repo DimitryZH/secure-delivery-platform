@@ -73,6 +73,6 @@ The first executable version should prove that:
 
 ## Deferred complexity
 
-The MVP does not need complex approval workflows, multi-party signoff, change management integration, or custom release orchestration.
+The MVP does not need complex change-control workflows, external change management integration, or custom release orchestration.
 
 Those can be introduced later after the platform demonstrates a coherent trusted release path.
