@@ -72,4 +72,4 @@ The canonical roadmap is maintained in [docs/roadmap.md](docs/roadmap.md):
 5. **Operational Visibility**
 6. **Security and Operational Hardening**
 
-Each milestone builds on the same release identity and trust boundaries. Later milestones add executable behavior without redefining the model established in Milestone 1.
+Implementation builds on the same release identity and trust boundaries, adding executable behavior without redefining the Trusted Release Model.

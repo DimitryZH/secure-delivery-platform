@@ -2,7 +2,7 @@
 
 This page is the visual index for the Secure Delivery Platform architecture.
 
-The diagrams describe the canonical design and trust model. They do not assert that every component is already deployed: Milestone 1 defines the model, Milestone 2 establishes the executable foundation, and Milestones 3–5 add enforcement, promotion, and operational visibility.
+The diagrams describe the canonical design and trust model, not the current deployment state. The Trusted Release Model defines the architecture; the executable foundation, trust enforcement, controlled promotion, and operational visibility are implemented incrementally according to the roadmap.
 
 For the detailed design, see the [Architecture Overview](../architecture/overview.md), [Release Metadata Contract](../architecture/release-metadata.md), [Trust Model](../architecture/trust-model.md), and [Environment Policies](../architecture/environment-policies.md).
 
