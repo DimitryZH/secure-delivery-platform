@@ -91,7 +91,7 @@ Minimum model:
 - an image digest as the attested subject
 - environment policies that decide where attestation is required
 
-The MVP does not need multiple attestors, complex approval chains, or a full enterprise provenance framework. Those can be added after the trusted path is executable and understandable.
+The MVP does not need multiple attestors, complex multi-attestor policy chains, or a full enterprise provenance framework. Those can be added after the trusted path is executable and understandable.
 
 ## Trust boundaries
 

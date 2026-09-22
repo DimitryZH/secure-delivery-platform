@@ -16,7 +16,7 @@ The release flow is governed by release identity and trust signals. A build resu
 6. Successful verification creates or prepares the trust signal for deployment enforcement.
 7. Binary Authorization evaluates deploy eligibility for the target environment.
 8. Cloud Deploy handles explicit promotion through target environments.
-9. Approved releases are deployed to GKE.
+9. Policy-eligible releases are deployed to GKE.
 10. Operators run a post-deployment review loop using dashboards, log-based metrics, and alert policies.
 11. Promotion continues only when runtime review confirms release health and release identity alignment.
 

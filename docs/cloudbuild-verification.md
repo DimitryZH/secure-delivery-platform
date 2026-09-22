@@ -116,7 +116,7 @@ The MVP verification stage does not need:
 - many security scanners
 - custom policy engines
 - complex provenance frameworks
-- multi-attestor approval chains
+- multi-attestor policy chains
 - enterprise change management integration
 
 Those capabilities can be added after the project demonstrates a clear verification-to-trust-to-deploy path.

@@ -33,10 +33,10 @@ Signals from logs, metrics, and dashboards should support promotion decisions.
 The base deployment manifest carries release metadata annotations on the pod template so operators can connect a running workload back to the verified release candidate.
 
 Minimum runtime metadata to review:
-- `release.gcp-secure-delivery.dev/commit-sha`
-- `release.gcp-secure-delivery.dev/build-id`
-- `release.gcp-secure-delivery.dev/image-digest`
-- `release.gcp-secure-delivery.dev/verification-status`
+- `release.secure-delivery.dev/commit-sha`
+- `release.secure-delivery.dev/build-id`
+- `release.secure-delivery.dev/image-digest`
+- `release.secure-delivery.dev/verification-status`
 
 These annotations should help answer what source revision, build execution, immutable artifact, and verification result produced the workload currently running in a namespace. They are not a replacement for long-term audit storage or a release catalog in the MVP.
 
