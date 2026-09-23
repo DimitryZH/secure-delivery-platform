@@ -12,6 +12,7 @@ crash.*.log
 *.tfvars
 *.tfvars.json
 !terraform/foundation/terraform.tfvars.example
+/terraform/foundation/backend.hcl
 
 # Private documentation
 docs/private/

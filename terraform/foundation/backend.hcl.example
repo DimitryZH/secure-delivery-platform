@@ -1,0 +1,2 @@
+bucket = "replace-with-globally-unique-state-bucket-name"
+prefix = "secure-delivery-platform/foundation"
