@@ -98,6 +98,18 @@ assert_contains "terraform -chdir=terraform/foundation init -backend=false" "$co
 assert_contains "terraform -chdir=terraform/foundation validate" "$command_log"
 assert_contains "terraform fmt -check -recursive terraform/bootstrap terraform/foundation" "$command_log"
 
+run_preflight \
+  --project-id sample-project-123 \
+  --state-bucket-name sample-state-bucket-123 \
+  --state-bucket-location us-central1 > "$output_file"
+assert_contains "State bucket location: us-central1" "$output_file"
+
+run_preflight \
+  --project-id sample-project-123 \
+  --state-bucket-name sample-state-bucket-123 \
+  --state-bucket-location nam4 > "$output_file"
+assert_contains "State bucket location: nam4" "$output_file"
+
 if grep -Eq -- 'terraform .*(plan|apply|destroy|-migrate-state)|gcloud .*(services enable|storage buckets (create|update)|secrets|iam|set-iam-policy)' "$command_log"; then
   fail_test "a mutating command was invoked"
 fi
@@ -137,5 +149,50 @@ if run_preflight \
   fail_test "a malformed state bucket name was accepted"
 fi
 [[ ! -s "$command_log" ]] || fail_test "a command ran before malformed state bucket name rejection"
+
+: > "$command_log"
+if run_preflight \
+  --project-id sample-project-123 \
+  --state-bucket-name goog-state-bucket-123 \
+  --state-bucket-location US > "$output_file" 2>&1; then
+  fail_test "a state bucket name beginning with goog was accepted"
+fi
+[[ ! -s "$command_log" ]] || fail_test "a command ran before goog-prefixed bucket rejection"
+
+: > "$command_log"
+if run_preflight \
+  --project-id sample-project-123 \
+  --state-bucket-name state-google-bucket-123 \
+  --state-bucket-location US > "$output_file" 2>&1; then
+  fail_test "a state bucket name containing google was accepted"
+fi
+[[ ! -s "$command_log" ]] || fail_test "a command ran before google-containing bucket rejection"
+
+: > "$command_log"
+if run_preflight \
+  --project-id sample-project-123 \
+  --state-bucket-name sample-state-bucket-123 \
+  --state-bucket-location replace-with-your-state-bucket-location > "$output_file" 2>&1; then
+  fail_test "the state bucket location placeholder was accepted"
+fi
+[[ ! -s "$command_log" ]] || fail_test "a command ran before state bucket location placeholder rejection"
+
+: > "$command_log"
+if run_preflight \
+  --project-id sample-project-123 \
+  --state-bucket-name sample-state-bucket-123 \
+  --state-bucket-location "   " > "$output_file" 2>&1; then
+  fail_test "a whitespace-only state bucket location was accepted"
+fi
+[[ ! -s "$command_log" ]] || fail_test "a command ran before whitespace-only state bucket location rejection"
+
+: > "$command_log"
+if run_preflight \
+  --project-id sample-project-123 \
+  --state-bucket-name sample-state-bucket-123 \
+  --state-bucket-location us_central1 > "$output_file" 2>&1; then
+  fail_test "a malformed state bucket location was accepted"
+fi
+[[ ! -s "$command_log" ]] || fail_test "a command ran before malformed state bucket location rejection"
 
 printf 'PASS: preflight foundation tests\n'

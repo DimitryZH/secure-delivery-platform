@@ -19,9 +19,12 @@ variable "state_bucket_name" {
     condition = (
       var.state_bucket_name != "replace-with-globally-unique-state-bucket-name" &&
       can(regex("^[a-z0-9][a-z0-9._-]{1,61}[a-z0-9]$", var.state_bucket_name)) &&
-      !strcontains(var.state_bucket_name, "..")
+      !strcontains(var.state_bucket_name, "..") &&
+      !can(regex("^([0-9]{1,3}\\.){3}[0-9]{1,3}$", var.state_bucket_name)) &&
+      !startswith(var.state_bucket_name, "goog") &&
+      !strcontains(var.state_bucket_name, "google")
     )
-    error_message = "state_bucket_name must be 3 to 63 valid characters, start and end with a letter or number, and must not use the example placeholder."
+    error_message = "state_bucket_name must be 3 to 63 valid characters, start and end with a letter or number, contain no consecutive periods, not use an IPv4 address format, not start with \"goog\", not contain \"google\", and not use the example placeholder."
   }
 }
 

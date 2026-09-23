@@ -68,8 +68,11 @@ done
 [[ "$state_bucket_name" =~ ^[a-z0-9][a-z0-9._-]{1,61}[a-z0-9]$ ]] || fail "--state-bucket-name is not a valid Google Cloud Storage bucket name."
 [[ "$state_bucket_name" != *..* ]] || fail "--state-bucket-name must not contain consecutive periods."
 [[ ! "$state_bucket_name" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] || fail "--state-bucket-name must not use an IPv4 address format."
+[[ "$state_bucket_name" != goog* ]] || fail "--state-bucket-name must not start with goog."
+[[ "$state_bucket_name" != *google* ]] || fail "--state-bucket-name must not contain google."
 
 [[ "$state_bucket_location" != "replace-with-your-state-bucket-location" ]] || fail "--state-bucket-location must not use an example placeholder."
+[[ "$state_bucket_location" =~ ^[A-Za-z][A-Za-z0-9-]{1,29}$ ]] || fail "--state-bucket-location has invalid syntax."
 
 for required_command in terraform gcloud git; do
   command -v "$required_command" >/dev/null 2>&1 || fail "required command not found: $required_command"
