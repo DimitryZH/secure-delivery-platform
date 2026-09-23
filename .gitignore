@@ -1,0 +1,17 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+*.tfplan
+*.tfplan.*
+*.plan
+tfplan
+crash.log
+crash.*.log
+*.tfvars
+*.tfvars.json
+!terraform/foundation/terraform.tfvars.example
+
+# Private documentation
+docs/private/
