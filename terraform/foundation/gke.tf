@@ -31,7 +31,7 @@ resource "kubernetes_namespace" "environment" {
   metadata {
     name = each.value
     labels = {
-      "app.kubernetes.io/part-of" = "secure-delivery-platform"
+      "app.kubernetes.io/part-of"     = "secure-delivery-platform"
       "delivery.platform/environment" = each.value
     }
   }

@@ -1,6 +1,14 @@
 variable "project_id" {
   description = "Google Cloud project ID for the secure delivery platform baseline."
   type        = string
+
+  validation {
+    condition = (
+      var.project_id != "replace-with-your-project-id" &&
+      can(regex("^[a-z][a-z0-9-]{4,28}[a-z0-9]$", var.project_id))
+    )
+    error_message = "project_id must be a valid Google Cloud project ID and must not use the example placeholder."
+  }
 }
 
 variable "region" {

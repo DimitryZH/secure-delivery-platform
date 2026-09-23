@@ -4,6 +4,19 @@ This directory is intended for the shared infrastructure backbone of the platfor
 
 The foundation should create the smallest reproducible Google-native baseline needed to demonstrate trusted delivery. It should not become a generic Terraform framework or an enterprise platform module system.
 
+## Safe local validation
+
+From this directory, copy the example variables file and replace the placeholder project ID with a valid Google Cloud project ID:
+
+```shell
+cp terraform.tfvars.example terraform.tfvars
+terraform init -backend=false
+terraform fmt
+terraform validate
+```
+
+This procedure validates the local Terraform configuration only. Provisioning is not part of this change.
+
 ## MVP foundation inventory
 
 The first executable foundation should include only the resources required for the trusted release path:
