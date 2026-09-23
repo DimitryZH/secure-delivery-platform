@@ -17,6 +17,18 @@ terraform validate
 
 This procedure validates the local Terraform configuration only. Provisioning is not part of this change.
 
+## Future GCS backend initialization
+
+After an explicitly authorized bootstrap has created the state bucket, copy `backend.hcl.example` to the ignored local `backend.hcl` file and replace the bucket placeholder with the bootstrap `state_bucket_name` output. The prefix is already set to `secure-delivery-platform/foundation`.
+
+An operator may initialize the GCS backend and migrate existing foundation state only after separate explicit authorization:
+
+```shell
+terraform init -backend-config=backend.hcl -migrate-state
+```
+
+State bucket provisioning and state migration are not part of this change.
+
 ## MVP foundation inventory
 
 The first executable foundation should include only the resources required for the trusted release path:
