@@ -22,9 +22,7 @@ variable "enabled_services" {
   type        = set(string)
   default = [
     "artifactregistry.googleapis.com",
-    "binaryauthorization.googleapis.com",
     "cloudbuild.googleapis.com",
-    "clouddeploy.googleapis.com",
     "container.googleapis.com",
     "iam.googleapis.com",
     "logging.googleapis.com",
@@ -89,7 +87,7 @@ variable "gke_initial_node_count" {
 variable "gke_node_machine_type" {
   description = "Machine type for the MVP GKE cluster node pool."
   type        = string
-  default     = "e2-small"
+  default     = "e2-standard-2"
 }
 
 variable "environment_namespaces" {
