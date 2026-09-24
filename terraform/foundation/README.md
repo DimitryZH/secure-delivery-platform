@@ -92,7 +92,7 @@ Operator or reviewer access should support release review and troubleshooting wi
 
 ## Kubernetes baseline
 
-The MVP uses one GKE cluster.
+The initial MVP uses one zonal GKE cluster with one non-Spot `e2-standard-2` node.
 
 The foundation creates a minimal cluster using `gke_cluster_name`, `gke_location`, `gke_initial_node_count`, and `gke_node_machine_type`.
 
