@@ -1,7 +1,14 @@
 steps:
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'LOCATION-docker.pkg.dev/PROJECT_ID/REPOSITORY/sample-service:$COMMIT_SHA', '.']
+    args: ['build', '-t', '${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/sample-service:$COMMIT_SHA', '.']
     dir: 'app/sample-service'
 
 images:
-  - 'LOCATION-docker.pkg.dev/PROJECT_ID/REPOSITORY/sample-service:$COMMIT_SHA'
+  - '${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/sample-service:$COMMIT_SHA'
+
+substitutions:
+  _LOCATION: us-central1
+  _REPOSITORY: secure-delivery
+
+options:
+  logging: CLOUD_LOGGING_ONLY
