@@ -46,6 +46,12 @@ resource "google_project_iam_member" "build_log_writer" {
   member  = "serviceAccount:${google_service_account.build.email}"
 }
 
+resource "google_project_iam_member" "build_cloud_build_builder" {
+  project = var.project_id
+  role    = "roles/cloudbuild.builds.builder"
+  member  = "serviceAccount:${google_service_account.build.email}"
+}
+
 resource "google_project_iam_member" "deploy_gke_developer" {
   project = var.project_id
   role    = "roles/container.developer"
