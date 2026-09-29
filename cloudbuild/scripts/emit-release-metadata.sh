@@ -20,14 +20,32 @@ command -v gcloud >/dev/null 2>&1 || {
   exit 1
 }
 
-image_digest="$(
-  gcloud artifacts docker images describe "$IMAGE_URI" \
-    --project="$PROJECT_ID" \
-    --format='value(image_summary.digest)'
-)"
+digest_lookup_max_attempts=5
+digest_lookup_retry_seconds=2
+image_digest=""
+
+for ((attempt = 1; attempt <= digest_lookup_max_attempts; attempt++)); do
+  candidate_digest=""
+  if candidate_digest="$(
+    gcloud artifacts docker images describe "$IMAGE_URI" \
+      --project="$PROJECT_ID" \
+      --format='value(image_summary.digest)'
+  )" && [[ "$candidate_digest" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+    image_digest="$candidate_digest"
+    break
+  fi
+
+  printf 'Warning: published image digest lookup attempt %d/%d did not return a valid digest.\n' \
+    "$attempt" "$digest_lookup_max_attempts" >&2
+
+  if ((attempt < digest_lookup_max_attempts)); then
+    sleep "$digest_lookup_retry_seconds"
+  fi
+done
 
 [[ "$image_digest" =~ ^sha256:[0-9a-f]{64}$ ]] || {
-  printf 'Error: published image did not return a valid sha256 digest.\n' >&2
+  printf 'Error: published image did not return a valid sha256 digest after %d attempts.\n' \
+    "$digest_lookup_max_attempts" >&2
   exit 1
 }
 
