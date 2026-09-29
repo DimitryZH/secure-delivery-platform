@@ -1,7 +1,24 @@
 steps:
-  - name: 'gcr.io/cloud-builders/docker'
+  - id: 'build-image'
+    name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', '${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/sample-service:$COMMIT_SHA', '.']
     dir: 'app/sample-service'
+
+  - id: 'publish-image'
+    name: 'gcr.io/cloud-builders/docker'
+    args: ['push', '${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/sample-service:$COMMIT_SHA']
+
+  - id: 'emit-release-metadata'
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+    entrypoint: 'bash'
+    env:
+      - 'PROJECT_ID=$PROJECT_ID'
+      - 'SOURCE_REPOSITORY=$REPO_FULL_NAME'
+      - 'COMMIT_SHA=$COMMIT_SHA'
+      - 'BUILD_ID=$BUILD_ID'
+      - 'BUILD_SERVICE_ACCOUNT=$SERVICE_ACCOUNT_EMAIL'
+      - 'IMAGE_URI=${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/sample-service:$COMMIT_SHA'
+    args: ['cloudbuild/scripts/emit-release-metadata.sh']
 
 images:
   - '${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/sample-service:$COMMIT_SHA'
