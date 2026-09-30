@@ -53,6 +53,48 @@ These checks are intentionally narrow. Additional scanning or policy tools can b
 
 ## Verification output
 
+### Executable gate (Issue #43)
+
+`cloudbuild/cloudbuild-verify.yaml` runs the standard-library Python validator
+`cloudbuild/scripts/verify-release-metadata.py`. Supply the initial JSON record
+from `emit-release-metadata.sh` as `release-metadata.json` in the verification
+build source, alongside the repository scripts. `_METADATA_FILE` can select a
+different source-relative file. The producer currently emits JSON to its build
+log; automated persistence and transport between builds remain a later step.
+
+The approved registry is derived from the verification build's `PROJECT_ID`,
+`_LOCATION` (default `us-central1`), and `_REPOSITORY` (default `secure-delivery`).
+These are trusted operator configuration, never read from candidate metadata.
+The gate checks all six initial fields as nonempty strings, a repository in
+`owner/repo` format, a lowercase 40-character Git SHA, a UUID-shaped build ID,
+an IAM service account email, and a lowercase SHA-256 digest. It anchors the
+image URI to the exact approved region/project/repository path.
+
+A tagged image with a separate valid digest is accepted, matching the initial
+producer contract. A digest-pinned input must match `image_digest`. Success
+emits `artifact_identity` as `image@sha256:...`; downstream consumers must use
+this field instead of the mutable input tag. Missing files, invalid JSON,
+duplicate fields, malformed identities, and digest mismatches exit with code 1.
+Every handled verification outcome emits one JSON object to stdout with
+`verification_status`, UTC `verification_timestamp`, and an `errors` array.
+Failure preserves known identity fields for diagnostics but omits
+`artifact_identity`. No input verification status or trust reference is trusted.
+
+Local verification (no GCP access):
+
+```sh
+python cloudbuild/scripts/verify-release-metadata.py \
+  --metadata release-metadata.json \
+  --approved-registry us-central1-docker.pkg.dev/example-project/secure-delivery
+python -B -m unittest discover -s scripts/tests -p test_release_metadata_verification.py -v
+```
+
+The Cloud Build configuration emits the result into build logs and propagates
+the validator's exit status. It does not upload an artifact or create an
+attestation. This validates the metadata contract, not cryptographic provenance,
+registry existence, tag-to-digest binding, or authorization of the claimed
+source/build identity. Those checks belong to the later trust-signal path.
+
 Verification should emit or update the release metadata contract with:
 - `verification_status`
 - `verification_timestamp`
@@ -69,9 +111,10 @@ For the MVP, the verification result can be represented as a small JSON object t
   "build_service_account": "<cloud-build-service-account>",
   "image_uri": "<artifact-registry-image-uri>",
   "image_digest": "<sha256-image-digest>",
+  "artifact_identity": "<artifact-registry-image-uri-without-tag>@<sha256-image-digest>",
   "verification_status": "passed",
   "verification_timestamp": "<rfc3339-timestamp>",
-  "trust_signal_ref": "pending-binary-authorization-attestation"
+  "errors": []
 }
 ```
 
