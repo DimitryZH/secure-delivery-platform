@@ -13,6 +13,11 @@ This keeps the platform reproducible while still demonstrating governed promotio
 
 ## Environment policy summary
 
+Issue #49 prepares one enforced Binary Authorization attestor rule for the
+shared GKE cluster, covering dev, stage, and prod equally once applied. The
+relaxed-dev and differentiated trust posture below are architectural goals,
+not namespace exceptions in that policy. See [the concrete admission policy](../binary-authorization.md).
+
 | Environment | Purpose | Trust posture | Promotion expectation |
 | --- | --- | --- | --- |
 | dev | First controlled deployment target | Relaxed enough for fast validation | Initial deployment after baseline checks |
