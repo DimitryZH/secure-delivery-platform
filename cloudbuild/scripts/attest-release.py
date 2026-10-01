@@ -5,6 +5,7 @@ import argparse
 import base64
 import hashlib
 import json
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -39,7 +40,7 @@ def validate_signature(occurrence, attestor, token):
         raise ValueError("signature_not_verified")
 
 
-def sign_and_create(artifact, project, attestor, note, key_version, token):
+def sign_and_create(artifact, project, attestor, note, key_version, public_key_id, token):
     reference, digest = artifact.split("@")
     payload = json.dumps({"critical": {
         "identity": {"docker-reference": reference},
@@ -55,7 +56,7 @@ def sign_and_create(artifact, project, attestor, note, key_version, token):
     occurrence = {
         "resourceUri": artifact, "noteName": note,
         "attestation": {"serializedPayload": base64.b64encode(payload).decode(),
-                        "signatures": [{"publicKeyId": key_version, "signature": signed["signature"]}]},
+                        "signatures": [{"publicKeyId": public_key_id, "signature": signed["signature"]}]},
     }
     # Require an explicit VERIFIED response before writing any occurrence.
     validate_signature(occurrence, attestor, token)
@@ -65,7 +66,7 @@ def sign_and_create(artifact, project, attestor, note, key_version, token):
     )
 
 
-def inspect_occurrence(occurrences, artifact, key_version, note):
+def inspect_occurrence(occurrences, artifact, public_key_id, note):
     """Find the exact subject/key/note; listing alone is not signature validation."""
     if not isinstance(occurrences, list):
         raise ValueError("invalid_occurrence_list")
@@ -78,7 +79,7 @@ def inspect_occurrence(occurrences, artifact, key_version, note):
             continue
         attestation = occurrence.get("attestation", {})
         signatures = attestation.get("signatures", [])
-        if not any(s.get("publicKeyId") == key_version and s.get("signature") for s in signatures):
+        if not any(s.get("publicKeyId") == public_key_id and s.get("signature") for s in signatures):
             continue
         payload = json.loads(base64.b64decode(attestation["serializedPayload"], validate=True))
         reference, digest = artifact.split("@")
@@ -98,11 +99,21 @@ def main():
     parser.add_argument("--project", required=True)
     parser.add_argument("--attestor", required=True)
     parser.add_argument("--note", required=True)
-    parser.add_argument("--key-version", required=True)
+    parser.add_argument("--key-version", required=True, help="KMS API resource name: projects/.../cryptoKeyVersions/N")
+    parser.add_argument("--public-key-id", required=True, help="Canonical ID registered on the Terraform-managed attestor")
     parser.add_argument("--inspect-only", action="store_true")
     args = parser.parse_args()
     result = {"attestation_status": "failed"}
     try:
+        # Terraform registers the canonical KMS URI as the attestor key ID.
+        # The KMS API itself requires the separate projects/... resource name.
+        if not re.fullmatch(
+            r"projects/[a-z][a-z0-9-]*/locations/[a-z0-9-]+/keyRings/[A-Za-z0-9_-]+/"
+            r"cryptoKeys/[A-Za-z0-9_-]+/cryptoKeyVersions/[1-9][0-9]*", args.key_version
+        ):
+            raise ValueError("invalid_kms_key_version")
+        if args.public_key_id != "//cloudkms.googleapis.com/v1/" + args.key_version:
+            raise ValueError("public_key_id_does_not_match_kms_key_version")
         # No caller-provided verification result is consumed. Verification runs
         # in this trusted signing execution, before any gcloud invocation.
         verification = run_json([
@@ -121,7 +132,8 @@ def main():
         if not token:
             raise ValueError("missing_access_token")
         if not args.inspect_only:
-            created = sign_and_create(artifact, args.project, attestor, args.note, args.key_version, token)
+            created = sign_and_create(artifact, args.project, attestor, args.note,
+                                      args.key_version, args.public_key_id, token)
             occurrences = [request_json(
                 "https://containeranalysis.googleapis.com/v1/" + created["name"], token,
             )]
@@ -132,7 +144,7 @@ def main():
                 "--attestor=" + args.attestor, "--attestor-project=" + args.project,
                 "--format=json", "--quiet",
             ])
-        reference = inspect_occurrence(occurrences, artifact, args.key_version, args.note)
+        reference = inspect_occurrence(occurrences, artifact, args.public_key_id, args.note)
         selected = next(item for item in occurrences if item["name"] == reference)
         validate_signature(selected, attestor, token)
         result.update(attestation_status="inspected" if args.inspect_only else "created",
