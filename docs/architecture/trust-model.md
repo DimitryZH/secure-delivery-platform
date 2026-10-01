@@ -91,6 +91,12 @@ Minimum model:
 - an image digest as the attested subject
 - environment policies that decide where attestation is required
 
+The executable [artifact attestation path](../artifact-attestation.md) uses a
+separate signing account and KMS key. It reruns the metadata gate in a protected
+execution and requires explicit signature validation before publishing a
+digest-bound occurrence. Build authority is not granted signing or impersonation
+access. Admission enforcement remains a separate step.
+
 The MVP does not need multiple attestors, complex multi-attestor policy chains, or a full enterprise provenance framework. Those can be added after the trusted path is executable and understandable.
 
 ## Trust boundaries

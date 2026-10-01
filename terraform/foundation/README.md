@@ -1,5 +1,9 @@
 # Terraform Foundation
 
+The [artifact attestation runbook](../../docs/artifact-attestation.md) describes
+the separate signing authority prepared in `attestation.tf`. Review a fresh plan
+and effective IAM before provisioning; this implementation does not apply it.
+
 This directory is intended for the shared infrastructure backbone of the platform.
 
 The foundation should create the smallest reproducible Google-native baseline needed to demonstrate trusted delivery. It should not become a generic Terraform framework or an enterprise platform module system.
