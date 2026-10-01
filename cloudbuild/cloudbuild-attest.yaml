@@ -1,0 +1,30 @@
+# Submit only reviewed, immutable source under the separate signing identity.
+# Candidate metadata is data; never upload candidate-controlled scripts/config.
+steps:
+  - id: 'verify-and-attest'
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+    entrypoint: 'python3'
+    args:
+      - 'cloudbuild/scripts/attest-release.py'
+      - '--metadata'
+      - '${_METADATA_FILE}'
+      - '--approved-registry'
+      - '${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}'
+      - '--project'
+      - '$PROJECT_ID'
+      - '--attestor'
+      - 'secure-delivery-verification'
+      - '--note'
+      - 'projects/$PROJECT_ID/notes/secure-delivery-verification'
+      - '--key-version'
+      - 'projects/$PROJECT_ID/locations/${_LOCATION}/keyRings/secure-delivery-attestation/cryptoKeys/verification/cryptoKeyVersions/1'
+
+serviceAccount: 'projects/$PROJECT_ID/serviceAccounts/secure-delivery-attestation@$PROJECT_ID.iam.gserviceaccount.com'
+
+substitutions:
+  _LOCATION: us-central1
+  _REPOSITORY: secure-delivery
+  _METADATA_FILE: release-metadata.json
+
+options:
+  logging: CLOUD_LOGGING_ONLY
