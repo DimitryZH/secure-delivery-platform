@@ -4,6 +4,27 @@ The [artifact attestation runbook](../../docs/artifact-attestation.md) describes
 the separate signing authority prepared in `attestation.tf`. Review a fresh plan
 and effective IAM before provisioning; this implementation does not apply it.
 
+## Provider quota project
+
+The foundation Google provider explicitly sends the target project as
+`X-Goog-User-Project` using `user_project_override = true` and
+`billing_project = var.project_id`. Local user ADC's `quota_project_id` alone
+did not supply this header for Binary Authorization IAM with provider 5.45.2.
+Without the header, attestor IAM reads returned `403 / SERVICE_DISABLED` against
+credential consumer project `764086051850`; the same ADC request with the target
+quota header succeeded. The target Binary Authorization and Service Usage APIs
+were enabled, and ADC's user had `serviceusage.services.use` on the target project.
+
+The authenticated principal must retain `serviceusage.services.use` on the
+configured quota project. This provider setting grants no IAM permissions and
+enables no APIs. It changes quota/billing routing for foundation provider requests;
+the GCS backend's credentials/configuration are separate and unchanged.
+After merging a provider configuration change, generate and review a fresh plan
+before any separately authorized apply; previously saved plans are not validation
+of the corrected configuration.
+
+See the [provider quota configuration reference](https://registry.terraform.io/providers/hashicorp/google/5.45.2/docs/guides/provider_reference#quota-management-configuration).
+
 This directory is intended for the shared infrastructure backbone of the platform.
 
 The foundation should create the smallest reproducible Google-native baseline needed to demonstrate trusted delivery. It should not become a generic Terraform framework or an enterprise platform module system.
