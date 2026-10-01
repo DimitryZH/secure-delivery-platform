@@ -14,6 +14,10 @@ resource "google_container_cluster" "platform" {
   initial_node_count  = var.gke_initial_node_count
   deletion_protection = false
 
+  binary_authorization {
+    evaluation_mode = "PROJECT_SINGLETON_POLICY_ENFORCE"
+  }
+
   node_config {
     machine_type    = var.gke_node_machine_type
     service_account = google_service_account.node.email
@@ -22,7 +26,8 @@ resource "google_container_cluster" "platform" {
     ]
   }
 
-  depends_on = [google_project_service.required]
+  # Install the attestor requirement before enabling admission enforcement.
+  depends_on = [google_project_service.required, google_binary_authorization_policy.application]
 }
 
 resource "kubernetes_namespace" "environment" {

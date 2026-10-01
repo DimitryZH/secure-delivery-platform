@@ -155,10 +155,11 @@ Implementation validation on September 30, 2026:
   No apply, API enablement, IAM write, signing, or occurrence creation was run.
   Generate/review a fresh locked plan before any authorized apply.
 
-Future Binary Authorization policy should require this attestor for the same
-immutable digest. That policy must separately arrange the Binary Authorization
-service agent's note-occurrence viewing and demonstrate admission allow/deny
-behavior. This implementation does not enable enforcement.
+Issue #49 prepares [Binary Authorization admission enforcement](binary-authorization.md)
+for this attestor. Read-only inspection confirmed that the existing same-project
+Binary Authorization service-agent role already supplies note/occurrence viewing
+and attestor verification. Enforcement apply and live admission allow/deny
+validation remain separate, pending steps.
 
 References: [Google's attestation flow](https://docs.cloud.google.com/binary-authorization/docs/making-attestations),
 [signature validation API](https://docs.cloud.google.com/binary-authorization/docs/reference/rest/v1/projects.attestors/validateAttestationOccurrence),
