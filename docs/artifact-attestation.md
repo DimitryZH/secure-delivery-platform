@@ -21,6 +21,22 @@ bytes with SHA-256, and asks KMS to sign. The private key never leaves KMS.
 occurrence. Unknown or rejected responses stop the path. Readback checks the
 subject, note, key ID, and payload and validates the signature again.
 
+The two key identifiers are deliberately separate:
+
+| Input | Purpose | Format |
+| --- | --- | --- |
+| `--key-version` | KMS `asymmetricSign` URL and returned resource-name check | `projects/.../cryptoKeyVersions/1` |
+| `--public-key-id` | Occurrence `signatures[].publicKeyId`, Binary Authorization validation, and inspection | `//cloudkms.googleapis.com/v1/projects/.../cryptoKeyVersions/1` |
+
+Terraform registers the canonical URI from the key-version data source as the
+attestor public-key ID. `attestation_key_version` output is that canonical URI;
+it must not be passed directly as the KMS API resource name. The script requires
+both inputs and rejects a canonical URI used as `--key-version`, a bare resource
+name used as `--public-key-id`, or IDs referring to different key versions before
+any credential or authority request. This contract is specific to the current
+Terraform-managed KMS attestor; custom public-key aliases are not supported.
+Rotation must update both inputs and the registered attestor public key.
+
 Successful stdout JSON contains `attestation_status=created`, `artifact_identity`,
 the full fresh `verification` record, and `trust_signal_ref` naming the occurrence.
 Failures exit 1 and emit `attestation_status=failed` and `error`, without a trust
@@ -101,6 +117,7 @@ python3 cloudbuild/scripts/attest-release.py \
   --project <project-id> --attestor secure-delivery-verification \
   --note projects/<project-id>/notes/secure-delivery-verification \
   --key-version projects/<project-id>/locations/<region>/keyRings/secure-delivery-attestation/cryptoKeys/verification/cryptoKeyVersions/1 \
+  --public-key-id //cloudkms.googleapis.com/v1/projects/<project-id>/locations/<region>/keyRings/secure-delivery-attestation/cryptoKeys/verification/cryptoKeyVersions/1 \
   --inspect-only
 ```
 
@@ -120,6 +137,11 @@ occurrence APIs. They cover successful creation, missing/malformed/forged input,
 digest mismatch, foreign registry, denied signing, signature rejection before
 write, readback mismatch, and inspection without signing. They do not prove
 live IAM denial or real KMS cryptography; live signing requires provisioning.
+
+The public-key-ID regression tests use the deployed canonical URI format and
+assert that KMS receives only the API resource name, while validation and
+occurrences carry the canonical ID. Bare-name occurrences and mismatched inputs
+are rejected. These checks run offline and perform no live signing.
 
 Implementation validation on September 30, 2026:
 

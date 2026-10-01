@@ -18,6 +18,8 @@ steps:
       - 'projects/$PROJECT_ID/notes/secure-delivery-verification'
       - '--key-version'
       - 'projects/$PROJECT_ID/locations/${_LOCATION}/keyRings/secure-delivery-attestation/cryptoKeys/verification/cryptoKeyVersions/1'
+      - '--public-key-id'
+      - '//cloudkms.googleapis.com/v1/projects/$PROJECT_ID/locations/${_LOCATION}/keyRings/secure-delivery-attestation/cryptoKeys/verification/cryptoKeyVersions/1'
 
 serviceAccount: 'projects/$PROJECT_ID/serviceAccounts/secure-delivery-attestation@$PROJECT_ID.iam.gserviceaccount.com'
 
