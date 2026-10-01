@@ -1,12 +1,18 @@
 steps:
-  - name: 'ubuntu'
-    entrypoint: 'bash'
+  - id: 'verify-release-metadata'
+    name: 'python:3.13-slim'
+    entrypoint: 'python'
     args:
-      - '-c'
-      - |
-        echo "MVP verification gate placeholder"
-        echo "1. Read release metadata for the candidate artifact."
-        echo "2. Validate source, build, image URI, and image digest fields."
-        echo "3. Confirm deployment input can reference the immutable digest."
-        echo "4. Emit a verification status before any promotion step consumes the release."
-        echo "See docs/cloudbuild-verification.md for the expected flow."
+      - 'cloudbuild/scripts/verify-release-metadata.py'
+      - '--metadata'
+      - '${_METADATA_FILE}'
+      - '--approved-registry'
+      - '${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}'
+
+substitutions:
+  _LOCATION: us-central1
+  _REPOSITORY: secure-delivery
+  _METADATA_FILE: release-metadata.json
+
+options:
+  logging: CLOUD_LOGGING_ONLY
