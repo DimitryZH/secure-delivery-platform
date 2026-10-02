@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: sample-service
+  namespace: REPLACE_WITH_ENVIRONMENT
 spec:
   replicas: 1
   selector:
@@ -18,7 +19,14 @@ spec:
         release.secure-delivery.dev/build-id: REPLACE_WITH_BUILD_ID
         release.secure-delivery.dev/image-digest: REPLACE_WITH_IMAGE_DIGEST
         release.secure-delivery.dev/verification-status: REPLACE_WITH_VERIFICATION_STATUS
+        release.secure-delivery.dev/source-repository: REPLACE_WITH_SOURCE_REPOSITORY
+        release.secure-delivery.dev/build-service-account: REPLACE_WITH_BUILD_SERVICE_ACCOUNT
+        release.secure-delivery.dev/verification-timestamp: REPLACE_WITH_VERIFICATION_TIMESTAMP
+        release.secure-delivery.dev/trust-signal-ref: REPLACE_WITH_TRUST_SIGNAL_REF
+        release.secure-delivery.dev/target-environment: REPLACE_WITH_ENVIRONMENT
+        release.secure-delivery.dev/deployment-authority: REPLACE_WITH_DEPLOYMENT_AUTHORITY
     spec:
+      automountServiceAccountToken: false
       containers:
         - name: sample-service
           image: REPLACE_WITH_IMAGE
@@ -26,7 +34,7 @@ spec:
             - containerPort: 8080
           env:
             - name: APP_ENV
-              value: "base"
+              value: REPLACE_WITH_ENVIRONMENT
           readinessProbe:
             httpGet:
               path: /healthz

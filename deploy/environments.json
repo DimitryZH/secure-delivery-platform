@@ -1,0 +1,14 @@
+{
+  "project": "sre-platform-staging-507220",
+  "cluster": "secure-delivery-platform",
+  "location": "us-central1-a",
+  "approved_registry": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery",
+  "deployment_service_account": "secure-delivery-deploy@sre-platform-staging-507220.iam.gserviceaccount.com",
+  "build_service_account": "secure-delivery-build@sre-platform-staging-507220.iam.gserviceaccount.com",
+  "source_repository": "DimitryZH/secure-delivery-platform",
+  "environments": {
+    "dev": {"namespace": "dev", "review_required": false},
+    "stage": {"namespace": "stage", "review_required": true},
+    "prod": {"namespace": "prod", "review_required": true}
+  }
+}
