@@ -10,7 +10,7 @@ an authorized apply. The policy has one cluster rule for
 `${gke_location}.${gke_cluster_name}` (currently
 `us-central1-a.secure-delivery-platform`):
 
-- `REQUIRE_ATTESTATION` by `projects/sre-platform-staging-507220/attestors/secure-delivery-verification`.
+- `REQUIRE_ATTESTATION` by `projects/sre-platform-staging-***/attestors/secure-delivery-verification`.
 - `ENFORCED_BLOCK_AND_AUDIT_LOG`, not audit-only mode.
 - `global_policy_evaluation_mode = "ENABLE"` for Google-maintained system images.
 - No custom image allowlist or namespace bypass.
@@ -43,7 +43,7 @@ No application Pods were present. This check does not prove post-enable
 admission or future custom platform workload compatibility.
 
 The existing service agent
-`service-465837787797@gcp-sa-binaryauthorization.iam.gserviceaccount.com` already
+`service-***@gcp-sa-binaryauthorization.iam.gserviceaccount.com` already
 has `roles/binaryauthorization.serviceAgent` in this project. Read-only role
 inspection confirmed attestor verification and note/occurrence read permissions.
 No additional IAM, signing, API, or build-authority grants are needed.

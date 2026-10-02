@@ -38,7 +38,7 @@ accepted by this command.
 On October 2, 2026, dev/stage/prod existed and there were no application
 Deployments, Services, or Pods in them. The earlier temporary validation Pods
 were already removed. Deployment identity
-`secure-delivery-deploy@sre-platform-staging-507220.iam.gserviceaccount.com`
+`secure-delivery-deploy@sre-platform-staging-***.iam.gserviceaccount.com`
 has `roles/container.developer` and `roles/logging.logWriter`. Node image pull
 uses the separately provisioned repository reader binding.
 
@@ -65,14 +65,29 @@ authentication, deployed foundation/enforced attestor policy, node repository
 reader access, and a current attestation. Preparation only needs Python.
 
 `deploy/examples/verified-release.json` contains synthetic build/digest/occurrence
-values targeted to dev, using the repository's already documented configuration.
+values targeted to dev with placeholders for project and service-account metadata.
 It is an offline preparation example, not a real verified or deployable candidate.
 Replace it with a privately retained real verification/attestation record before
 execution. Never copy the example's claimed passed status into a live candidate.
-Prepare manifests and `deployment-result.json` without any cloud commands:
+Materialize the synthetic example locally from the executable configuration
+(the generated record stays ignored), then prepare without any cloud commands:
+
+```python
+import json
+from pathlib import Path
+policy = json.loads(Path("deploy/environments.json").read_text())
+example = Path("deploy/examples/verified-release.json").read_text()
+for key, value in {"project_id": policy["project"],
+                   "approved_registry": policy["approved_registry"],
+                   "build_service_account": policy["build_service_account"]}.items():
+    example = example.replace("${" + key + "}", value)
+output = Path("docs/private/issue52/example.json")
+output.parent.mkdir(parents=True, exist_ok=True)
+output.write_text(example)
+```
 
 ```sh
-python -B deploy/deploy-release.py --metadata deploy/examples/verified-release.json --environment dev --output-dir docs/private/issue52/dev
+python -B deploy/deploy-release.py --metadata docs/private/issue52/example.json --environment dev --output-dir docs/private/issue52/dev
 ```
 
 For each other target, copy the same record and change only
