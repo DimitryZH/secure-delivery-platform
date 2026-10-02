@@ -95,3 +95,15 @@ variable "environment_namespaces" {
   type        = set(string)
   default     = ["dev", "stage", "prod"]
 }
+
+variable "deployment_operator_principal" {
+  description = "Reviewed operator IAM member (user:email or group:email). Supply privately through TF_VAR_deployment_operator_principal; never commit the value."
+  type        = string
+  sensitive   = true
+  nullable    = false
+
+  validation {
+    condition     = can(regex("^(user|group):[^\\s@]+@[^\\s@]+\\.[^\\s@]+$", var.deployment_operator_principal))
+    error_message = "Use a specific user:email or group:email operator principal; public principals and service accounts are not accepted."
+  }
+}

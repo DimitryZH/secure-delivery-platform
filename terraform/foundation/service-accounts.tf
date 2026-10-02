@@ -16,6 +16,14 @@ resource "google_service_account" "deploy" {
   depends_on = [google_project_service.required]
 }
 
+# Operator handoff is scoped to the deployment identity, never the project.
+# Build authority is not eligible for this operator-only binding.
+resource "google_service_account_iam_member" "deployment_operator" {
+  service_account_id = google_service_account.deploy.name
+  role               = "roles/iam.serviceAccountTokenCreator"
+  member             = var.deployment_operator_principal
+}
+
 resource "google_service_account" "reviewer" {
   project      = var.project_id
   account_id   = var.reviewer_service_account_id
