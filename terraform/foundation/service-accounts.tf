@@ -87,3 +87,13 @@ resource "google_project_iam_member" "node_monitoring_metric_writer" {
   role    = "roles/monitoring.metricWriter"
   member  = "serviceAccount:${google_service_account.node.email}"
 }
+
+# Kubelet pulls private application images using the node identity. Limit read
+# access to the release repository rather than granting it across the project.
+resource "google_artifact_registry_repository_iam_member" "node_image_reader" {
+  project    = google_artifact_registry_repository.release_images.project
+  location   = google_artifact_registry_repository.release_images.location
+  repository = google_artifact_registry_repository.release_images.repository_id
+  role       = "roles/artifactregistry.reader"
+  member     = "serviceAccount:${google_service_account.node.email}"
+}
