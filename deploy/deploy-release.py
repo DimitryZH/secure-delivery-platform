@@ -7,6 +7,7 @@ import importlib.util
 import json
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import tempfile
 
@@ -73,7 +74,10 @@ def render(record, policy, environment):
 def run(command):
     # Never include stderr or command arguments in errors: token-bearing
     # kubectl commands must not leak credentials into release records.
-    completed = subprocess.run(command, capture_output=True, text=True)
+    executable = shutil.which(command[0])
+    if executable is None:
+        raise ValueError("executable_not_found:" + command[0])
+    completed = subprocess.run([executable, *command[1:]], capture_output=True, text=True, shell=False)
     if completed.returncode:
         raise ValueError("command_failed:" + command[0] + ":exit=" + str(completed.returncode))
     return completed.stdout
@@ -92,7 +96,10 @@ def execute(manifest, policy, environment):
     with tempfile.TemporaryDirectory() as directory:
         ca = Path(directory) / "ca.pem"
         ca.write_bytes(base64.b64decode(cluster["masterAuth"]["clusterCaCertificate"], validate=True))
-        command = ["kubectl", "--kubeconfig=" + str(Path(directory) / "unused-kubeconfig"),
+        kubeconfig = Path(directory) / "kubeconfig.json"
+        kubeconfig.write_text(json.dumps({"apiVersion": "v1", "kind": "Config",
+                                         "clusters": [], "contexts": [], "users": []}), encoding="utf-8")
+        command = ["kubectl", "--kubeconfig=" + str(kubeconfig),
                    "--server=https://" + cluster["endpoint"], "--certificate-authority=" + str(ca),
                    "--token=" + token, "--request-timeout=30s", "--namespace=" + environment]
         namespace = json.loads(run(command + ["get", "namespace", environment, "-o", "json"]))

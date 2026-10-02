@@ -4,6 +4,7 @@ import copy
 import importlib.util
 import io
 import json
+import subprocess
 from pathlib import Path
 import tempfile
 import unittest
@@ -147,6 +148,54 @@ class DeploymentTest(unittest.TestCase):
             path.write_text('{"image_uri":"one","image_uri":"two"}')
             with self.assertRaises(ValueError):
                 deployment.load(path)
+
+    def test_executable_resolution_preserves_arguments_on_windows_linux_and_macos(self):
+        for executable in (r"C:\Program Files\Google\Cloud SDK\bin\gcloud.CMD",
+                           "/usr/bin/gcloud", "/opt/google-cloud-sdk/bin/gcloud"):
+            with self.subTest(executable=executable):
+                command = ["gcloud", "--project=test-project", "version"]
+                with patch.object(deployment.shutil, "which", return_value=executable) as lookup, \
+                        patch.object(deployment.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, "version-output")) as process:
+                    self.assertEqual(deployment.run(command), "version-output")
+                lookup.assert_called_once_with("gcloud")
+                process.assert_called_once_with([executable, *command[1:]], capture_output=True, text=True, shell=False)
+                self.assertEqual(command[0], "gcloud")
+
+    def test_missing_executable_and_command_failure_are_sanitized(self):
+        command = ["kubectl", "--token=private-test-token", "get", "namespace"]
+        with patch.object(deployment.shutil, "which", return_value=None), \
+                patch.object(deployment.subprocess, "run") as process:
+            with self.assertRaisesRegex(ValueError, "^executable_not_found:kubectl$"):
+                deployment.run(command)
+            process.assert_not_called()
+        with patch.object(deployment.shutil, "which", return_value="/usr/bin/kubectl"), \
+                patch.object(deployment.subprocess, "run", return_value=subprocess.CompletedProcess([], 1, "", "private-test-token")):
+            with self.assertRaisesRegex(ValueError, "^command_failed:kubectl:exit=1$"):
+                deployment.run(command)
+
+    def test_isolated_kubeconfig_exists_and_is_removed_after_success_or_failure(self):
+        for failure in (None, "namespace", "admission"):
+            with self.subTest(failure=failure):
+                paths = []
+                runner = self.runner(failure)
+
+                def inspect(command):
+                    if command[0] == "kubectl":
+                        path = Path(next(arg.split("=", 1)[1] for arg in command if arg.startswith("--kubeconfig=")))
+                        paths.append(path)
+                        self.assertEqual(json.loads(path.read_text(encoding="utf-8")),
+                                         {"apiVersion": "v1", "kind": "Config", "clusters": [], "contexts": [], "users": []})
+                        ca = Path(next(arg.split("=", 1)[1] for arg in command if arg.startswith("--certificate-authority=")))
+                        self.assertEqual(ca.read_bytes(), b"ca")
+                        self.assertEqual(ca.parent, path.parent)
+                        self.assertIn("--server=https://127.0.0.1", command)
+                    return runner(command)
+
+                code, _, _, _ = self.invoke(RECORD, execute=True, runner=inspect)
+                self.assertEqual(code, 0 if failure is None else 1)
+                self.assertTrue(paths)
+                self.assertEqual(len(set(paths)), 1)
+                self.assertFalse(paths[0].parent.exists())
 
 
 if __name__ == "__main__":

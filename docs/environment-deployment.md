@@ -51,8 +51,10 @@ this CLI's namespace scope; the CLI does not replace IAM/RBAC isolation.
 
 Every execution-side gcloud command explicitly impersonates the deploy account.
 kubectl uses that short-lived token, the target cluster endpoint and CA, and an
-isolated temporary kubeconfig path; it never falls back to the operator's current
-kubeconfig. Tokens are not written into release results. The reviewed operator
+isolated temporary kubeconfig created as a valid empty Config before use; it
+never falls back to the operator's current kubeconfig. The temporary kubeconfig
+and CA are removed on success or failure; the token is not stored in that Config.
+Tokens are not written into release results. The reviewed operator
 must already be allowed to impersonate that account (normally Token Creator).
 No new impersonation grant or build-side delegation is added. A build identity
 without that permission fails to obtain the deployment token before apply.
@@ -63,6 +65,10 @@ Live impersonation/RBAC access was not exercised by this preparation.
 Requirements for execution: Python 3.10+, gcloud and kubectl, reviewed operator
 authentication, deployed foundation/enforced attestor policy, node repository
 reader access, and a current attestation. Preparation only needs Python.
+
+The CLI resolves executables through PATH, including `gcloud.CMD` on Windows,
+and passes arguments without a shell. Linux/macOS use their PATH executables.
+No local launcher or manually pre-created kubeconfig is required.
 
 `deploy/examples/verified-release.json` contains synthetic build/digest/occurrence
 values targeted to dev with placeholders for project and service-account metadata.
@@ -122,12 +128,14 @@ failures. Re-execution applies the same reviewed candidate; it never rebuilds.
 python -B -m unittest discover -s scripts/tests -p 'test_*py' -v
 ```
 
-22 offline tests passed, including seven focused deployment test methods and
+25 offline tests passed, including ten focused deployment test methods and
 their subcases. They exercise preparation for every environment, release
 identity preservation, invalid/tagged/foreign/mismatched candidates, missing
 trust reference, failed verification, review/target guards, duplicate JSON,
 separate authority, and simulated impersonation, disabled enforcement,
-admission/rollout failure and runtime digest mismatch. Cloud commands are
+admission/rollout failure and runtime digest mismatch. Portability regressions
+cover Windows/Linux/macOS executable resolution, sanitized missing-command
+and subprocess failures, and temporary kubeconfig creation/cleanup. Cloud commands are
 stubbed; this proves executable control flow, not live GKE deployment authority.
 
 After authorization, positive validation should execute the existing attested
