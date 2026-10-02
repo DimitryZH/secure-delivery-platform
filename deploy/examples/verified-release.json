@@ -1,0 +1,12 @@
+{
+  "source_repository": "DimitryZH/secure-delivery-platform",
+  "commit_sha": "0000000000000000000000000000000000000000",
+  "build_id": "00000000-0000-0000-0000-000000000000",
+  "build_service_account": "secure-delivery-build@sre-platform-staging-507220.iam.gserviceaccount.com",
+  "image_uri": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/sample-service@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "image_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "verification_status": "passed",
+  "verification_timestamp": "2000-01-01T00:00:00Z",
+  "trust_signal_ref": "projects/sre-platform-staging-507220/occurrences/SYNTHETIC-EXAMPLE",
+  "target_environment": "dev"
+}

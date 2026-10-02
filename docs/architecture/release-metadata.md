@@ -114,6 +114,12 @@ Kubernetes release annotations use the vendor-neutral `release.secure-delivery.d
 
 ## Validation expectations
 
+The executable Issue #52 deployment consumer is documented in
+[Environment-aware deployment](../environment-deployment.md). It requires the
+verified, digest-pinned record plus `trust_signal_ref` and `target_environment`,
+then emits a deployment result while preserving the release identity. This path
+uses the existing deployment identity without Cloud Deploy.
+
 The metadata contract should support basic validation before deployment:
 - `commit_sha` is present
 - `build_id` is present
