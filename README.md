@@ -4,13 +4,39 @@ Secure Delivery Platform defines and incrementally implements a trusted software
 
 The platform is organized around a release candidate whose identity remains traceable from source through runtime. Build success alone does not make an artifact deployable: verification, trust policy, environment policy, and runtime evidence all contribute to release decisions.
 
-```text
-Source → Build → Artifact → Verify → Trust → Deploy → Observe → Promote
+The implemented path uses digest-pinned artifacts and separate build, attestation, and deployment authority. GKE checks Binary Authorization when the authorized deployment path submits a workload.
+
+```mermaid
+flowchart TB
+    Source[Source]
+
+    subgraph BuildBoundary[Build and verification path]
+        direction TB
+        Build[Cloud Build]
+        Registry["Artifact Registry<br/>immutable digest"]
+        Verify["Verification<br/>release metadata and digest"]
+        Build --> Registry --> Verify
+    end
+
+    Trust["Attestation / Trust<br/>separate attestation authority"]
+
+    subgraph DeploymentBoundary[Deployment identity — separate authority]
+        Deploy["Authorized Deployment<br/>environment-aware CLI"]
+    end
+
+    Admission{"Binary Authorization<br/>trusted artifact?"}
+    Runtime["GKE<br/>target namespace"]
+    Source --> Build
+    Verify -->|passed| Trust
+    Trust --> Deploy
+    Deploy --> Admission
+    Admission -->|trusted| Runtime
+    Admission -->|untrusted| Blocked["Blocked<br/>no running workload"]
 ```
 
 ## Architecture
 
-The MVP uses Google Cloud services with deliberately narrow responsibilities:
+The broader target design uses Google Cloud services with deliberately narrow responsibilities:
 
 - **Cloud Build** builds and verifies release candidates and records release metadata.
 - **Artifact Registry** stores container images identified by immutable digest.
