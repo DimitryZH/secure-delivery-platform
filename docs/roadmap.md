@@ -59,21 +59,24 @@ A source change can produce a traceable container artifact in the approved regis
 
 ### Scope
 
-* executable Cloud Build verification
-* release metadata validation
-* approved artifact location validation
-* immutable digest validation
-* verification result generation
-* minimal trust signal / attestation path
-* Binary Authorization configuration
-* environment-aware deployment policy
-* trusted deployment scenario
-* blocked untrusted deployment scenario
-* separation of build and deployment authority
+* executable release verification
+  * executable Cloud Build verification
+  * release metadata validation
+  * approved artifact location validation
+  * immutable digest validation
+  * verification result generation
+* artifact trust and admission
+  * minimal trust signal / attestation path
+  * Binary Authorization enforcement
+  * blocked untrusted deployment scenario
+* environment-aware trusted deployment
+  * environment-aware deployment policy
+  * trusted deployment scenario
+  * separation of build and deployment authority
 
 ### Target outcome
 
-Build success alone is insufficient for deployment. Only a release candidate that satisfies the required verification and trust conditions can pass the deployment admission boundary.
+The platform enforces the `Verify → Trust → Deploy` boundary: executable verification determines whether a release candidate is eligible for the required trust signal, and deployment admission permits only artifacts that satisfy the required trust conditions. Deployment uses a separate authorized, environment-aware path; build success alone does not authorize deployment.
 
 ---
 
