@@ -14,11 +14,17 @@ The release flow is governed by release identity and trust signals. A build resu
 4. The release identity is recorded using commit SHA, build ID, build identity, image URI, and image digest.
 5. Verification checks run against the release candidate.
 6. Successful verification creates or prepares the trust signal for deployment enforcement.
-7. Binary Authorization evaluates deploy eligibility for the target environment.
-8. Cloud Deploy handles explicit promotion through target environments.
-9. Policy-eligible releases are deployed to GKE.
+7. Cloud Deploy orchestrates explicit progression of the verified and trusted digest through target environments.
+8. Binary Authorization evaluates runtime admission when the workload reaches GKE.
+9. Policy-eligible releases are admitted into the GKE target namespace.
 10. Operators run a post-deployment review loop using dashboards, log-based metrics, and alert policies.
 11. Promotion continues only when runtime review confirms release health and release identity alignment.
+
+The [Cloud Deploy foundation](../deploy/clouddeploy/README.md) defines the
+promotion control plane and offline rendering path. Runtime review and
+observability-based promotion above describe the intended later design; they
+are not implemented by this foundation. Cloud Deploy orchestration does not
+replace verification, attestation, or Binary Authorization admission.
 
 ## Logical stages
 

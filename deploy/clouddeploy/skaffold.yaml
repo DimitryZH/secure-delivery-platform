@@ -1,0 +1,16 @@
+apiVersion: skaffold/v4beta7
+kind: Config
+metadata:
+  name: sample-service
+deploy:
+  kubectl: {}
+profiles:
+  - name: dev
+    manifests:
+      rawYaml: [rendered/dev/sample-service.yaml]
+  - name: stage
+    manifests:
+      rawYaml: [rendered/stage/sample-service.yaml]
+  - name: prod
+    manifests:
+      rawYaml: [rendered/prod/sample-service.yaml]

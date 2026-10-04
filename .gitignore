@@ -16,3 +16,7 @@ crash.*.log
 
 # Private documentation
 docs/private/
+
+# Local Cloud Deploy bundles and validation output can contain private evidence.
+/.local-validation/
+/deploy/clouddeploy/rendered/
