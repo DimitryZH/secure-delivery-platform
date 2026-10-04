@@ -35,14 +35,68 @@ the caller's scoped release/promotion permissions and `actAs` permission on the
 deployment account. Existing operator Token Creator access alone is not Cloud
 Deploy release/promotion authorization.
 
-Default Cloud Build workers and Cloud Deploy artifact storage are used. A future
-release can cause managed artifact storage and execution costs; this task creates
+Default Cloud Build workers and a dedicated custom artifact bucket are used. A future
+release can cause storage and execution costs; this configuration creates
 no release or execution jobs. The documented job-runner role includes
 project-scoped storage object access; review effective access before apply.
 It is granted only to the already separate deployment identity. Namespace mapping
 is routing, not new namespace-scoped RBAC; existing cluster access is preserved.
 See Google's [execution environment](https://docs.cloud.google.com/deploy/docs/execution-environment)
 and [service account requirements](https://docs.cloud.google.com/deploy/docs/cloud-deploy-service-account).
+
+## Source and rendered artifact protection
+
+Related to #59. Terraform defines `sre-platform-staging-507220-clouddeploy`
+in `us-central1`, using STANDARD storage, uniform bucket-level access and enforced
+public access prevention. Object Versioning is disabled and `force_destroy=false`.
+An unlocked bucket retention policy prevents object bytes from being replaced or
+deleted for 86400 seconds. Administrators with bucket-update permission can change
+this policy; it is not an irreversible retention lock.
+
+Each target's RENDER/DEPLOY execution configuration uses
+`gs://sre-platform-staging-507220-clouddeploy/rendered/<target>`.
+The bucket reference creates the required Terraform dependency. This setting does
+not configure source staging. A separately authorized release command must use
+`--gcs-source-staging-dir=gs://sre-platform-staging-507220-clouddeploy/source/<release-name>`.
+Prefixes organize objects; they are not IAM boundaries.
+
+The release caller uploads source; the existing deploy identity reads it and
+writes/reads execution outputs through Cloud Build. Google-managed service agents
+retain their existing service-agent bindings. Existing grants cover these paths;
+no new IAM bindings or project-wide storage roles are introduced. The build
+identity's existing Cloud Build builder role already includes project-level GCS
+object access. Bucket IAM cannot revoke inherited access, so retention protects
+bytes during execution without granting the build identity deployment authority.
+
+Use unique object names and record a SHA-256 hash of the actual archive outside
+object metadata. Upload the original archive with a create-only generation
+precondition. The installed gcloud SDK copies a GCS source archive to a new
+timestamp/UUID staging object; verify the actual source URI recorded in the release
+and its bytes, generation and retention expiration. Do not assume the release URI
+pins an object generation. Before dev rollout, verify rendered digests, namespaces
+and release annotations. Finish the initial render/dev validation within the
+24-hour protection window; stop if the remaining window is insufficient.
+
+Lifecycle cleanup deletes live objects after seven days, with a further seven-day
+soft-delete recovery period. **This is an MVP storage-lifetime choice, not a
+permanent promotion deadline.** Later promotions, retries or rollbacks require
+review if artifacts have expired or their protection window has elapsed. Do not
+assume an old release remains executable after cleanup. Retention compatibility
+is supported by the documented Job Runner create/get/list permissions, but live
+render/retry behavior still requires separately authorized validation. Stop on
+retention-related write failures rather than relaxing protection automatically.
+
+Release creation renders manifests for all serial targets. Use
+`--disable-initial-rollout`, inspect all outputs, then separately authorize only
+the dev rollout. Stage/prod rendering does not authorize rollouts, promotions or
+workload changes. Digest-pinned raw manifests can be used without `--images` or
+`--build-artifacts`; preserve the exact verified image identity and check the
+rendered output before deployment. Storage protection does not replace artifact
+verification, attestation or Binary Authorization admission.
+
+See [retention policies](https://docs.cloud.google.com/storage/docs/using-bucket-lock),
+[object lifecycle](https://docs.cloud.google.com/storage/docs/lifecycle) and the
+[release command](https://docs.cloud.google.com/sdk/gcloud/reference/deploy/releases/create).
 
 ## Offline release preparation and rendering
 

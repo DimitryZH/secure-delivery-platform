@@ -17,6 +17,40 @@ resource "google_project_iam_member" "deploy_clouddeploy_job_runner" {
   member  = "serviceAccount:${google_service_account.deploy.email}"
 }
 
+# Short retention protects source and outputs during the initial execution window.
+# Seven-day cleanup is an MVP storage lifetime, not a promotion deadline.
+resource "google_storage_bucket" "clouddeploy_artifacts" {
+  project                     = var.project_id
+  name                        = "${var.project_id}-clouddeploy"
+  location                    = var.region
+  storage_class               = "STANDARD"
+  uniform_bucket_level_access = true
+  public_access_prevention    = "enforced"
+  force_destroy               = false
+
+  retention_policy {
+    retention_period = 86400
+    is_locked        = false
+  }
+
+  versioning {
+    enabled = false
+  }
+
+  soft_delete_policy {
+    retention_duration_seconds = 604800
+  }
+
+  lifecycle_rule {
+    condition {
+      age = 7
+    }
+    action {
+      type = "Delete"
+    }
+  }
+}
+
 resource "google_clouddeploy_target" "environment" {
   for_each         = toset(local.promotion_environments)
   project          = var.project_id
@@ -30,8 +64,9 @@ resource "google_clouddeploy_target" "environment" {
   }
 
   execution_configs {
-    usages          = ["RENDER", "DEPLOY"]
-    service_account = google_service_account.deploy.email
+    usages           = ["RENDER", "DEPLOY"]
+    service_account  = google_service_account.deploy.email
+    artifact_storage = "gs://${google_storage_bucket.clouddeploy_artifacts.name}/rendered/${each.value}"
   }
 
   depends_on = [
