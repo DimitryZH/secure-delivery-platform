@@ -18,6 +18,14 @@ Cloud Deploy orchestrates existing trusted artifacts; Binary Authorization remai
 
 The implemented path includes metadata verification, digest-bound attestation, enforced admission, protected source/render storage, and controlled promotion. Manual readiness and internal HTTP checks validate deployments. Application dashboards, alert-driven promotion, and automated rollback remain planned.
 
+## Validated delivery path
+
+End-to-end controlled promotion was validated: the same verified and attested release progressed through `dev → stage → prod` without rebuilding or replacing the artifact. This is a validation snapshot, not a live infrastructure or status dashboard.
+
+![The same trusted release deployed across dev, stage, and prod](docs/images/controlled-promotion/03-promotion-complete.png)
+
+See [Controlled Promotion Validation](docs/trusted-delivery.md#controlled-promotion-validation) for the approval flow and the surrounding identity, trust, admission, and health checks.
+
 ## Repository structure
 
 | Area | Responsibility |

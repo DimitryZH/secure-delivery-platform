@@ -1,21 +1,5 @@
 # Dashboards
 
-Store dashboard definitions or notes here.
+Reserved for Milestone 5 planned application dashboard definitions. No such definitions are currently checked in here. Platform telemetry access and manual rollout/HTTP validation do not implement these assets.
 
-Suggested focus:
-- deployment health
-- request errors
-- latency
-- release visibility
-
-## MVP release review dashboard notes
-
-The first dashboard iteration should support operator review rather than broad platform analytics.
-
-Minimum views to plan:
-- deployment health for the selected namespace
-- request error rate after rollout
-- request latency after rollout
-- release metadata lookup using runtime annotations such as commit SHA, build ID, image digest, and verification status
-
-These notes are intentionally lightweight. The MVP does not require checked-in dashboard JSON until the workload, metrics, and release labels are stable enough to keep definitions reviewable.
+See [Observability](../../docs/observability.md) for the canonical visibility boundary. This directory adds no promotion gates or rollback automation.
