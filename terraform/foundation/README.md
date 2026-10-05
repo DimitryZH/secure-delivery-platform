@@ -1,6 +1,6 @@
 # Terraform Foundation
 
-The [artifact attestation runbook](../../docs/artifact-attestation.md) describes
+The [artifact attestation runbook](../../docs/trusted-delivery.md#attestation) describes
 the separate signing authority prepared in `attestation.tf`. Review a fresh plan
 and effective IAM before provisioning; this implementation does not apply it.
 
