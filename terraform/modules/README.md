@@ -1,11 +1,3 @@
 # Terraform Modules
 
-Place reusable Terraform modules here when extraction becomes worthwhile.
-
-Examples:
-- service account module
-- Artifact Registry module
-- Cloud Deploy helper module
-- monitoring helper module
-
-Do not over-modularize the first version. Prefer a clear baseline first.
+No reusable modules are extracted yet. The foundation uses explicit resources to keep the MVP readable. Extract a module only when meaningful repetition justifies it; avoid a generic framework. See [MVP Boundaries](../../docs/architecture/mvp-boundaries.md).

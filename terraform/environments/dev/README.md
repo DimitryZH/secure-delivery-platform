@@ -1,5 +1,5 @@
-# Dev Environment
+# Dev Environment Directory
 
-Use this directory for dev-specific infrastructure variables or composition.
+Reserved for future environment-specific variables or composition; this directory contains no independent Terraform stack. The existing shared foundation defines the `dev` namespace and Cloud Deploy target on one cluster, with shared Binary Authorization enforcement.
 
-Dev should be the first controlled target in the release path.
+See [foundation configuration](../../foundation/README.md) and [Environment Policies](../../../docs/architecture/environment-policies.md). Do not initialize this directory as a deployed stack.

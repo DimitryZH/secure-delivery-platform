@@ -1,45 +1,36 @@
 # Terraform State Bootstrap
 
-This standalone configuration defines one protected Google Cloud Storage bucket for Terraform state and enables only the Cloud Storage API. It keeps local state until an operator explicitly authorizes provisioning.
+This standalone configuration manages the Cloud Storage API and a Terraform state bucket with uniform bucket-level access, public access prevention, versioning enabled, and `force_destroy=false`. Bootstrap state is local; foundation uses its separate GCS backend.
 
-## Safe local validation
+## Local validation
 
-Copy the example variables file and replace both placeholders with non-sensitive values suitable for local validation:
+From this directory, copy `terraform.tfvars.example` to an ignored local variables file and privately supply the project/bucket inputs:
 
-```shell
-cp terraform.tfvars.example terraform.tfvars
+```sh
 terraform init -backend=false
-terraform fmt
+terraform fmt -check
 terraform validate
 ```
 
-These commands initialize and validate the configuration locally. They do not create the bucket or migrate foundation state.
+These checks do not provision the bucket or migrate state.
 
-## Provisioning preflight
+## Provisioning preflight and backend setup
 
-Before any separately authorized provisioning workflow, run the preflight from the repository root with all required arguments:
+From the repository root:
 
-```shell
+```sh
 ./scripts/preflight-foundation.sh \
-  --project-id your-project-id \
-  --state-bucket-name your-globally-unique-state-bucket-name \
-  --state-bucket-location US
+  --project-id <PROJECT_ID> \
+  --state-bucket-name <TF_STATE_BUCKET> \
+  --state-bucket-location <STATE_BUCKET_LOCATION>
 ```
 
-The command validates the inputs, required local tools, clean tracked Git state, active Google Cloud project and account, read-only project access, and both Terraform configurations. A successful run prints the project ID, project number, requested bucket name, and requested bucket location.
+The preflight checks inputs/tools, clean tracked Git state, active project/account, read-only project access, and Terraform configurations. It performs no resource mutation or plan/state/backend writes. Its output contains project identifiers; keep raw output private. Success does not authorize planning, apply, initialization, or migration.
 
-The preflight fails before Terraform checks when an input, tool, tracked Git state, active project, account, or project-access check is invalid. It does not enable APIs, create or change resources, inspect secrets, or write plans, state, credentials, reports, or backend configuration.
+For a separately authorized initial setup, use the bucket output in the ignored foundation `backend.hcl`, retaining `secure-delivery-platform/foundation`. Initial state migration requires separate authorization:
 
-A successful preflight is not authorization to run `terraform plan`, `terraform apply`, backend initialization, or state migration. Each of those actions requires separate explicit operator authorization.
-
-## Intended operator-authorized sequence
-
-Creating the bucket requires a separately reviewed and explicitly authorized provisioning action. After the bucket exists, copy `terraform/foundation/backend.hcl.example` to `terraform/foundation/backend.hcl`, replace the bucket placeholder with the `state_bucket_name` output, and retain the documented prefix.
-
-Migrating foundation state to the GCS backend also requires explicit operator authorization. From `terraform/foundation`, the future authorized migration would use:
-
-```shell
-terraform init -backend-config=backend.hcl -migrate-state
+```sh
+terraform -chdir=terraform/foundation init -backend-config=backend.hcl -migrate-state
 ```
 
-Bucket provisioning and state migration are not part of this change.
+Do not repeat migration for an already initialized backend as housekeeping. See [foundation guidance](../foundation/README.md) and [infrastructure safety](../../docs/operator-runbook.md#infrastructure-and-credential-safety).

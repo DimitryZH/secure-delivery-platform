@@ -1,20 +1,5 @@
 # Log-based Metrics
 
-Store log-based metric definitions or notes here.
+Reserved for Milestone 5 planned release/application log-based metric definitions. No such definitions are currently checked in here. Platform telemetry access and manual rollout/HTTP validation do not implement these assets.
 
-Suggested focus:
-- release events
-- deployment denials
-- application error bursts
-
-## MVP release review metric notes
-
-The first log-based metrics should support operator review of release outcomes without creating a broad observability framework.
-
-Minimum signals to plan:
-- release events that include release identity or promotion context
-- deployment denials from trust or policy enforcement
-- application error bursts after a rollout
-- verification or deployment failures tied to commit SHA, build ID, image digest, or verification status when those fields are available in logs
-
-These notes are intentionally lightweight. The MVP can start with documented signal expectations before checked-in metric definitions are added.
+See [Observability](../../docs/observability.md) for the canonical visibility boundary. This directory adds no promotion gates or rollback automation.
