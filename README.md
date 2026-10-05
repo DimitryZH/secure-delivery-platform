@@ -8,7 +8,7 @@ flowchart TB
     Build --> Registry[Artifact Registry digest]
     Registry --> Verify[Metadata verification]
     Verify --> Sign[Separate signer and KMS]
-    Sign --> Deploy[Cloud Deploy: dev â†’ stage â†’ prod]
+    Sign --> Deploy[Cloud Deploy: dev → stage → prod]
     Deploy --> Admission{Binary Authorization}
     Admission -->|trusted| Runtime[GKE target namespace]
     Admission -->|denied| Blocked[Pod admission blocked]
