@@ -18,6 +18,16 @@ Platform Logging/Monitoring access does not imply application dashboards, metric
 
 Operational Visibility remains an architectural capability in the [Roadmap](roadmap.md), answering what runs, where, when it changed, and whether it behaves normally.
 
+## Structured application logging
+
+`sample-service` implements newline-delimited JSON stdout for startup and HTTP responses using the Python standard library. Request events identify service/environment, method, URL path, HTTP status, monotonic duration in `latency_ms`, severity, and health-check traffic. Query values, headers, bodies, cookies, and URL authority are excluded. Responses and exact-path health routing are unchanged. One flushed event accompanies each HTTP response; closed idle connections produce no request event.
+
+The existing GKE workload logging integration collects container stdout/stderr and adds Kubernetes resource identity. JSON events can be inspected as `jsonPayload`, with severity extracted into the LogEntry `severity` field. Use the [read-only application log procedure](operator-runbook.md#application-log-inspection) to filter a selected environment and Pod, then apply runtime release correlation to that same workload. Full release metadata is not copied into every event.
+
+Repository validation covers application responses, JSON shape, latency, severity, health traffic, and sensitive request-data exclusion. The baseline was live-validated in dev through the trusted build, verification, attestation, protected release, and rollout path. Runtime digest and release correlation checks passed; internal GET `/` and `/healthz` returned HTTP 200. Cloud Logging ingested structured request and startup events from the new Pod, with `/healthz` marked `health_check=true` and severity extracted into the top-level LogEntry field. Stage and prod remained unchanged; no promotion or approval occurred. Kubernetes resource labels correlate logs to the producing workload. Logs remain operational/runtime evidence, not cryptographic proof; release metadata, attestation, and Binary Authorization establish separate correlation and trust properties.
+
+No log-based metrics, dashboards, alerts, tracing, SLOs, sinks, exports, custom retention, or additional logging backend are introduced. Health probes produce request events and contribute to logging volume; queries can exclude them without changing collection or retention. See [GKE collection](https://docs.cloud.google.com/kubernetes-engine/docs/concepts/about-logs) and [structured payload handling](https://docs.cloud.google.com/logging/docs/structured-logging).
+
 ## Planned signals
 
 - Deployment availability and rollout failures.
