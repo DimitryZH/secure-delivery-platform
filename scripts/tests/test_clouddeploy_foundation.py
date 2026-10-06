@@ -35,9 +35,9 @@ class CloudDeployTest(unittest.TestCase):
         self.assertIn('artifact_storage = "gs://${google_storage_bucket.clouddeploy_artifacts.name}/rendered/${each.value}"',
                       re.sub(r"[ \t]+", " ", configuration))
         documentation = (ROOT / "deploy/clouddeploy/README.md").read_text()
-        self.assertIn("--gcs-source-staging-dir=gs://sre-platform-staging-507220-clouddeploy/source/<release-name>",
+        self.assertIn("gs://<CLOUD_DEPLOY_BUCKET>/source/<release-name>/",
                       documentation)
-        self.assertIn("Later promotions, retries or rollbacks require", documentation)
+        self.assertIn("availability/protection review before later promotion, retry, or rollback", documentation)
 
     def prepare(self, directory, record, reviewed=True):
         metadata = Path(directory) / "metadata.json"
