@@ -193,6 +193,66 @@ Service stays ClusterIP. Use read-only internal connectivity, such as Kubernetes
 
 Inspect job logs/ReplicaSet events read-only to distinguish admission rejection, scheduling, and image-pull failure. Deployment acceptance does not imply admitted Pods. Keep raw evidence private and redact before public sharing.
 
+## Application log inspection
+
+Run this read-only procedure only after a separately authorized trusted application version is deployed. Shell examples use a POSIX shell, as in runtime release correlation. Offline JSON tests do not prove Cloud Logging ingestion. Use existing Logging read permission; unavailable access is missing evidence, not permission to expand IAM. Keep raw query results private.
+
+First use [runtime release correlation](#runtime-release-correlation) to identify the reviewed cluster/location, namespace, container, current owned Pod, immutable digest, release, and successful target rollout. Select an observation window after that rollout completed. Do not attribute old-version logs to the new release just because the service name matches.
+
+Confirm existing workload collection read-only:
+
+```sh
+gcloud container clusters describe <GKE_CLUSTER> \
+  --project=<PROJECT_ID> --location=<ZONE> \
+  --format='json(loggingService,loggingConfig)'
+```
+
+Require Cloud Logging integration with `WORKLOADS` enabled. The managed GKE collector supplies `k8s_container` resource labels; no logging sidecar or application credentials are needed. This configuration check alone does not prove that an event was ingested or that an exclusion did not discard it.
+
+In Logs Explorer, select the reviewed project and use the following filter, substituting the exact correlated Pod and the GKE cluster location (a zone for this cluster):
+
+```text
+resource.type="k8s_container"
+resource.labels.project_id="<PROJECT_ID>"
+resource.labels.location="<ZONE>"
+resource.labels.cluster_name="<GKE_CLUSTER>"
+resource.labels.namespace_name="<ENVIRONMENT>"
+resource.labels.container_name="sample-service"
+resource.labels.pod_name="<CORRELATED_POD_NAME>"
+log_id("stdout")
+timestamp >= "<OBSERVATION_START_UTC>"
+timestamp < "<OBSERVATION_END_UTC>"
+```
+
+The same filter works with `gcloud logging read`. Store it in a shell variable without private output entering repository files:
+
+```sh
+LOG_FILTER='resource.type="k8s_container"
+resource.labels.project_id="<PROJECT_ID>"
+resource.labels.location="<ZONE>"
+resource.labels.cluster_name="<GKE_CLUSTER>"
+resource.labels.namespace_name="<ENVIRONMENT>"
+resource.labels.container_name="sample-service"
+resource.labels.pod_name="<CORRELATED_POD_NAME>"
+log_id("stdout")
+timestamp >= "<OBSERVATION_START_UTC>"
+timestamp < "<OBSERVATION_END_UTC>"'
+
+gcloud logging read "$LOG_FILTER" --project=<PROJECT_ID> --limit=50 \
+  --order=asc --format='json(timestamp,severity,resource.labels,jsonPayload,textPayload)'
+gcloud logging read "$LOG_FILTER AND jsonPayload.event=\"http_request\"" \
+  --project=<PROJECT_ID> --limit=50 --order=asc \
+  --format='json(timestamp,severity,resource.labels,jsonPayload)'
+```
+
+Require parsed `jsonPayload` request records with `service=sample-service`, environment equal to namespace, expected method/path/status, finite non-negative numeric `latency_ms`, and boolean `health_check`. `severity` is a special structured logging field: inspect the top-level LogEntry field rather than requiring `jsonPayload.severity`. Expect INFO for statuses below 400, WARNING for 4xx, and ERROR for 5xx. Startup records have `event=startup` and are not request events.
+
+Append `AND jsonPayload.health_check=true` to inspect health traffic, or `AND jsonPayload.health_check=false` to exclude it. Append `AND severity>=ERROR` to inspect server/request errors. Append `AND jsonPayload.path="/" AND jsonPayload.status=200` to inspect successful root responses. Apply these to the request-event filter, not the startup query. No metric or alert is created by a read query.
+
+Health probes can supply health events. For root-response validation, use the existing read-only [internal HTTP check](#runtime-validation) without creating a helper workload or ingress, and query its observation window. Allow ingestion delay and repeat the read before concluding events are missing. An empty result is missing evidence; wrong environment, unstructured request records, invalid fields, or conflicting workload identity is inconsistent evidence. A limit of 50 is a bounded sample, not a request count or an absence-of-errors guarantee.
+
+Compare each event's project/location/cluster/namespace/Pod/container resource labels with the selected workload. Repeat runtime correlation after the query to ensure the same Pod UID, image digest, release identity, and rollout still agree. Kubernetes resource labels identify the log-producing workload, not its cryptographic trust. If the Pod has disappeared or changed, stop current-runtime attribution and inspect retained deployment history read-only; do not attach historical logs to an unrelated current Pod. Public conclusions use placeholders and sanitized check outcomes only.
+
 ## Validation scenarios
 
 | Scenario | Expected result |
