@@ -87,7 +87,14 @@ class SampleServiceLoggingTest(unittest.TestCase):
                 self.assertEqual(status, 200)
                 self.assertEqual(json.loads(body), {"service": "sample-service", "status": "running", "environment": "dev"})
                 self.assertEqual(event["path"], path.split("?")[0])
-                self.assertEqual(event["health_check"], event["path"] == "/healthz")
+                self.assertFalse(event["health_check"])
+
+    def test_post_health_path_is_not_a_health_check(self):
+        status, _, event = self.request("/healthz", method="POST")
+        self.assertEqual(status, 501)
+        self.assertEqual((event["method"], event["path"], event["severity"]),
+                         ("POST", "/healthz", "ERROR"))
+        self.assertFalse(event["health_check"])
 
     def test_absolute_target_omits_authority_and_query(self):
         _, _, event = self.request("http://private-user:private-token@example.invalid/path?token=private-query")

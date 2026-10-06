@@ -14,6 +14,7 @@ class Handler(BaseHTTPRequestHandler):
     def handle_one_request(self):
         started = time.monotonic()
         self._response_status = None
+        self._health_check = False
         self.path = ""
         self.command = None
         try:
@@ -29,13 +30,14 @@ class Handler(BaseHTTPRequestHandler):
                 write_log("http_request", method=self.command, path=path,
                           status=status, latency_ms=(time.monotonic() - started) * 1000,
                           severity="ERROR" if status >= 500 else "WARNING" if status >= 400 else "INFO",
-                          health_check=path == "/healthz")
+                          health_check=self._health_check)
 
     def log_request(self, code="-", size="-"):
         self._response_status = int(code)
 
     def do_GET(self):
         if self.path == "/healthz":
+            self._health_check = True
             self._send_json({"status": "ok"})
             return
 
