@@ -313,6 +313,18 @@ The example excludes health traffic. Change the health label to true to inspect 
 
 Use [application log inspection](#application-log-inspection) to inspect matching structured events and compare identity/health classification. Use runtime release correlation to connect that workload to source/build/verification/trust and Cloud Deploy state. Logs, metric health, and resource labels are operational evidence, not cryptographic trust, admission proof, or deployment authorization. Dashboards, alerts, SLOs, and automatic decisions remain outside this procedure.
 
+## Deployment health dashboard review
+
+This procedure is read-only and requires the declarative [dashboard](../monitoring/dashboards/README.md) to have been created by a separately reviewed plan and authorized apply. Missing access or missing dashboard is a reason to stop; do not create it, modify IAM, or enable collectors from this procedure.
+
+1. Run [runtime release correlation](#runtime-release-correlation) first. Privately identify the current workload, immutable digest, source/build/verification/trust context, release, target, and rollout.
+2. Open **Sample service deployment health** in Cloud Monitoring for the reviewed project. Select exactly one environment: dev, stage, or prod. Do not use wildcard/all-environment selection for release review.
+3. Select an observation window after the reviewed rollout, allow ingestion delay, and inspect sample freshness. A window spanning releases cannot attribute all behavior to the latest release. Wider windows can increase alignment intervals.
+4. Compare available and desired replicas. Require fresh positive desired counts and matching available counts; inspect raw collector series if they disagree. Conservative interval extrema can show a temporary gap during transitions. Confirm Deployment observed generation and owned Pod readiness using [runtime validation](#runtime-validation). Scale-to-zero and missing/stale samples are not success.
+5. Inspect application responses excluding health checks, 4xx/5xx counts including both classifications, and separate health-check responses. Counts are per aligned interval, not rates. Sparse application traffic and empty error series are possible; absence is not proof of zero errors. Do not generate traffic or artificial failures to fill charts.
+6. Inspect server handling p95 for non-health requests. Distributions are merged across Pods before estimating the percentile. This is histogram-based server duration, not client latency or an SLO; low sample counts and extraction gaps limit interpretation. Use [metric inspection](#release-health-metric-inspection) to compare distribution/request counts and investigate missing evidence.
+7. Recheck runtime release identity after review. Privately record the environment/window and evidence gaps, then explicitly continue, hold, or reject release evaluation. Dashboard health does not establish provenance, verification, attestation validity, Binary Authorization admission, Cloud Deploy identity, or promotion authorization. No approval, promotion, rollback, or other mutation follows automatically.
+
 ## Validation scenarios
 
 | Scenario | Expected result |
@@ -321,7 +333,7 @@ Use [application log inspection](#application-log-inspection) to inspect matchin
 | Pre-release failure | Rejection before signing/release/promotion |
 | Untrusted admission | Fresh unattested Pod request rejected; separately authorize live test |
 | Stage/prod control | Pending approval, separate approval before deployment |
-| Runtime review | Manual readiness/digest/HTTP checks; dashboards/alerts remain planned |
+| Runtime review | Manual readiness/digest/HTTP checks; dashboard creation/live validation and alerts remain pending |
 
 Offline negatives make no cloud calls. Live tests, cleanup, retry, and rollback need explicit authorization. Simulations are not live IAM denial/admission evidence.
 

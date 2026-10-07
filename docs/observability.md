@@ -36,6 +36,12 @@ Workload availability uses the existing GKE deployment-state `prometheus.googlea
 
 Use [release-health metric inspection](operator-runbook.md#release-health-metric-inspection) for read-only Monitoring queries and release correlation. Metrics describe operational behavior, not artifact provenance, verification success, attestation validity, or Binary Authorization admission. A healthy signal never authorizes promotion. Metrics do not add dashboards, alerts, SLOs, tracing, exports, another backend, or automated decisions.
 
+## Deployment health dashboard
+
+One compact [deployment health dashboard](../monitoring/dashboards/README.md) is defined declaratively for sample-service, with a dev/stage/prod selector and five views: available/desired replicas, application responses, HTTP errors, merged-distribution server handling p95, and separate health-check traffic. It reuses existing metrics and scopes queries to the configured cluster/location and selected environment. Application traffic and latency exclude probes; missing/stale or sparse data is missing evidence, not success.
+
+Use [runtime release correlation](operator-runbook.md#runtime-release-correlation) before the [read-only dashboard review](operator-runbook.md#deployment-health-dashboard-review). Health summaries do not establish provenance, verification, attestation, admission, release identity, or promotion authorization. Dashboard creation and live rendering validation remain pending a separately reviewed plan and explicit apply authorization. No alerts, SLOs, collectors, or automated decisions are added.
+
 ## Planned signals
 
 - Deployment availability and rollout failures.
@@ -49,4 +55,4 @@ Signals support explicit operator review rather than replacing trust/admission. 
 
 Use [canonical annotations](architecture/release-model.md#annotation-mapping). They identify workloads but establish neither cryptographic trust nor durable audit storage; compare with running digest and release/rollout state.
 
-Existing [dashboard](../monitoring/dashboards/README.md) and [alert](../monitoring/alert-policies/README.md) notes describe planned assets; [metric definitions](../monitoring/log-based-metrics/README.md) are declarative and were live-validated in dev. Keep visibility small and tied to release review. Current checks belong in [Operator Runbook](operator-runbook.md#runtime-validation); health evidence never automatically authorizes deployment.
+The [dashboard definition](../monitoring/dashboards/README.md) awaits authorized creation and live validation; [alert](../monitoring/alert-policies/README.md) notes describe planned assets; [metric definitions](../monitoring/log-based-metrics/README.md) are declarative and were live-validated in dev. Keep visibility small and tied to release review. Current checks belong in [Operator Runbook](operator-runbook.md#runtime-validation); health evidence never automatically authorizes deployment.
