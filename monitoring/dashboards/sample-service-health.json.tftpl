@@ -1,0 +1,211 @@
+{
+  "displayName": "Sample service deployment health",
+  "dashboardFilters": [
+    {
+      "filterType": "VALUE_ONLY",
+      "templateVariable": "environment",
+      "valueType": "STRING",
+      "stringValue": "dev",
+      "stringArray": {
+        "values": [
+          "dev",
+          "stage",
+          "prod"
+        ]
+      }
+    }
+  ],
+  "gridLayout": {
+    "columns": "2",
+    "widgets": [
+      {
+        "title": "Deployment availability \u2014 sample-service",
+        "xyChart": {
+          "dataSets": [
+            {
+              "plotType": "LINE",
+              "targetAxis": "Y1",
+              "minAlignmentPeriod": "60s",
+              "timeSeriesQuery": {
+                "timeSeriesFilter": {
+                  "filter": "metric.type=\"prometheus.googleapis.com/kube_deployment_status_replicas_available/gauge\" AND resource.type=\"prometheus_target\" AND resource.labels.project_id=\"${project_id}\" AND resource.labels.location=\"${location}\" AND resource.labels.cluster=\"${cluster}\" AND resource.labels.namespace=one_of(\"dev\", \"stage\", \"prod\") AND resource.labels.namespace=monitoring.regex.full_match($${environment}) AND metric.labels.deployment=\"sample-service\"",
+                  "aggregation": {
+                    "alignmentPeriod": "60s",
+                    "perSeriesAligner": "ALIGN_MIN",
+                    "crossSeriesReducer": "REDUCE_MIN",
+                    "groupByFields": [
+                      "resource.labels.namespace"
+                    ]
+                  }
+                }
+              },
+              "legendTemplate": "Available"
+            },
+            {
+              "plotType": "LINE",
+              "targetAxis": "Y1",
+              "minAlignmentPeriod": "60s",
+              "timeSeriesQuery": {
+                "timeSeriesFilter": {
+                  "filter": "metric.type=\"prometheus.googleapis.com/kube_deployment_spec_replicas/gauge\" AND resource.type=\"prometheus_target\" AND resource.labels.project_id=\"${project_id}\" AND resource.labels.location=\"${location}\" AND resource.labels.cluster=\"${cluster}\" AND resource.labels.namespace=one_of(\"dev\", \"stage\", \"prod\") AND resource.labels.namespace=monitoring.regex.full_match($${environment}) AND metric.labels.deployment=\"sample-service\"",
+                  "aggregation": {
+                    "alignmentPeriod": "60s",
+                    "perSeriesAligner": "ALIGN_MAX",
+                    "crossSeriesReducer": "REDUCE_MAX",
+                    "groupByFields": [
+                      "resource.labels.namespace"
+                    ]
+                  }
+                }
+              },
+              "legendTemplate": "Desired"
+            }
+          ],
+          "yAxis": {
+            "label": "Replicas",
+            "scale": "LINEAR"
+          },
+          "chartOptions": {
+            "mode": "COLOR"
+          }
+        }
+      },
+      {
+        "title": "Application responses \u2014 health checks excluded",
+        "xyChart": {
+          "dataSets": [
+            {
+              "plotType": "LINE",
+              "targetAxis": "Y1",
+              "minAlignmentPeriod": "60s",
+              "timeSeriesQuery": {
+                "timeSeriesFilter": {
+                  "filter": "metric.type=\"logging.googleapis.com/user/sample_service_requests\" AND resource.type=\"k8s_container\" AND resource.labels.project_id=\"${project_id}\" AND resource.labels.location=\"${location}\" AND resource.labels.cluster_name=\"${cluster}\" AND resource.labels.container_name=\"sample-service\" AND resource.labels.namespace_name=one_of(\"dev\", \"stage\", \"prod\") AND resource.labels.namespace_name=monitoring.regex.full_match($${environment}) AND metric.labels.environment=monitoring.regex.full_match($${environment}) AND metric.labels.health_check=\"false\"",
+                  "aggregation": {
+                    "alignmentPeriod": "60s",
+                    "perSeriesAligner": "ALIGN_SUM",
+                    "crossSeriesReducer": "REDUCE_SUM",
+                    "groupByFields": [
+                      "resource.labels.namespace_name",
+                      "metric.labels.environment"
+                    ]
+                  }
+                }
+              }
+            }
+          ],
+          "yAxis": {
+            "label": "Responses / aligned interval",
+            "scale": "LINEAR"
+          },
+          "chartOptions": {
+            "mode": "COLOR"
+          }
+        }
+      },
+      {
+        "title": "HTTP 4xx/5xx responses \u2014 all health classifications",
+        "xyChart": {
+          "dataSets": [
+            {
+              "plotType": "LINE",
+              "targetAxis": "Y1",
+              "minAlignmentPeriod": "60s",
+              "timeSeriesQuery": {
+                "timeSeriesFilter": {
+                  "filter": "metric.type=\"logging.googleapis.com/user/sample_service_errors\" AND resource.type=\"k8s_container\" AND resource.labels.project_id=\"${project_id}\" AND resource.labels.location=\"${location}\" AND resource.labels.cluster_name=\"${cluster}\" AND resource.labels.container_name=\"sample-service\" AND resource.labels.namespace_name=one_of(\"dev\", \"stage\", \"prod\") AND resource.labels.namespace_name=monitoring.regex.full_match($${environment}) AND metric.labels.environment=monitoring.regex.full_match($${environment})",
+                  "aggregation": {
+                    "alignmentPeriod": "60s",
+                    "perSeriesAligner": "ALIGN_SUM",
+                    "crossSeriesReducer": "REDUCE_SUM",
+                    "groupByFields": [
+                      "resource.labels.namespace_name",
+                      "metric.labels.environment"
+                    ]
+                  }
+                }
+              }
+            }
+          ],
+          "yAxis": {
+            "label": "Errors / aligned interval",
+            "scale": "LINEAR"
+          },
+          "chartOptions": {
+            "mode": "COLOR"
+          }
+        }
+      },
+      {
+        "title": "Server handling p95 \u2014 health checks excluded",
+        "xyChart": {
+          "dataSets": [
+            {
+              "plotType": "LINE",
+              "targetAxis": "Y1",
+              "minAlignmentPeriod": "60s",
+              "timeSeriesQuery": {
+                "timeSeriesFilter": {
+                  "filter": "metric.type=\"logging.googleapis.com/user/sample_service_latency_ms\" AND resource.type=\"k8s_container\" AND resource.labels.project_id=\"${project_id}\" AND resource.labels.location=\"${location}\" AND resource.labels.cluster_name=\"${cluster}\" AND resource.labels.container_name=\"sample-service\" AND resource.labels.namespace_name=one_of(\"dev\", \"stage\", \"prod\") AND resource.labels.namespace_name=monitoring.regex.full_match($${environment}) AND metric.labels.environment=monitoring.regex.full_match($${environment}) AND metric.labels.health_check=\"false\"",
+                  "aggregation": {
+                    "alignmentPeriod": "60s",
+                    "perSeriesAligner": "ALIGN_SUM",
+                    "crossSeriesReducer": "REDUCE_SUM",
+                    "groupByFields": [
+                      "resource.labels.namespace_name",
+                      "metric.labels.environment"
+                    ]
+                  },
+                  "secondaryAggregation": {
+                    "alignmentPeriod": "60s",
+                    "perSeriesAligner": "ALIGN_PERCENTILE_95"
+                  }
+                }
+              }
+            }
+          ],
+          "yAxis": {
+            "label": "Estimated p95 (ms)",
+            "scale": "LINEAR"
+          },
+          "chartOptions": {
+            "mode": "COLOR"
+          }
+        }
+      },
+      {
+        "title": "Health-check responses",
+        "xyChart": {
+          "dataSets": [
+            {
+              "plotType": "LINE",
+              "targetAxis": "Y1",
+              "minAlignmentPeriod": "60s",
+              "timeSeriesQuery": {
+                "timeSeriesFilter": {
+                  "filter": "metric.type=\"logging.googleapis.com/user/sample_service_requests\" AND resource.type=\"k8s_container\" AND resource.labels.project_id=\"${project_id}\" AND resource.labels.location=\"${location}\" AND resource.labels.cluster_name=\"${cluster}\" AND resource.labels.container_name=\"sample-service\" AND resource.labels.namespace_name=one_of(\"dev\", \"stage\", \"prod\") AND resource.labels.namespace_name=monitoring.regex.full_match($${environment}) AND metric.labels.environment=monitoring.regex.full_match($${environment}) AND metric.labels.health_check=\"true\"",
+                  "aggregation": {
+                    "alignmentPeriod": "60s",
+                    "perSeriesAligner": "ALIGN_SUM",
+                    "crossSeriesReducer": "REDUCE_SUM",
+                    "groupByFields": [
+                      "resource.labels.namespace_name",
+                      "metric.labels.environment"
+                    ]
+                  }
+                }
+              }
+            }
+          ],
+          "yAxis": {
+            "label": "Responses / aligned interval",
+            "scale": "LINEAR"
+          },
+          "chartOptions": {
+            "mode": "COLOR"
+          }
+        }
+      }
+    ]
+  }
+}
