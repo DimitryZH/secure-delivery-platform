@@ -11,9 +11,10 @@ This directory manages the shared Google Cloud/GKE infrastructure with explicit 
 - `attestation.tf`: separate signer, KMS key, note/attestor, signing IAM, and attestation source bucket.
 - `binary-authorization.tf`: protected cluster admission policy.
 - `clouddeploy.tf`: API, Job Runner binding, serial pipeline/targets, and source/render artifact bucket.
+- `logging-metrics.tf.json`: three structured sample-service request/error/latency metrics.
 - `outputs.tf`: resource identities and integration outputs.
 
-Resources here do not define application dashboards, alert policies, or log-based metrics. [IAM Model](../../docs/iam-model.md) owns the identity/authority matrix; [Trusted Delivery](../../docs/trusted-delivery.md) owns delivery and storage contracts.
+Resources here define the bounded [release-health log-based metrics](../../monitoring/log-based-metrics/README.md), but no application dashboards or alert policies. [IAM Model](../../docs/iam-model.md) owns the identity/authority matrix; [Trusted Delivery](../../docs/trusted-delivery.md) owns delivery and storage contracts.
 
 ## Validation and backend
 

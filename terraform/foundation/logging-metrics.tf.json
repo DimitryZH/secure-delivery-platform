@@ -1,0 +1,127 @@
+{
+  "locals": {
+    "sample_service_request_filter": "resource.type=\"k8s_container\"\nresource.labels.cluster_name=\"${var.gke_cluster_name}\"\nresource.labels.container_name=\"sample-service\"\nlog_id(\"stdout\")\njsonPayload.event=\"http_request\"\njsonPayload.service=\"sample-service\"\n((resource.labels.namespace_name=\"dev\" AND jsonPayload.environment=\"dev\") OR (resource.labels.namespace_name=\"stage\" AND jsonPayload.environment=\"stage\") OR (resource.labels.namespace_name=\"prod\" AND jsonPayload.environment=\"prod\"))\n(jsonPayload.health_check=true OR jsonPayload.health_check=false)\njsonPayload.status >= 100\njsonPayload.status < 600"
+  },
+  "resource": {
+    "google_logging_metric": {
+      "sample_service_requests": {
+        "name": "sample_service_requests",
+        "project": "${var.project_id}",
+        "description": "Sample service HTTP responses, including health traffic.",
+        "filter": "${local.sample_service_request_filter}",
+        "metric_descriptor": [
+          {
+            "metric_kind": "DELTA",
+            "value_type": "INT64",
+            "unit": "1",
+            "labels": [
+              {
+                "key": "environment",
+                "value_type": "STRING",
+                "description": "Target environment: dev, stage, or prod."
+              },
+              {
+                "key": "health_check",
+                "value_type": "BOOL",
+                "description": "True only for requests handled by the exact GET health endpoint."
+              }
+            ]
+          }
+        ],
+        "label_extractors": {
+          "environment": "EXTRACT(jsonPayload.environment)",
+          "health_check": "EXTRACT(jsonPayload.health_check)"
+        },
+        "depends_on": [
+          "google_project_service.required"
+        ]
+      },
+      "sample_service_errors": {
+        "name": "sample_service_errors",
+        "project": "${var.project_id}",
+        "description": "Sample service HTTP 4xx and 5xx responses, including health traffic.",
+        "filter": "${local.sample_service_request_filter}\njsonPayload.status >= 400",
+        "metric_descriptor": [
+          {
+            "metric_kind": "DELTA",
+            "value_type": "INT64",
+            "unit": "1",
+            "labels": [
+              {
+                "key": "environment",
+                "value_type": "STRING",
+                "description": "Target environment: dev, stage, or prod."
+              },
+              {
+                "key": "health_check",
+                "value_type": "BOOL",
+                "description": "True only for requests handled by the exact GET health endpoint."
+              }
+            ]
+          }
+        ],
+        "label_extractors": {
+          "environment": "EXTRACT(jsonPayload.environment)",
+          "health_check": "EXTRACT(jsonPayload.health_check)"
+        },
+        "depends_on": [
+          "google_project_service.required"
+        ]
+      },
+      "sample_service_latency": {
+        "name": "sample_service_latency_ms",
+        "project": "${var.project_id}",
+        "description": "Sample service server-side request handling duration in milliseconds.",
+        "filter": "${local.sample_service_request_filter}\njsonPayload.latency_ms >= 0",
+        "metric_descriptor": [
+          {
+            "metric_kind": "DELTA",
+            "value_type": "DISTRIBUTION",
+            "unit": "ms",
+            "labels": [
+              {
+                "key": "environment",
+                "value_type": "STRING",
+                "description": "Target environment: dev, stage, or prod."
+              },
+              {
+                "key": "health_check",
+                "value_type": "BOOL",
+                "description": "True only for requests handled by the exact GET health endpoint."
+              }
+            ]
+          }
+        ],
+        "label_extractors": {
+          "environment": "EXTRACT(jsonPayload.environment)",
+          "health_check": "EXTRACT(jsonPayload.health_check)"
+        },
+        "depends_on": [
+          "google_project_service.required"
+        ],
+        "value_extractor": "EXTRACT(jsonPayload.latency_ms)",
+        "bucket_options": [
+          {
+            "explicit_buckets": [
+              {
+                "bounds": [
+                  1,
+                  5,
+                  10,
+                  25,
+                  50,
+                  100,
+                  250,
+                  500,
+                  1000,
+                  2500,
+                  5000
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
