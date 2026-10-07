@@ -333,7 +333,7 @@ This procedure is read-only and requires the declarative [dashboard](../monitori
 | Pre-release failure | Rejection before signing/release/promotion |
 | Untrusted admission | Fresh unattested Pod request rejected; separately authorize live test |
 | Stage/prod control | Pending approval, separate approval before deployment |
-| Runtime review | Manual readiness/digest/HTTP checks; dashboard creation/live validation and alerts remain pending |
+| Runtime review | Runtime correlation and read-only deployment health dashboard review; alerts remain planned |
 
 Offline negatives make no cloud calls. Live tests, cleanup, retry, and rollback need explicit authorization. Simulations are not live IAM denial/admission evidence.
 
