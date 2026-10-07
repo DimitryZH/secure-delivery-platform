@@ -253,6 +253,66 @@ Health probes can supply health events. For root-response validation, use the ex
 
 Compare each event's project/location/cluster/namespace/Pod/container resource labels with the selected workload. Repeat runtime correlation after the query to ensure the same Pod UID, image digest, release identity, and rollout still agree. Kubernetes resource labels identify the log-producing workload, not its cryptographic trust. If the Pod has disappeared or changed, stop current-runtime attribution and inspect retained deployment history read-only; do not attach historical logs to an unrelated current Pod. Public conclusions use placeholders and sanitized check outcomes only.
 
+## Release-health metric inspection
+
+This is a read-only workflow. Application metrics must first exist through a separately reviewed Terraform plan and authorized apply; repository definitions do not mean they are deployed. Use existing Monitoring read permission. Missing access or collection is a reason to stop, not permission to alter IAM, enable monitoring components, or generate failures.
+
+First perform [runtime release correlation](#runtime-release-correlation), recording the reviewed project, cluster/location, environment, Deployment, owned Pods, digest, release, and successful rollout privately. Choose a UTC observation window after the rollout and allow ingestion delay. Recheck current workload identity after metric reads; time series aggregate behavior, not immutable release identity. A window containing multiple releases cannot attribute all traffic to the newest release.
+
+For workload availability in Metrics Explorer, select the existing `prometheus.googleapis.com/kube_deployment_status_replicas_available/gauge` and `prometheus.googleapis.com/kube_deployment_spec_replicas/gauge`. Use `prometheus_target`, project/location/cluster/namespace resource filters, and metric label `deployment=sample-service`. Compare recent available and desired values from matching timestamps. Require desired > 0 and available = desired, then check Deployment observed generation/available replicas and owned Pod readiness with [runtime validation](#runtime-validation). Missing/stale series and scale-to-zero are not success. These deployment-state metrics already exist in the reviewed GKE integration; do not enable or install a collector to recover absent data.
+
+After authorized creation, inspect the application definitions read-only:
+
+```sh
+for METRIC_NAME in sample_service_requests sample_service_errors sample_service_latency_ms; do
+  gcloud logging metrics describe "$METRIC_NAME" --project=<PROJECT_ID> \
+    --format='json(name,filter,metricDescriptor,labelExtractors,valueExtractor,bucketOptions,disabled)'
+done
+```
+
+Compare them with [checked-in definitions](../terraform/foundation/logging-metrics.tf.json). Require DELTA/INT64 counters, DELTA/DISTRIBUTION latency in ms, the canonical filters, two bounded labels, the numeric latency extractor, and explicit buckets. Do not change metrics from this inspection procedure.
+
+The Monitoring time-series API supports the same scoped read in a reproducible observation window. POSIX shell example; keep response data and credentials private, and avoid shell tracing:
+
+```sh
+PROJECT_ID='<PROJECT_ID>'
+ZONE='<ZONE>'
+CLUSTER='<GKE_CLUSTER>'
+ENVIRONMENT='<ENVIRONMENT>'
+START_UTC='<OBSERVATION_START_UTC>'
+END_UTC='<OBSERVATION_END_UTC>'
+ACCESS_TOKEN="$(gcloud auth print-access-token)"
+
+# Availability: repeat with kube_deployment_spec_replicas/gauge.
+METRIC_TYPE='prometheus.googleapis.com/kube_deployment_status_replicas_available/gauge'
+METRIC_FILTER="metric.type=\"$METRIC_TYPE\" AND resource.type=\"prometheus_target\" AND resource.labels.project_id=\"$PROJECT_ID\" AND resource.labels.location=\"$ZONE\" AND resource.labels.cluster=\"$CLUSTER\" AND resource.labels.namespace=\"$ENVIRONMENT\" AND metric.labels.deployment=\"sample-service\""
+curl --fail --silent --show-error --get \
+  "https://monitoring.googleapis.com/v3/projects/$PROJECT_ID/timeSeries" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  --data-urlencode "filter=$METRIC_FILTER" \
+  --data-urlencode "interval.startTime=$START_UTC" \
+  --data-urlencode "interval.endTime=$END_UTC" \
+  --data-urlencode 'view=FULL'
+
+# Requests: repeat with sample_service_errors and sample_service_latency_ms.
+METRIC_TYPE='logging.googleapis.com/user/sample_service_requests'
+METRIC_FILTER="metric.type=\"$METRIC_TYPE\" AND resource.type=\"k8s_container\" AND resource.labels.project_id=\"$PROJECT_ID\" AND resource.labels.location=\"$ZONE\" AND resource.labels.cluster_name=\"$CLUSTER\" AND resource.labels.namespace_name=\"$ENVIRONMENT\" AND resource.labels.container_name=\"sample-service\" AND metric.labels.environment=\"$ENVIRONMENT\" AND metric.labels.health_check=\"false\""
+curl --fail --silent --show-error --get \
+  "https://monitoring.googleapis.com/v3/projects/$PROJECT_ID/timeSeries" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  --data-urlencode "filter=$METRIC_FILTER" \
+  --data-urlencode "interval.startTime=$START_UTC" \
+  --data-urlencode "interval.endTime=$END_UTC" \
+  --data-urlencode 'view=FULL'
+unset ACCESS_TOKEN
+```
+
+Follow `nextPageToken` with the same query and `pageToken` when present; a first page is not a complete count. Inspect sample timestamps, metric labels, and resource identity. For availability, repeated collector series represent the same Deployment; do not sum duplicate collectors. For request/error totals, use identical windows and health selection, align DELTA counters with SUM over a common interval (for example 60 seconds), then reduce SUM across resource series grouped by environment/health classification. RATE is requests per second, not the interval count. For latency, align and merge distributions across the same resources/window before deriving percentiles; do not average per-Pod percentile values. In Metrics Explorer choose these aligners/reducers without saving a dashboard or alert.
+
+The example excludes health traffic. Change the health label to true to inspect probes or omit it to include both; state the choice in the review. Error metrics count 4xx and 5xx responses; absent points do not prove zero failures. Latency histogram counts can differ from request counts if extraction fails. Metrics are not retroactive and collection can lag: wait and re-read within a bounded window without restarting or redeploying. Do not generate errors just to populate a counter. Monitor actual series volume because built-in Pod resource labels still contribute cardinality and cost.
+
+Use [application log inspection](#application-log-inspection) to inspect matching structured events and compare identity/health classification. Use runtime release correlation to connect that workload to source/build/verification/trust and Cloud Deploy state. Logs, metric health, and resource labels are operational evidence, not cryptographic trust, admission proof, or deployment authorization. Dashboards, alerts, SLOs, and automatic decisions remain outside this procedure.
+
 ## Validation scenarios
 
 | Scenario | Expected result |
