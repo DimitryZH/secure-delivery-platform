@@ -352,6 +352,68 @@ Require a successful API response without warnings and inspect component vectors
 
 Alert review does not itself authorize promotion, approval, rejection by infrastructure, rollback, redeployment, trust changes, or any cloud mutation. All such actions require separate explicit authorization. This procedure changes no policy or notification routing.
 
+## Release review checkpoint
+
+This is the canonical read-only checkpoint for dev, stage, or prod. It combines release identity, trust evidence, deployment state, and operational evidence into exactly one recorded decision: `continue`, `hold`, or `reject`, with a reason. It creates no service, evidence database, or enforcement gate. Review assertions and runtime annotations are correlation evidence, not cryptographic proof.
+
+### Collect and reconcile evidence
+
+1. Identify the intended environment, release, target, rollout, immutable image digest, source repository/revision, producing build ID and build identity from reviewed candidate/configuration. Record UTC review time and observation window after the rollout. Use existing read access; a failed read is missing evidence, not permission to change IAM or recover resources.
+2. Perform [runtime release correlation](#runtime-release-correlation) completely. Join the intended candidate to Cloud Deploy release annotations, target snapshot/current target, one unambiguous successful rollout and deploy job, Deployment and UID-owned Pods, desired image and actual imageID. Require consistent source/build/digest, environment, and deployment authority. Inspect the producing build read-only (`gcloud builds describe <BUILD_ID> --project=<PROJECT_ID> --region=<REGION>`): require successful execution, reviewed source revision and build identity, and matching produced digest. Inspect retained trusted verification execution/result for this same candidate; syntax validation or a workload's passed annotation alone is insufficient. Missing history is incomplete evidence; a confirmed wrong digest/source is conflicting evidence.
+3. Perform [attestation inspection](#attestation-inspection) using reviewed settings and `--inspect-only`. Require the exact immutable subject, expected attestor/note/key, and VERIFIED signature validation; compare the inspected occurrence with the candidate trust reference. Read the current Binary Authorization policy and cluster enforcement (`gcloud container binauthz policy export --project=<PROJECT_ID>` and `gcloud container clusters describe <GKE_CLUSTER> --project=<PROJECT_ID> --location=<ZONE>`). Require the [protected cluster rule](trusted-delivery.md#runtime-admission), configured attestor, REQUIRE_ATTESTATION, ENFORCED_BLOCK_AND_AUDIT_LOG, and PROJECT_SINGLETON_POLICY_ENFORCE. Inspect workload annotations for break-glass and other overrides, and existing deployment/admission events or audit evidence where retained. A Ready Pod alone does not establish past admission policy; record the historical evidence and its retention limitations. Do not bypass admission, sign, or mutate trust to complete a review.
+4. Inspect [deployment state](#runtime-validation): non-zero desired replicas, observed generation, updated/available replicas matching desired, Running/Ready owned Pods, successful correlated rollout/deploy job, expected approval state, and no unexplained containers or replacement. Failed rollout attribution or confirmed release-specific readiness failure can support reject; unsettled or ambiguous state requires investigation. Re-read runtime identity at the end; changed UID/generation/Pod/digest invalidates the mixed observation and requires hold and a fresh review.
+5. Perform [alert review](#release-health-alert-review), including the policy's Alerts section and fresh component vectors, then [dashboard review](#deployment-health-dashboard-review) for exactly the same environment/window. Record enabled policy, condition, active alert state, sample timestamps, desired/available values, and dashboard query scope. A firing alert requires investigation, not automatic rejection or rollback. No alert or an empty condition vector alone does not prove health.
+6. Inspect [structured logs](#application-log-inspection) and [request/error/latency metrics](#release-health-metric-inspection) for the correlated workload as needed. Record missing, stale, conflicting, and sufficient evidence separately. Missing operational evidence normally means hold. If non-health traffic/latency or error series are absent, explicitly record that gap: continue is defensible only for a bounded availability review with fresh deployment gauges, readiness, existing probe logs/health series, and no unresolved condition; it makes no application-traffic, latency-target, or zero-error claim. If the release stage requires those absent signals, hold. Do not generate traffic or induce failures.
+7. Apply the decision rules below, record one outcome and a concrete reason, evidence references, limitations, and follow-up. Keep detailed identifiers/raw output in ignored private validation storage; use only placeholders and sanitized conclusions in public material. Any later promotion requires separate authorization and fresh execution preflight, including source/render artifact availability and retention. A continue review is not an executability guarantee after artifacts expire.
+
+### Decision rules and offline scenarios
+
+Confirmed invalid identity/trust or a defensible release-specific failure takes precedence over healthy signals. Ambiguity or unavailable evidence is not a confirmed failure. Review all four evidence groups before continue; there is no score or majority vote.
+
+| Scenario | Decision | Reason / boundary |
+| --- | --- | --- |
+| Consistent identity, valid trust, settled deployment, sufficient fresh operational evidence | continue | No unresolved condition for the stated review scope; separate promotion authorization still required |
+| Healthy workload, invalid signature or unexpected immutable digest | reject | Health cannot override failed trust or identity |
+| Healthy workload, missing trust evidence | hold | Trust is not established; confirmed invalid evidence instead requires reject |
+| Valid trust, stale or missing required operational evidence | hold | Absence is not health evidence |
+| Valid trust, firing alert with unexplained cause | hold | Investigate; no automatic rejection or rollback |
+| Valid trust, confirmed release-specific deployment or operational failure | reject | Record the failure evidence; rollback requires separate authorization |
+| Ambiguous rollout attribution or changing runtime identity | hold | Collect a coherent observation before deciding |
+| Sparse non-health traffic, fresh readiness/gauges/probe evidence, bounded availability scope | continue | Explicitly accept the traffic/latency evidence gap for this scope only |
+| Sparse non-health traffic when application performance evidence is required | hold | Alternative availability evidence does not satisfy the required scope |
+
+Healthy but untrusted must not continue. Trusted but unhealthy must not continue automatically. Missing trust evidence means hold or reject, never continue. `continue` neither authorizes nor executes promotion. `reject` records the decision and does not execute rollback. This checkpoint performs no promotion, approval, rollback, redeployment, build, signing, trust mutation, or other cloud mutation; it introduces no bypass path.
+
+### Review record
+
+Copy this template into ignored private validation storage, replace every placeholder, and choose exactly one decision (never a list). Evidence references must identify actual reads and timestamps; filling the template is not evidence verification. Inaccessible evidence must be recorded as missing rather than passed. Public extracts must retain placeholders for sensitive identifiers.
+
+```text
+reviewed_at_utc: <UTC_TIME>
+observation_window_utc: <START_UTC> / <END_UTC>
+environment: <dev_or_stage_or_prod>
+review_scope: <REQUIRED_EVIDENCE_AND_STAGE>
+release / target / rollout: <RELEASE> / <TARGET> / <ROLLOUT>
+artifact_identity: <APPROVED_IMAGE>@sha256:<DIGEST>
+source_repository / commit_sha: <SOURCE_REPOSITORY> / <FULL_COMMIT_SHA>
+build_id / build_identity: <BUILD_ID> / <BUILD_SERVICE_ACCOUNT>
+runtime_identity: <DEPLOYMENT_UID_GENERATION_AND_OWNED_POD_UIDS>
+identity_evidence: <REFERENCES_AND_MATCH_RESULTS>
+trust_evidence: <VERIFICATION_ATTESTATION_SIGNATURE_AND_ADMISSION_RESULTS>
+deployment_evidence: <ROLLOUT_APPROVAL_READINESS_AND_FINAL_IDENTITY_RECHECK>
+operational_evidence: <ALERTS_DASHBOARD_FRESH_GAUGES_LOGS_AND_METRICS>
+missing_or_conflicting_evidence: <GAPS_OR_NONE_AND_SCOPE_JUSTIFICATION>
+decision: <ONE_OF_continue_hold_reject>
+reason: <CONCRETE_REASON_LINKED_TO_EVIDENCE>
+limitations_and_follow_up: <REMAINING_GAPS_AND_SEPARATE_AUTHORIZATION_BOUNDARY>
+```
+
+### Healthy-state validation
+
+A read-only dev review recorded `continue` for bounded deployment availability: runtime/release/rollout/source/build/digest correlation agreed, retained trusted verification passed for that candidate, exact-subject attestation signature validation returned VERIFIED, current admission enforcement was active without a workload override, and the correlated deploy job/rollout succeeded. Fresh desired/available replicas were 1/1 with an unchanged owned Ready workload. Scoped dashboard queries were accepted, probe logs returned HTTP 200, the availability condition was non-firing, and review-time Cloud Monitoring UI evidence showed zero firing/acknowledged alerts and an empty active Alerts list.
+
+Non-health response/error/latency series were absent; fresh readiness, deployment gauges, and probe evidence supported this bounded scope only. Historical admission enforcement was not independently reconstructed from retained events. This review does not establish application performance, zero errors, future artifact availability, or promotion authorization. Hold/reject scenarios above were checked offline; no failure, traffic, or cloud mutation was induced. Detailed identity and evidence references remain private.
+
 ## Validation scenarios
 
 | Scenario | Expected result |

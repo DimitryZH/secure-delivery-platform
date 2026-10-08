@@ -48,6 +48,10 @@ One [availability alert policy](../monitoring/alert-policies/README.md) is defin
 
 An alert requests explicit release review through [runtime correlation and dashboard inspection](operator-runbook.md#release-health-alert-review); it does not establish trust/admission or authorize promotion, rollback, or any mutation. Missing/stale telemetry or no incident is not health evidence. Combined 4xx/5xx semantics and insufficient non-health latency baseline leave error and latency alerts deferred. No notification routing, SLOs, collectors, or automated decisions are introduced.
 
+## Release review
+
+The [canonical release review checkpoint](operator-runbook.md#release-review-checkpoint) combines identity, trust, deployment, and operational evidence for one environment/window and records exactly one continue/hold/reject outcome with its reason. Missing operational evidence normally means hold; alternative evidence must explicitly satisfy the bounded review scope. Non-firing alerts alone do not prove health, and healthy runtime evidence cannot override invalid or missing trust. The decision executes no promotion, rollback, or other mutation.
+
 ## Planned signals
 
 - Deployment availability and rollout failures.

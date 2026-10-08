@@ -77,6 +77,10 @@ Execution impersonates deploy authority using a short-lived token and isolated v
 
 `--execute` applies a Deployment and ClusterIP Service, waits up to 120 seconds, checks current generation availability/template digest, and emits deployment UID/time and correlation. Failure emits no `deployed_at` and may leave resources configured. No automatic rollback/cleanup exists. This consumer never builds/signs or creates Cloud Deploy releases; existing-release controlled promotion uses Cloud Deploy.
 
+## Release review
+
+Use the [release review checkpoint](operator-runbook.md#release-review-checkpoint) to reconcile immutable identity, independently inspected trust/admission evidence, deployment state, and operational evidence. Record exactly one decision and reason: continue, hold, or reject. Health cannot replace trust; missing evidence cannot silently pass. Continue requires separate promotion authorization; reject does not execute rollback. The checkpoint is read-only.
+
 ## Security controls
 
 Require complete identity, approved location, passed gate, separate attestation, pinned digest, explicit target authority, and enforced admission. Claimed JSON status/annotations alone establish no trust. Inspect effective IAM, integrity, jobs, running digest, annotations, and health. Preserve prior environments. Further promotion, retries, cleanup, rollback, and corrections need separate authorization. Dashboards/alert-based gates/automatic rollback are not implemented controls; see [Observability](observability.md).
