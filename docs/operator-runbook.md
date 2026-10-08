@@ -325,6 +325,33 @@ This procedure is read-only and requires the declarative [dashboard](../monitori
 6. Inspect server handling p95 for non-health requests. Distributions are merged across Pods before estimating the percentile. This is histogram-based server duration, not client latency or an SLO; low sample counts and extraction gaps limit interpretation. Use [metric inspection](#release-health-metric-inspection) to compare distribution/request counts and investigate missing evidence.
 7. Recheck runtime release identity after review. Privately record the environment/window and evidence gaps, then explicitly continue, hold, or reject release evaluation. Dashboard health does not establish provenance, verification, attestation validity, Binary Authorization admission, Cloud Deploy identity, or promotion authorization. No approval, promotion, rollback, or other mutation follows automatically.
 
+## Release-health alert review
+
+This workflow is read-only. The [availability policy](../monitoring/alert-policies/README.md) is deployed through a reviewed exact saved-plan apply that added only the policy. Healthy-state live validation confirmed fresh available=1/desired=1 values across dev/stage/prod, a non-firing condition, zero firing/acknowledged alerts, no active alerts for this policy, and an unchanged dashboard. A real FIRING lifecycle and duplicate collectors were not exercised live; no artificial failure was induced. Use existing Monitoring read access; missing policy/access is a reason to stop, not permission to create resources, change IAM, or enable collectors.
+
+1. In Cloud Monitoring Alerting, inspect **Sample service deployment availability review**, its enabled state, condition, and Alerts section. Compare the live query, 30-second evaluation interval, 120-second duration, and empty notification routing with the canonical definition. No incident alone is not success.
+2. Identify namespace/environment from the query result or incident labels, plus project/location/cluster/deployment. Require dev, stage, or prod and deployment sample-service; never join unrelated environments. Keep raw identifiers private.
+3. Run [runtime release correlation](#runtime-release-correlation) for that environment. Confirm current owned workload, immutable digest, release/target/rollout, and source/build/verification/trust context. An old incident can concern a different release.
+4. Inspect fresh raw available/desired gauges using [metric inspection](#release-health-metric-inspection) and compare with Kubernetes desired replicas, observed generation, availability, and Pod readiness. MIN available/MAX desired avoids duplicate collector summation; inspect collector disagreement and sample timestamps. Desired zero or missing/stale metrics is missing health evidence. Do not scale, delete Pods, alter readiness, or generate failures to test firing.
+5. For reproducible query inspection, resolve the checked-in PromQL locals with the reviewed private project/location/cluster inputs and query the existing API. POSIX shell example; QUERY is the exact resolved condition, not a new threshold:
+
+```sh
+PROJECT_ID='<PROJECT_ID>'
+QUERY='<EXACT_RESOLVED_PROMQL_CONDITION>'
+ACCESS_TOKEN="$(gcloud auth print-access-token)"
+curl --fail --silent --show-error --get \
+  "https://monitoring.googleapis.com/v1/projects/$PROJECT_ID/location/global/prometheus/api/v1/query" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  --data-urlencode "query=$QUERY"
+unset ACCESS_TOKEN
+```
+
+Require a successful API response without warnings and inspect component vectors separately. An empty condition result means no mismatch was detected; it is not proof of healthy state when component vectors are absent/stale. Retain environment labels when inspecting all three namespaces. See [Prometheus query API](https://docs.cloud.google.com/stackdriver/docs/managed-prometheus/query-api-ui).
+
+6. Perform [deployment health dashboard review](#deployment-health-dashboard-review) for the same environment/window. Errors remain combined 4xx/5xx evidence; sparse non-health latency does not justify a threshold. Privately record evidence gaps and explicitly decide continue, hold, or reject release evaluation.
+
+Alert review does not itself authorize promotion, approval, rejection by infrastructure, rollback, redeployment, trust changes, or any cloud mutation. All such actions require separate explicit authorization. This procedure changes no policy or notification routing.
+
 ## Validation scenarios
 
 | Scenario | Expected result |
@@ -333,7 +360,7 @@ This procedure is read-only and requires the declarative [dashboard](../monitori
 | Pre-release failure | Rejection before signing/release/promotion |
 | Untrusted admission | Fresh unattested Pod request rejected; separately authorize live test |
 | Stage/prod control | Pending approval, separate approval before deployment |
-| Runtime review | Runtime correlation and read-only deployment health dashboard review; alerts remain planned |
+| Runtime review | Runtime correlation and read-only deployment health dashboard review; deployed availability policy and healthy-state alert validation; real FIRING lifecycle and duplicate collectors were not exercised live |
 
 Offline negatives make no cloud calls. Live tests, cleanup, retry, and rollback need explicit authorization. Simulations are not live IAM denial/admission evidence.
 
