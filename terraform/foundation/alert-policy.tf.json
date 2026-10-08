@@ -1,0 +1,39 @@
+{
+  "locals": {
+    "sample_service_available_replicas": "min by (project_id, location, cluster, namespace, deployment) (kube_deployment_status_replicas_available{project_id=\"${var.project_id}\", location=\"${var.gke_location}\", cluster=\"${var.gke_cluster_name}\", namespace=~\"dev|stage|prod\", deployment=\"sample-service\"})",
+    "sample_service_desired_replicas": "max by (project_id, location, cluster, namespace, deployment) (kube_deployment_spec_replicas{project_id=\"${var.project_id}\", location=\"${var.gke_location}\", cluster=\"${var.gke_cluster_name}\", namespace=~\"dev|stage|prod\", deployment=\"sample-service\"})",
+    "sample_service_availability_alert_query": "(${local.sample_service_available_replicas} < on (project_id, location, cluster, namespace, deployment) ${local.sample_service_desired_replicas})\nand on (project_id, location, cluster, namespace, deployment) (${local.sample_service_desired_replicas} > 0)"
+  },
+  "resource": {
+    "google_monitoring_alert_policy": {
+      "sample_service_availability": {
+        "display_name": "Sample service deployment availability review",
+        "project": "${var.project_id}",
+        "enabled": true,
+        "combiner": "OR",
+        "notification_channels": [],
+        "documentation": [
+          {
+            "mime_type": "text/markdown",
+            "content": "Deployment availability requires release review. Identify namespace/environment in the condition result labels, then perform runtime release correlation and deployment health dashboard review for that same environment and current release context. Explicitly decide continue, hold, or reject. An alert or its absence does not establish trust, admission, or promotion authorization and authorizes no rollback, deployment, or other cloud mutation. Missing/stale series are missing evidence; verify fresh metrics and Kubernetes readiness."
+          }
+        ],
+        "conditions": [
+          {
+            "display_name": "Desired replicas positive and available below desired",
+            "condition_prometheus_query_language": [
+              {
+                "query": "${local.sample_service_availability_alert_query}",
+                "duration": "120s",
+                "evaluation_interval": "30s"
+              }
+            ]
+          }
+        ],
+        "depends_on": [
+          "google_project_service.required"
+        ]
+      }
+    }
+  }
+}

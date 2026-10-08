@@ -13,9 +13,10 @@ This directory manages the shared Google Cloud/GKE infrastructure with explicit 
 - `clouddeploy.tf`: API, Job Runner binding, serial pipeline/targets, and source/render artifact bucket.
 - `logging-metrics.tf.json`: three structured sample-service request/error/latency metrics.
 - `dashboard.tf`: one deployment health dashboard using existing metrics.
+- `alert-policy.tf.json`: one availability review policy using existing deployment-state gauges.
 - `outputs.tf`: resource identities and integration outputs.
 
-Resources here define the bounded [release-health log-based metrics](../../monitoring/log-based-metrics/README.md), and one [deployment health dashboard definition](../../monitoring/dashboards/README.md), but no alert policies. [IAM Model](../../docs/iam-model.md) owns the identity/authority matrix; [Trusted Delivery](../../docs/trusted-delivery.md) owns delivery and storage contracts.
+Resources here define the bounded [release-health log-based metrics](../../monitoring/log-based-metrics/README.md), one [deployment health dashboard](../../monitoring/dashboards/README.md), and one [availability alert policy](../../monitoring/alert-policies/README.md). Live alert creation requires separate authorization. [IAM Model](../../docs/iam-model.md) owns the identity/authority matrix; [Trusted Delivery](../../docs/trusted-delivery.md) owns delivery and storage contracts.
 
 ## Validation and backend
 
