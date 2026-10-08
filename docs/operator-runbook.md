@@ -327,9 +327,9 @@ This procedure is read-only and requires the declarative [dashboard](../monitori
 
 ## Release-health alert review
 
-This workflow is read-only. The [availability policy](../monitoring/alert-policies/README.md) must first exist through a separately reviewed plan and authorized apply. Use existing Monitoring read access; missing policy/access is a reason to stop, not permission to create resources, change IAM, or enable collectors.
+This workflow is read-only. The [availability policy](../monitoring/alert-policies/README.md) is deployed through a reviewed exact saved-plan apply that added only the policy. Healthy-state live validation confirmed fresh available=1/desired=1 values across dev/stage/prod, a non-firing condition, zero firing/acknowledged alerts, no active alerts for this policy, and an unchanged dashboard. A real FIRING lifecycle and duplicate collectors were not exercised live; no artificial failure was induced. Use existing Monitoring read access; missing policy/access is a reason to stop, not permission to create resources, change IAM, or enable collectors.
 
-1. In Cloud Monitoring Alerting, inspect **Sample service deployment availability review**, its enabled state, condition, and incidents. Compare the live query, 30-second evaluation interval, 120-second duration, and empty notification routing with the canonical definition. No incident alone is not success.
+1. In Cloud Monitoring Alerting, inspect **Sample service deployment availability review**, its enabled state, condition, and Alerts section. Compare the live query, 30-second evaluation interval, 120-second duration, and empty notification routing with the canonical definition. No incident alone is not success.
 2. Identify namespace/environment from the query result or incident labels, plus project/location/cluster/deployment. Require dev, stage, or prod and deployment sample-service; never join unrelated environments. Keep raw identifiers private.
 3. Run [runtime release correlation](#runtime-release-correlation) for that environment. Confirm current owned workload, immutable digest, release/target/rollout, and source/build/verification/trust context. An old incident can concern a different release.
 4. Inspect fresh raw available/desired gauges using [metric inspection](#release-health-metric-inspection) and compare with Kubernetes desired replicas, observed generation, availability, and Pod readiness. MIN available/MAX desired avoids duplicate collector summation; inspect collector disagreement and sample timestamps. Desired zero or missing/stale metrics is missing health evidence. Do not scale, delete Pods, alter readiness, or generate failures to test firing.
@@ -360,7 +360,7 @@ Alert review does not itself authorize promotion, approval, rejection by infrast
 | Pre-release failure | Rejection before signing/release/promotion |
 | Untrusted admission | Fresh unattested Pod request rejected; separately authorize live test |
 | Stage/prod control | Pending approval, separate approval before deployment |
-| Runtime review | Runtime correlation and read-only deployment health dashboard review; availability alert creation/incident validation remains pending |
+| Runtime review | Runtime correlation and read-only deployment health dashboard review; deployed availability policy and healthy-state alert validation; real FIRING lifecycle and duplicate collectors were not exercised live |
 
 Offline negatives make no cloud calls. Live tests, cleanup, retry, and rollback need explicit authorization. Simulations are not live IAM denial/admission evidence.
 
