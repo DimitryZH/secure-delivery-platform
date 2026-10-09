@@ -392,6 +392,8 @@ Select an explicit previously accepted release and successful prior rollout for 
 
 The selected mechanism is [Cloud Deploy target rollback](https://docs.cloud.google.com/deploy/docs/roll-back): one new rollout of an explicitly selected existing accepted release in one target. It preserves that release's immutable image and rendered material; no new release/source upload/application build is part of this workflow. Always supply `--release` and an unused `--rollout-id`; never use automatic last-successful selection. See the [command reference](https://docs.cloud.google.com/sdk/gcloud/reference/deploy/targets/rollback).
 
+Before execution authorization, verify read-only that the exact rollback caller has effective `clouddeploy.rollouts.rollback` permission on the intended delivery pipeline, accounting for applicable IAM conditions and deny policies. Record the caller, permission-check time, scope, and evidence privately; do not infer permission from a role name or a prior successful deployment. Cloud Deploy Job Runner (`roles/clouddeploy.jobRunner`) supports execution jobs and is separate from rollback-caller authority; it does not establish permission to initiate target rollback. If the permission is absent or cannot be verified, report rollback as blocked pending separately reviewed IAM authorization/change. Do not grant or modify IAM, add permissions automatically, or switch caller to bypass the check. A positive permission check is a prerequisite, not rollback execution authorization.
+
 Only after all candidate checks pass and separate explicit authorization identifies the exact project/pipeline, environment, prior release/digest, new rollout ID, expected mutations, and approval boundary, the following mutation may be executed:
 
 ```sh
@@ -417,6 +419,7 @@ build_identity / verification / trust: <BUILD_SERVICE_ACCOUNT> / <VERIFICATION_E
 target_and_admission_compatibility: <RESULT_AND_EVIDENCE>
 source_render_generations_hashes_and_protection: <READBACK_RESULTS_AND_REMAINING_MARGIN>
 execution_authority_access: <READ_ACCESS_EVIDENCE_OR_BLOCKED>
+rollback_caller_permission: <CALLER_SCOPE_TIMESTAMP_AND_clouddeploy.rollouts.rollback_EVIDENCE_OR_BLOCKED>
 other_environment_baseline: <PRIVATE_SNAPSHOT_REFERENCE>
 rollback_executable: <YES_OR_NO_WITH_BLOCKERS>
 proposed_command_and_new_rollout: <EXACT_COMMAND_AND_UNUSED_ID>

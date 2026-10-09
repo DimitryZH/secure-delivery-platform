@@ -42,6 +42,18 @@ class ReleaseRollbackWorkflowTest(unittest.TestCase):
                      "command exit success alone is insufficient", "Compare every unrelated environment"):
             self.assertIn(rule, TEXT)
 
+    def test_rollback_caller_permission_is_separate_and_fail_closed(self):
+        for requirement in ("exact rollback caller", "effective `clouddeploy.rollouts.rollback` permission",
+                            "intended delivery pipeline", "IAM conditions and deny policies",
+                            "Cloud Deploy Job Runner (`roles/clouddeploy.jobRunner`)",
+                            "separate from rollback-caller authority",
+                            "If the permission is absent or cannot be verified",
+                            "blocked pending separately reviewed IAM authorization/change",
+                            "Do not grant or modify IAM, add permissions automatically",
+                            "not rollback execution authorization"):
+            self.assertIn(requirement, TEXT)
+        self.assertIn("rollback_caller_permission: <CALLER_SCOPE_TIMESTAMP_AND_clouddeploy.rollouts.rollback_EVIDENCE_OR_BLOCKED>", TEXT)
+
     def test_offline_rejection_and_rollback_scenarios(self):
         table = TEXT.split("### Offline rejection and rollback scenarios", 1)[1]
         rows = [line.split("|")[1:-1] for line in table.splitlines() if line.startswith("| ")]
