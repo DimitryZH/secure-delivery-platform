@@ -352,6 +352,100 @@ Require a successful API response without warnings and inspect component vectors
 
 Alert review does not itself authorize promotion, approval, rejection by infrastructure, rollback, redeployment, trust changes, or any cloud mutation. All such actions require separate explicit authorization. This procedure changes no policy or notification routing.
 
+## Manual release rejection and rollback
+
+The sequence is release review → reject → stop further progression → identify rollback need → review rollback candidate → separate authorization → rollback execution → post-rollback validation. Rejection is a review record; rollback is a distinct cloud mutation. Neither an alert nor a reject outcome executes recovery.
+
+### Record rejection and stop progression
+
+Complete the [release review checkpoint](#release-review-checkpoint), retaining the failed release and evidence. Record the environment, release/target/rollout, exact immutable digest, source revision, producing build ID/identity, UTC timestamp, rejection reason/evidence, and exactly one rollback need: required, deferred, or not applicable. Explain the selected need: a rejected candidate that never changed the environment may need no rollback; a deployed failure may require restoration; uncertainty may defer recovery while investigation continues.
+
+Stop issuing further promotions and approvals for the rejected candidate. This is an explicit procedural stop, not an automatic infrastructure lock: the record does not cancel queued/in-progress jobs, revoke permissions, suspend the pipeline, or abandon a release. Inspect concurrent/pending rollouts read-only. Do not grant a pending approval and compensate afterward. Any server-side approval rejection, cancellation, or suspension is a separate mutation needing its own explicit authorization; resolve an active competing deployment before rollback authorization. Do not retry/redeploy, rebuild, resign, modify trust, or erase rejection evidence automatically.
+
+Copy this record into ignored private validation storage; keep public extracts placeholder-only:
+
+```text
+rejected_at_utc: <UTC_TIME>
+environment: <ENVIRONMENT>
+rejected_release / target / rollout: <RELEASE> / <TARGET> / <ROLLOUT>
+immutable_digest: sha256:<DIGEST>
+source_repository / source_revision: <SOURCE_REPOSITORY> / <FULL_COMMIT_SHA>
+producing_build / build_identity: <BUILD_ID> / <BUILD_SERVICE_ACCOUNT>
+decision: reject
+reason_and_evidence: <REASON_AND_TIMESTAMPED_EVIDENCE_REFERENCES>
+progression_stop: <NO_FURTHER_PROMOTION_OR_APPROVAL_AND_CONCURRENT_STATE>
+rollback_need: <ONE_OF_required_deferred_not_applicable>
+rollback_need_reason: <REASON>
+```
+
+### Validate a previously accepted rollback candidate
+
+Select an explicit previously accepted release and successful prior rollout for the affected target, with its acceptance evidence; do not infer acceptance merely from render success or choose the latest release automatically. An already running candidate in the same environment is not a restoration to an earlier release. Successful historical rollout is deployment evidence, not sufficient trust or health acceptance by itself.
+
+1. Join the historical release annotations, successful target rollout/deploy job, acceptance record, source revision, producing build ID/identity, and immutable approved image reference. Read the image by digest in Artifact Registry and the successful producing build. Require retained passed trusted verification output for this exact candidate, not a claimed annotation alone. A mutable-tag-only candidate is blocked; never rebuild historical source, retag, substitute a digest, or create replacement artifacts to make it eligible.
+2. Use [attestation inspection](#attestation-inspection) with reviewed settings and `--inspect-only`: exact subject/digest, occurrence, expected attestor/note/key, and VERIFIED signature. Require compatibility with current [Binary Authorization enforcement](trusted-delivery.md#runtime-admission), without trust mutation, bypass IAM, policy overrides, or break-glass. Missing or invalid trust blocks rollback; prior admission is not a waiver of current enforcement.
+3. Compare the historical pipeline/target snapshot with current configuration: affected namespace/profile/APP_ENV, cluster, deploy authority, standard strategy, approval requirements, and rendered application resources. Require the same candidate digest and canonical source/build/verification/trust annotations. Inspect full manifests for configuration changes, unexpected containers, hooks, build/image overrides, or data/schema incompatibility. The selected release restores its rendered configuration as well as its image; image equality alone is insufficient. This workflow does not reverse data changes.
+4. Inspect the actual release source URI, targetArtifacts and phaseArtifacts. Read each required source archive, rendered manifest, and effective Skaffold object at its recorded generation; compare source SHA-256 with the reviewed release annotation and rendered bytes with retained reviewed evidence. Record object generations/hashes, bucket ownership/location/protection, retention expiration, lifecycle/deletion exposure, and readability by the existing deploy execution authority. Do not assume object existence proves execution-identity access. Follow [artifact protection](trusted-delivery.md#source-and-rendered-artifact-protection): require at least the established 75-minute deployment + validation protection margin, longer if the reviewed execution window requires it. An object still readable after retention expiry fails this gate; soft-deleted bytes are not live executable material. Missing/unavailable material, expired protection, unverified hashes/access, or insufficient margin blocks execution. Do not silently recover, upload, recreate a release, relax retention, or change IAM.
+5. Record compatibility and any missing/conflicting evidence. Re-read current affected workload and snapshot all other environments' Deployment UID/generation/spec, owned Pod UIDs/digests, release/rollout identity, and admission state for post-action comparison. Require no unaccounted active/queued rollout, an unused rollback rollout ID, and a reviewed execution plan. Candidate identity may be valid while rollback remains blocked by storage protection; report both separately.
+
+### Cloud Deploy execution boundary
+
+The selected mechanism is [Cloud Deploy target rollback](https://docs.cloud.google.com/deploy/docs/roll-back): one new rollout of an explicitly selected existing accepted release in one target. It preserves that release's immutable image and rendered material; no new release/source upload/application build is part of this workflow. Always supply `--release` and an unused `--rollout-id`; never use automatic last-successful selection. See the [command reference](https://docs.cloud.google.com/sdk/gcloud/reference/deploy/targets/rollback).
+
+Only after all candidate checks pass and separate explicit authorization identifies the exact project/pipeline, environment, prior release/digest, new rollout ID, expected mutations, and approval boundary, the following mutation may be executed:
+
+```sh
+gcloud deploy targets rollback <TARGET> \
+  --project=<PROJECT_ID> --region=<REGION> \
+  --delivery-pipeline=sample-service \
+  --release=<PREVIOUS_ACCEPTED_RELEASE> \
+  --rollout-id=<NEW_ROLLBACK_ROLLOUT_ID>
+```
+
+This creates a rollout and triggers normal Cloud Deploy execution/jobs and artifact/log writes; dev can deploy immediately. Review existing execution permissions before authorization; this procedure grants none. Stage/prod retain `requireApproval=true`: inspect the new rollout and require PENDING_APPROVAL/NEEDS_APPROVAL before any deployment, then use the existing [separately authorized approval procedure](#controlled-promotion) for this rollback rollout under the selected prior release. Do not assume historical approval authorizes the new rollout. Unexpected approval/execution behavior stops the procedure and requires review, never an override or compensating mutation. No rollout, promotion, approval, rollback, upload, or cleanup is authorized by this documentation itself.
+
+Keep both the rejected rollout and the new rollback rollout in the record; do not rewrite history. On failure, stop and preserve diagnostics. Do not retry, choose another candidate, recreate a release, or use direct kubectl mutation, the direct deployment consumer, or manual Skaffold apply as an alternate rollback path. Multiple rollouts under the prior release can make normal runtime attribution ambiguous: inspect this exact authorized rollout/job and timeline against the pre/post UID/generation observations; release labels alone cannot select an attempt.
+
+```text
+rollback_reviewed_at_utc: <UTC_TIME>
+rejection_record: <REFERENCE>
+affected_environment / target: <ENVIRONMENT> / <TARGET>
+previous_accepted_release / prior_rollout: <RELEASE> / <PRIOR_ROLLOUT>
+acceptance_evidence: <TIMESTAMPED_REFERENCE>
+candidate_digest / source_revision / producing_build: sha256:<DIGEST> / <FULL_COMMIT_SHA> / <BUILD_ID>
+build_identity / verification / trust: <BUILD_SERVICE_ACCOUNT> / <VERIFICATION_EVIDENCE> / <ATTESTATION_EVIDENCE>
+target_and_admission_compatibility: <RESULT_AND_EVIDENCE>
+source_render_generations_hashes_and_protection: <READBACK_RESULTS_AND_REMAINING_MARGIN>
+execution_authority_access: <READ_ACCESS_EVIDENCE_OR_BLOCKED>
+other_environment_baseline: <PRIVATE_SNAPSHOT_REFERENCE>
+rollback_executable: <YES_OR_NO_WITH_BLOCKERS>
+proposed_command_and_new_rollout: <EXACT_COMMAND_AND_UNUSED_ID>
+separate_authorization: <AUTHORIZATION_REFERENCE_OR_NOT_AUTHORIZED>
+post_rollback_result: <NOT_EXECUTED_OR_TIMESTAMPED_VALIDATION_REFERENCE>
+```
+
+### Post-rollback validation
+
+After an authorized execution, require the exact new rollout's successful deploy job, terminal SUCCEEDED state, and expected approval state; command exit success alone is insufficient. Run [runtime release correlation](#runtime-release-correlation), resolving multiple historical attempts explicitly as above. Confirm the selected candidate digest in template/owned Pods/actual imageID, matching source/build/verification/trust and prior release identity, target environment, observed generation, positive desired replicas, equal updated/available replicas, and Ready owned Pods. Recheck valid attestation and enforced Binary Authorization with no bypass. Perform [alert review](#release-health-alert-review) and [deployment health dashboard review](#deployment-health-dashboard-review), recording freshness, evidence gaps, and any active alert rather than treating no alert as proof of health. Compare every unrelated environment with its pre-action snapshot; require unchanged workload spec/UID/generation, owned Pod identity/digest, and release/rollout state, or investigate before claiming isolation. Record the new [release review outcome](#release-review-checkpoint) and reason; rollback success does not authorize further promotion. Failure or ambiguity stops evaluation and permits no automatic corrective mutation.
+
+### Offline rejection and rollback scenarios
+
+| Scenario | Expected result | Boundary |
+| --- | --- | --- |
+| Reject before deployment; rollback not applicable | progression stopped | No rollback, retry, redeploy, or trust mutation |
+| Reject deployed release; accepted immutable candidate and all gates pass | authorization required | No execution until separate explicit authorization; stage/prod approval remains separate |
+| Candidate image or required source/render material unavailable | rollback blocked | No rebuild, substitution, or silent recovery |
+| Source/render bytes readable but retention expired or margin insufficient | rollback blocked | Readability does not satisfy protection |
+| Candidate trust missing or invalid | rollback blocked | Health or historical admission cannot override trust |
+| Candidate identified only by mutable tag | rollback blocked | Require previously accepted immutable digest |
+| Concurrent rollout or target/authority mismatch | rollback blocked | Resolve ambiguity through separate review, never bypass |
+
+### Read-only feasibility finding
+
+Release history inspection found a previous candidate successfully deployed to dev/stage/prod, while a later accepted release is current in dev. A separate rendered-only release has no rollout and is not a previously accepted rollback candidate. The prior candidate image remained available, source/build/digest identity agreed, retained trusted verification passed, attestation signature validation returned VERIFIED, and current dev target/admission configuration was compatible.
+
+The prior release source archive and dev rendered manifest/effective Skaffold objects were readable; source read-back matched the recorded archive SHA-256 and rendered manifests retained the expected digest/namespace. Their retention protection had expired, however, leaving less than the required execution/validation margin. Thus a prior trusted identity exists, but no fully eligible executable dev rollback candidate was established. Rollback is blocked under the existing protection contract; no recovery, re-upload, re-render, new release, or configuration change was attempted. This is an observation, not a durable inventory or authorization; every future attempt requires fresh checks. No rollout or workload mutation occurred.
+
 ## Release review checkpoint
 
 This is the canonical read-only checkpoint for dev, stage, or prod. It combines release identity, trust evidence, deployment state, and operational evidence into exactly one recorded decision: `continue`, `hold`, or `reject`, with a reason. It creates no service, evidence database, or enforcement gate. Review assertions and runtime annotations are correlation evidence, not cryptographic proof.
