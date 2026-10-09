@@ -81,6 +81,10 @@ Execution impersonates deploy authority using a short-lived token and isolated v
 
 Use the [release review checkpoint](operator-runbook.md#release-review-checkpoint) to reconcile immutable identity, independently inspected trust/admission evidence, deployment state, and operational evidence. Record exactly one decision and reason: continue, hold, or reject. Health cannot replace trust; missing evidence cannot silently pass. Continue requires separate promotion authorization; reject does not execute rollback. The checkpoint is read-only.
 
+## Manual rejection and rollback
+
+The [canonical workflow](operator-runbook.md#manual-release-rejection-and-rollback) records reject and stops further progression without automatic recovery. Separately authorized Cloud Deploy target rollback creates a new rollout of an explicitly selected previously accepted release, preserving its immutable digest, trust requirements, deployment authority, and target approval gates. Required source/render material must remain available and protected for the execution/validation window; readable bytes with expired retention do not satisfy the contract. No rebuild, retag, substitution, new release, direct Kubernetes deployment, or trust bypass is a recovery shortcut.
+
 ## Security controls
 
 Require complete identity, approved location, passed gate, separate attestation, pinned digest, explicit target authority, and enforced admission. Claimed JSON status/annotations alone establish no trust. Inspect effective IAM, integrity, jobs, running digest, annotations, and health. Preserve prior environments. Further promotion, retries, cleanup, rollback, and corrections need separate authorization. Dashboards/alert-based gates/automatic rollback are not implemented controls; see [Observability](observability.md).

@@ -52,6 +52,8 @@ An alert requests explicit release review through [runtime correlation and dashb
 
 The [canonical release review checkpoint](operator-runbook.md#release-review-checkpoint) combines identity, trust, deployment, and operational evidence for one environment/window and records exactly one continue/hold/reject outcome with its reason. Missing operational evidence normally means hold; alternative evidence must explicitly satisfy the bounded review scope. Non-firing alerts alone do not prove health, and healthy runtime evidence cannot override invalid or missing trust. The decision executes no promotion, rollback, or other mutation.
 
+The [manual rejection and rollback workflow](operator-runbook.md#manual-release-rejection-and-rollback) uses these observations to record rejection evidence and post-rollback health. Alerts never execute rollback. Candidate trust, historical acceptance, retained artifact protection, and separate authorization remain independent prerequisites.
+
 ## Planned signals
 
 - Deployment availability and rollout failures.
