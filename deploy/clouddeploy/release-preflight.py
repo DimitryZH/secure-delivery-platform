@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Evaluate a fresh, independently collected release decision evidence snapshot.
+"""Evaluate a fresh release decision evidence snapshot.
 
 This command only reads a local JSON file. It never invokes gcloud, kubectl, or a
 deployment command. Its result is eligibility information, not authorization.
@@ -24,6 +24,96 @@ PROTECTION_MARGIN = timedelta(minutes=75)
 DIGEST = re.compile(r"sha256:[0-9a-f]{64}\Z")
 RELEASE = re.compile(r"[a-z][a-z0-9-]{0,62}\Z")
 SHA256 = re.compile(r"[0-9a-f]{64}\Z")
+
+# IDs and summaries are part of the output contract. Only the operational gate
+# may leave a complete, otherwise valid decision on HOLD when evidence is unknown.
+CHECKS = {
+    "request_binding": ("Snapshot binding to the requested action and release.", True),
+    "release_identity": ("Release identity and metadata against the selected digest.", True),
+    "build_integrity": ("Producing build and image correlation.", True),
+    "trusted_verification": ("Retained trusted verification evidence.", True),
+    "attestation": ("Attestation signature and selected digest binding.", True),
+    "binary_authorization": ("Current admission policy compatibility and enforcement.", True),
+    "source_artifact": ("Source artifact availability and hash readback.", True),
+    "source_retention": ("Source artifact retention protection margin.", True),
+    "rendered_artifact": ("Target render availability, digest, and hash readback.", True),
+    "rendered_retention": ("Target render retention protection margin.", True),
+    "target_state": ("Current target and release snapshot compatibility.", True),
+    "rollout_state": ("Active or queued rollout conflicts.", True),
+    "caller_authority": ("Effective caller authority for the proposed action.", True),
+    "operational_evidence": ("Operational review freshness and sufficiency.", False),
+    "promotion_eligibility": ("Prior target progression for promotion.", True),
+    "rollback_eligibility": ("Earlier accepted release eligibility for rollback.", True),
+}
+
+
+def check_id(code):
+    """Map diagnostic reasons to stable gate IDs without exposing evidence."""
+    if code.startswith("request_"):
+        return "request_binding"
+    if code.startswith(("identity_", "release_identity", "release_digest",
+                        "metadata_digest", "invalid_immutable_metadata",
+                        "unexpected_release_producer", "authority_separation",
+                        "release_annotations", "release_render")):
+        return "release_identity"
+    if code.startswith(("build_", "producing_build", "image_unavailable")):
+        return "build_integrity"
+    if code.startswith(("verification_", "trusted_verification",
+                        "metadata_verification")):
+        return "trusted_verification"
+    if code.startswith(("attestation_", "attestor_", "invalid_trust_reference")):
+        return "attestation"
+    if code.startswith(("admission_", "cluster_admission")):
+        return "binary_authorization"
+    if code.startswith("source_retention"):
+        return "source_retention"
+    if code.startswith(("source_", "source_archive")):
+        return "source_artifact"
+    if code.startswith("rendered_retention"):
+        return "rendered_retention"
+    if code.startswith("rendered_"):
+        return "rendered_artifact"
+    if code.startswith("target_already_has_rollout"):
+        return "promotion_eligibility"
+    if code.startswith(("target_", "deployment_authority")):
+        return "target_state"
+    if code.startswith(("rollouts_", "conflicting_rollout")):
+        return "rollout_state"
+    if code.startswith("caller_"):
+        return "caller_authority"
+    if code.startswith(("operations_", "operational_", "health_", "runtime_",
+                        "release_review_")):
+        return "operational_evidence"
+    if code.startswith(("prior_", "promotion_")):
+        return "promotion_eligibility"
+    if code.startswith("rollback_"):
+        return "rollback_eligibility"
+    raise ValueError("unknown_preflight_reason")
+
+
+def decision_result(issues, release, target, action, digest):
+    selected = {key: {"id": key, "status": "PASS", "reason_code": "passed",
+                      "summary": summary}
+                for key, (summary, _) in CHECKS.items()
+                if key not in ("promotion_eligibility", "rollback_eligibility")
+                or key == action + "_eligibility"}
+    rank = {"PASS": 0, "UNKNOWN": 1, "FAIL": 2}
+    for item in sorted(issues, key=lambda entry: entry["code"]):
+        key = check_id(item["code"])
+        status = "FAIL" if item["severity"] == "BLOCKED" else "UNKNOWN"
+        if rank[status] > rank[selected[key]["status"]]:
+            selected[key]["status"] = status
+            selected[key]["reason_code"] = item["code"]
+    checks = list(selected.values())
+    blocked = any(entry["status"] == "FAIL" or
+                  (entry["status"] == "UNKNOWN" and CHECKS[entry["id"]][1])
+                  for entry in checks)
+    decision = "BLOCKED" if blocked else (
+        "HOLD" if any(entry["status"] == "UNKNOWN" for entry in checks) else "READY")
+    return {"schema_version": 1, "decision": decision, "action": action,
+            "release": release, "target": target, "digest": digest,
+            "checks": checks, "authorization": "separate_required",
+            "mutation_performed": False}
 
 
 def utc(value):
@@ -254,36 +344,43 @@ def evaluate(evidence, release, target, action, digest, now=None):
         required_truth(issues, rollouts, "different_from_current", "rollback_already_running")
         bound(issues, operations, "reviewed_target", target, "rollback_review_target")
 
-    severity = "BLOCKED" if any(i["severity"] == "BLOCKED" for i in issues) else (
-        "HOLD" if issues else "READY")
-    return {"schema_version": 1, "action": action, "target": target, "decision": severity,
-            "authorization": "separate_required", "cloud_action_executed": False,
-            "issues": sorted(issues, key=lambda item: (item["severity"], item["code"]))}
+    return decision_result(issues, release, target, action, digest)
+
+
+class Parser(argparse.ArgumentParser):
+    def error(self, message):
+        self.exit(64, "Invalid invocation. Use --help for accepted arguments.\n")
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = Parser(description=__doc__)
     parser.add_argument("--release", required=True)
     parser.add_argument("--target", required=True, choices=TARGETS)
     parser.add_argument("--action", required=True, choices=("promotion", "rollback"))
     parser.add_argument("--digest", required=True, help="Explicit immutable sha256 digest")
-    parser.add_argument("--evidence", required=True, help="Fresh, independently collected JSON snapshot")
+    parser.add_argument("--evidence", required=True, help="Operator-supplied JSON evidence snapshot")
     parser.add_argument("--format", choices=("json", "text"), default="text")
     args = parser.parse_args()
+    if not RELEASE.fullmatch(args.release) or not DIGEST.fullmatch(args.digest):
+        parser.error("invalid release or digest")
     try:
         evidence = deployment.load(args.evidence)
         result = evaluate(evidence, args.release, args.target, args.action, args.digest)
     except (OSError, ValueError, TypeError, KeyError):
         result = {"schema_version": 1, "action": args.action, "target": args.target,
+                  "release": args.release, "digest": args.digest,
                   "decision": "BLOCKED", "authorization": "separate_required",
-                  "cloud_action_executed": False,
-                  "issues": [{"severity": "BLOCKED", "code": "malformed_or_unreadable_evidence"}]}
+                  "mutation_performed": False,
+                  "checks": [{"id": "evidence_schema", "status": "FAIL",
+                              "reason_code": "malformed_or_unreadable_evidence",
+                              "summary": "Evidence snapshot is unreadable or malformed."}]}
     if args.format == "json":
         print(json.dumps(result, sort_keys=True))
     else:
         print(result["decision"] + " — " + args.action + " to " + args.target)
-        for item in result["issues"]:
-            print(item["severity"] + ": " + item["code"])
+        for item in result["checks"]:
+            print(item["status"] + " " + item["id"] + ": " + item["summary"] +
+                  " (" + item["reason_code"] + ")")
         print("Separate authorization is required; no cloud action was executed.")
     return {"READY": 0, "HOLD": 2, "BLOCKED": 3}[result["decision"]]
 

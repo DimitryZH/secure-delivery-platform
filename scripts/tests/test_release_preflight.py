@@ -91,19 +91,53 @@ def evidence(action="promotion", target="stage"):
     }
 
 
+def current_evidence():
+    record = evidence()
+    current = datetime.now(timezone.utc)
+    observed = current.isoformat().replace("+00:00", "Z")
+    expires = (current + timedelta(minutes=90)).isoformat().replace("+00:00", "Z")
+    for name in ("identity", "build", "verification", "attestation", "admission",
+                 "target_state", "rollouts", "caller", "operations"):
+        record[name]["observed_at"] = observed
+    for name in ("source", "rendered"):
+        record["artifacts"][name]["observed_at"] = observed
+        record["artifacts"][name]["retention_expires_at"] = expires
+    return record
+
+
 class ReleasePreflightTests(unittest.TestCase):
     def decide(self, record, action="promotion", target="stage"):
         return preflight.evaluate(record, RELEASE, target, action, DIGEST, NOW)
 
     def assert_issue(self, result, code):
-        self.assertIn(code, {item["code"] for item in result["issues"]})
+        self.assertIn(code, {item["reason_code"] for item in result["checks"]})
+
+    def check(self, result, check_id):
+        return next(item for item in result["checks"] if item["id"] == check_id)
+
+    def invoke(self, record, output_format="json"):
+        with tempfile.TemporaryDirectory(dir=ROOT) as directory:
+            path = Path(directory) / "evidence.json"
+            path.write_text(json.dumps(record), encoding="utf-8")
+            command = [sys.executable, str(SCRIPT), "--release", RELEASE,
+                       "--target", "stage", "--action", "promotion", "--digest", DIGEST,
+                       "--evidence", str(path), "--format", output_format]
+            return subprocess.run(command, check=False, capture_output=True, text=True)
 
     def test_promotion_ready_is_not_authorization(self):
         result = self.decide(evidence())
         self.assertEqual(result["decision"], "READY")
-        self.assertEqual(result["issues"], [])
+        self.assertEqual(result["schema_version"], 1)
+        self.assertEqual(result["action"], "promotion")
+        self.assertEqual(result["release"], RELEASE)
+        self.assertEqual(result["target"], "stage")
+        self.assertEqual(result["digest"], DIGEST)
+        self.assertEqual(len(result["checks"]), 15)
+        self.assertEqual(len({item["id"] for item in result["checks"]}), 15)
+        self.assertTrue(all(item["status"] == "PASS" and item["reason_code"] == "passed"
+                            and item["summary"] for item in result["checks"]))
         self.assertEqual(result["authorization"], "separate_required")
-        self.assertFalse(result["cloud_action_executed"])
+        self.assertFalse(result["mutation_performed"])
 
     def test_rollback_ready_requires_explicit_prior_acceptance(self):
         record = evidence("rollback")
@@ -113,14 +147,69 @@ class ReleasePreflightTests(unittest.TestCase):
         self.assertEqual(result["decision"], "BLOCKED")
         self.assert_issue(result, "rollback_release_not_accepted")
 
-    def test_missing_or_stale_evidence_holds(self):
+    def test_missing_trusted_verification_blocks(self):
         record = evidence()
         del record["verification"]["trusted_result_retained"]
+        result = self.decide(record)
+        self.assertEqual(result["decision"], "BLOCKED")
+        self.assert_issue(result, "trusted_verification_missing")
+        self.assertEqual(self.check(result, "trusted_verification")["status"], "UNKNOWN")
+
+    def test_stale_operational_evidence_holds(self):
+        record = evidence()
         record["operations"]["observed_at"] = stamp(-6)
         result = self.decide(record)
         self.assertEqual(result["decision"], "HOLD")
-        self.assert_issue(result, "trusted_verification_missing")
         self.assert_issue(result, "operations_observation_expired")
+        self.assertEqual(self.check(result, "operational_evidence")["status"], "UNKNOWN")
+
+    def test_missing_caller_and_required_read_evidence_block(self):
+        record = evidence()
+        del record["caller"]["effective_permission"]
+        del record["attestation"]["evidence_ref"]
+        result = self.decide(record)
+        self.assertEqual(result["decision"], "BLOCKED")
+        self.assertEqual(self.check(result, "caller_authority")["status"], "UNKNOWN")
+        self.assertEqual(self.check(result, "attestation")["status"], "UNKNOWN")
+        self.assert_issue(result, "caller_not_authorized")
+        self.assert_issue(result, "attestation_reference_missing")
+
+    def test_missing_trust_or_caller_section_blocks(self):
+        for section in ("attestation", "caller"):
+            with self.subTest(section=section):
+                record = current_evidence()
+                del record[section]
+                completed = self.invoke(record)
+                self.assertEqual(completed.returncode, 3)
+                result = json.loads(completed.stdout)
+                self.assertEqual(result["decision"], "BLOCKED")
+                self.assertEqual(result["checks"][0]["id"], "evidence_schema")
+
+    def test_each_missing_required_gate_blocks(self):
+        cases = (
+            (("identity", "observed_at"), "release_identity"),
+            (("build", "image_available"), "build_integrity"),
+            (("verification", "observed_at"), "trusted_verification"),
+            (("attestation", "signature_verified"), "attestation"),
+            (("admission", "evidence_ref"), "binary_authorization"),
+            (("artifacts", "source", "available"), "source_artifact"),
+            (("artifacts", "source", "retention_expires_at"), "source_retention"),
+            (("artifacts", "rendered", "available"), "rendered_artifact"),
+            (("artifacts", "rendered", "retention_expires_at"), "rendered_retention"),
+            (("target_state", "release_snapshot_matches_current"), "target_state"),
+            (("rollouts", "no_active_or_queued_conflict"), "rollout_state"),
+            (("caller", "effective_permission"), "caller_authority"),
+        )
+        for path, check_id in cases:
+            with self.subTest(path=path):
+                record = evidence()
+                section = record
+                for key in path[:-1]:
+                    section = section[key]
+                del section[path[-1]]
+                result = self.decide(record)
+                self.assertEqual(result["decision"], "BLOCKED")
+                self.assertEqual(self.check(result, check_id)["status"], "UNKNOWN")
 
     def test_expired_protection_and_conflict_block(self):
         record = evidence()
@@ -137,7 +226,7 @@ class ReleasePreflightTests(unittest.TestCase):
         record["attestation"]["signature_verified"] = False
         result = self.decide(record)
         self.assertEqual(result["decision"], "BLOCKED")
-        self.assert_issue(result, "metadata_digest_mismatch")
+        self.assert_issue(result, "invalid_immutable_metadata")
         self.assert_issue(result, "attestation_invalid")
 
     def test_unavailable_render_and_admission_mismatch_block(self):
@@ -166,8 +255,8 @@ class ReleasePreflightTests(unittest.TestCase):
         record["caller"]["deployment_act_as_permission"] = False
         result = self.decide(record, "rollback")
         self.assertEqual(result["decision"], "BLOCKED")
-        self.assert_issue(result, "rollback_not_earlier_release")
-        self.assert_issue(result, "caller_not_authorized")
+        self.assertEqual(self.check(result, "rollback_eligibility")["status"], "FAIL")
+        self.assertEqual(self.check(result, "caller_authority")["status"], "FAIL")
         self.assert_issue(result, "caller_cannot_act_as_deployment_identity")
 
     def test_malformed_input_exits_blocked_without_identifiers(self):
@@ -180,35 +269,49 @@ class ReleasePreflightTests(unittest.TestCase):
                  "--evidence", str(path), "--format", "json"],
                 check=False, capture_output=True, text=True)
         self.assertEqual(completed.returncode, 3)
-        self.assertEqual(json.loads(completed.stdout)["decision"], "BLOCKED")
+        result = json.loads(completed.stdout)
+        self.assertEqual(result["decision"], "BLOCKED")
+        self.assertEqual(result["release"], RELEASE)
+        self.assertEqual(result["digest"], DIGEST)
+        self.assertEqual(result["checks"][0]["id"], "evidence_schema")
+        self.assertFalse(result["mutation_performed"])
         self.assertNotIn(POLICY["project"], completed.stdout)
 
+    def test_invalid_invocation_exits_64(self):
+        completed = subprocess.run(
+            [sys.executable, str(SCRIPT), "--release", RELEASE, "--target", "stage",
+             "--action", "promotion", "--digest", "latest", "--evidence", "missing.json",
+             "--format", "json"], check=False, capture_output=True, text=True)
+        self.assertEqual(completed.returncode, 64)
+        self.assertEqual(completed.stdout, "")
+        self.assertIn("Invalid invocation", completed.stderr)
+
     def test_cli_emits_ready_as_text_and_json_without_cloud_action(self):
-        record = evidence()
-        current = datetime.now(timezone.utc)
-        observed = current.isoformat().replace("+00:00", "Z")
-        expires = (current + timedelta(minutes=90)).isoformat().replace("+00:00", "Z")
-        for name in ("identity", "build", "verification", "attestation", "admission",
-                     "target_state", "rollouts", "caller", "operations"):
-            record[name]["observed_at"] = observed
-        for name in ("source", "rendered"):
-            record["artifacts"][name]["observed_at"] = observed
-            record["artifacts"][name]["retention_expires_at"] = expires
-        with tempfile.TemporaryDirectory(dir=ROOT) as directory:
-            path = Path(directory) / "evidence.json"
-            path.write_text(json.dumps(record), encoding="utf-8")
-            command = [sys.executable, str(SCRIPT), "--release", RELEASE,
-                       "--target", "stage", "--action", "promotion", "--digest", DIGEST,
-                       "--evidence", str(path)]
-            human = subprocess.run(command, check=False, capture_output=True, text=True)
-            machine = subprocess.run(command + ["--format", "json"],
-                                     check=False, capture_output=True, text=True)
+        record = current_evidence()
+        human = self.invoke(record, "text")
+        machine = self.invoke(record)
         self.assertEqual(human.returncode, 0)
         self.assertIn("READY", human.stdout)
         self.assertIn("Separate authorization is required", human.stdout)
         self.assertEqual(machine.returncode, 0)
-        self.assertEqual(json.loads(machine.stdout)["decision"], "READY")
+        result = json.loads(machine.stdout)
+        self.assertEqual(result["decision"], "READY")
+        self.assertEqual(result["release"], RELEASE)
+        self.assertEqual(result["digest"], DIGEST)
+        self.assertFalse(result["mutation_performed"])
         self.assertNotIn(POLICY["project"], human.stdout + machine.stdout)
+
+    def test_cli_hold_and_blocked_exit_codes(self):
+        record = current_evidence()
+        record["operations"]["observed_at"] = stamp(-6)
+        held = self.invoke(record)
+        self.assertEqual(held.returncode, 2)
+        self.assertEqual(json.loads(held.stdout)["decision"], "HOLD")
+        record = current_evidence()
+        del record["caller"]["effective_permission"]
+        blocked = self.invoke(record)
+        self.assertEqual(blocked.returncode, 3)
+        self.assertEqual(json.loads(blocked.stdout)["decision"], "BLOCKED")
 
 
 if __name__ == "__main__":
