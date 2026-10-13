@@ -4,13 +4,13 @@
 
 The Secure Delivery Platform is organized around a trusted software delivery path.
 
-The implementation sequence follows the release trust model: define release identity and trust boundaries first, establish the minimum executable foundation, enforce deployment trust, introduce controlled promotion, and connect runtime evidence back to release decisions.
+The implementation sequence follows the release trust model: define release identity and trust boundaries first, establish the minimum executable foundation, enforce deployment trust, introduce controlled promotion, connect runtime evidence back to release decisions, and then turn those decision rules into executable platform controls.
 
-The platform should remain focused on secure delivery rather than becoming a generic CI/CD framework, Terraform framework, or Kubernetes platform.
+The platform should remain focused on secure delivery rather than becoming a generic CI/CD framework, Terraform framework, Kubernetes platform, or broad SRE platform.
 
 ---
 
-## Milestone 1 — Trusted Release Model
+## Trusted Release Model
 
 **Goal:** Define the governance and trust model before expanding the implementation.
 
@@ -30,7 +30,7 @@ The platform has a coherent definition of what constitutes a release candidate, 
 
 ---
 
-## Milestone 2 — Executable Foundation
+## Executable Foundation
 
 **Goal:** Establish the minimum infrastructure and delivery components required to execute the trusted release path.
 
@@ -53,34 +53,31 @@ A source change can produce a traceable container artifact in the approved regis
 
 ---
 
-## Milestone 3 — Trusted Delivery Path
+## Trusted Delivery Path
 
 **Goal:** Make release verification and deployment trust enforceable.
 
 ### Scope
 
-* executable release verification
-  * executable Cloud Build verification
-  * release metadata validation
-  * approved artifact location validation
-  * immutable digest validation
-  * verification result generation
-* artifact trust and admission
-  * minimal trust signal / attestation path
-  * Binary Authorization enforcement
-  * blocked untrusted deployment scenario
-* environment-aware trusted deployment
-  * environment-aware deployment policy
-  * trusted deployment scenario
-  * separation of build and deployment authority
+* executable Cloud Build verification
+* release metadata validation
+* approved artifact location validation
+* immutable digest validation
+* verification result generation
+* minimal trust signal / attestation path
+* Binary Authorization configuration
+* environment-aware deployment policy
+* trusted deployment scenario
+* blocked untrusted deployment scenario
+* separation of build and deployment authority
 
 ### Target outcome
 
-The platform enforces the `Verify → Trust → Deploy` boundary: executable verification determines whether a release candidate is eligible for the required trust signal, and deployment admission permits only artifacts that satisfy the required trust conditions. Deployment uses a separate authorized, environment-aware path; build success alone does not authorize deployment.
+Build success alone is insufficient for deployment. Only a release candidate that satisfies the required verification and trust conditions can pass the deployment admission boundary.
 
 ---
 
-## Milestone 4 — Controlled Promotion
+## Controlled Promotion
 
 **Goal:** Introduce explicit environment progression without rebuilding or changing the trusted artifact.
 
@@ -103,9 +100,9 @@ Promotion does not rebuild, retag, or replace the release candidate.
 
 ---
 
-## Milestone 5 — Operational Visibility
+## Operational Visibility
 
-**Goal:** Connect runtime behavior to release identity and use operational evidence as part of release progression.
+**Goal:** Connect runtime behavior to release identity and expose the operational evidence required for release decisions.
 
 ### Scope
 
@@ -115,9 +112,6 @@ Promotion does not rebuild, retag, or replace the release candidate.
 * deployment health dashboard
 * release-related log views and metrics
 * alert policies for unhealthy rollout conditions
-* operator review workflow
-* promotion decision checkpoint
-* rollback and release rejection workflow
 
 ### Target outcome
 
@@ -128,9 +122,11 @@ Operators can determine:
 * which immutable image digest is running
 * whether verification and trust requirements were satisfied
 * where the release is currently deployed
-* whether runtime health supports further promotion
+* whether runtime health provides sufficient evidence for the next release decision
 
-The complete path becomes:
+Operational visibility supplies evidence. It does not itself authorize promotion, rejection, or rollback.
+
+The delivery path becomes:
 
 ```text
 Source
@@ -140,14 +136,94 @@ Source
   → Trust
   → Deploy
   → Observe
-  → Promote
 ```
 
 ---
 
-## Milestone 6 — Security and Operational Hardening
+## Platform Release Controls
 
-**Goal:** Strengthen the completed trusted release path and validate its behavior under failure conditions.
+**Goal:** Turn release decision rules into explicit, deterministic, and executable platform controls.
+
+### Scope
+
+* explicit release review checkpoint
+* continue / hold / reject decision semantics
+* manual release rejection workflow
+* controlled rollback workflow
+* rollback candidate eligibility rules
+* executable promotion preflight
+* executable rollback preflight
+* deterministic READY / HOLD / BLOCKED outcomes
+* machine-readable decision output
+* fail-closed handling for missing or expired evidence
+* separation of decision evaluation from deployment authorization and mutation
+
+### Target outcome
+
+The platform can evaluate whether a release action is currently eligible before Cloud Deploy performs the action.
+
+A release decision evaluates evidence such as:
+
+* release identity and immutable digest
+* source, build, verification, and attestation correlation
+* Binary Authorization compatibility
+* source and rendered artifact availability
+* retention protection margin
+* target compatibility
+* conflicting rollout state
+* required caller authority
+* required operational evidence
+
+The resulting decision is explicit and reproducible:
+
+```text
+Release + Target + Intended Action
+              ↓
+      Executable Preflight
+              ↓
+      READY / HOLD / BLOCKED
+              ↓
+     Separate Authorization
+              ↓
+       Cloud Deploy Action
+```
+
+A successful preflight does not perform promotion or rollback and does not replace environment approval gates. Mutation remains a separately authorized action.
+
+This stage completes the core MVP platform capability: the system does not only execute a trusted delivery path; it also evaluates release eligibility using deterministic, fail-closed controls.
+
+---
+
+## MVP Release
+
+**Goal:** Package the completed core platform as the first reproducible MVP release.
+
+### Scope
+
+* finalize canonical public documentation
+* align architecture and roadmap with implemented behavior
+* curate representative validation screenshots and evidence
+* document the executable release decision flow
+* verify repository links and public examples
+* tag and publish the first MVP release
+
+### Target outcome
+
+The repository presents a coherent end-to-end platform that can:
+
+* build and identify an immutable release candidate
+* verify and attest that candidate
+* enforce admission trust
+* promote the same release across environments
+* correlate runtime behavior with release identity
+* evaluate release eligibility before promotion or rollback
+* preserve separate authorization for deployment mutations
+
+---
+
+## Security and Operational Hardening
+
+**Goal:** Strengthen the completed MVP and validate its behavior under broader failure conditions.
 
 ### Scope
 
@@ -157,14 +233,14 @@ Source
 * improve Binary Authorization denial diagnostics
 * validate release metadata consistency across the delivery path
 * validate promotion failure and recovery behavior
-* improve runtime review and rollback procedures
+* improve executable decision and rollback controls
 * exercise representative failure scenarios
 * remove unnecessary permissions and temporary implementation exceptions
 * verify operational documentation against the implemented system
 
 ### Target outcome
 
-The platform demonstrates a complete, reproducible, and auditable trusted delivery path with clear behavior for both successful releases and security or operational failures.
+The platform demonstrates a hardened, reproducible, and auditable trusted delivery path with clear behavior for both successful releases and security or operational failures.
 
 ---
 
@@ -178,6 +254,8 @@ The roadmap is complete when the platform can demonstrate that:
 4. deployment policy prevents an untrusted artifact from running where trust enforcement is required;
 5. the same trusted artifact progresses through `dev → stage → prod` without rebuild;
 6. runtime workloads remain correlated with their release identity;
-7. operational health is evaluated before further promotion;
-8. failed verification, denied deployment, failed promotion, and unhealthy runtime conditions have explicit and diagnosable outcomes;
-9. build, deployment, and operational responsibilities remain separated by clear IAM and trust boundaries.
+7. operational health is available as evidence for release decisions;
+8. promotion and rollback eligibility can be evaluated by deterministic, executable, fail-closed preflight controls;
+9. release decisions remain separate from approval and deployment mutation;
+10. failed verification, denied deployment, blocked promotion, rejected release, blocked rollback, and unhealthy runtime conditions have explicit and diagnosable outcomes;
+11. build, signing, deployment, review, and operational responsibilities remain separated by clear IAM and trust boundaries.
