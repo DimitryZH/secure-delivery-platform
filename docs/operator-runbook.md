@@ -51,9 +51,39 @@ gcloud deploy releases create <RELEASE_NAME> \
 
 Templates are not authorization. No image overrides. Require successful render, all target namespaces/digests/annotations, and no hooks/build/bypass. Render failure stops; corrective mutations need new authorization.
 
+## Release decision preflight
+
+Use `deploy/clouddeploy/release-preflight.py` for a proposed stage/prod promotion or a target rollback. Supply the exact existing Cloud Deploy release, target, intended action, and immutable digest. Initial dev rollout is a separate procedure. The CLI reads one local JSON snapshot and performs no cloud calls. Collect every observation independently with the read-only procedures in this runbook immediately before evaluation; keep raw results and the snapshot in ignored private validation storage. A hand-written `true` value, historical success, or release annotation alone is not proof. The snapshot must be reviewed against the actual cloud readbacks, including signature validation and effective IAM, before its result can be used in a release decision.
+
+```sh
+python deploy/clouddeploy/release-preflight.py \
+  --release=<EXISTING_RELEASE> --target=<TARGET> \
+  --action=promotion --digest=sha256:<DIGEST> \
+  --evidence=<PRIVATE_EVIDENCE_JSON> --format=json
+```
+
+Use `--action=rollback` with an explicitly selected earlier accepted release and its digest for rollback. The evidence JSON has `schema_version: 1`, a `request` object with exact `release`, `target`, `action`, and `digest`, and the sections below. Each section, including each artifact, needs a private `evidence_ref` and UTC `observed_at` no older than five minutes at evaluation (up to 30 seconds of future clock skew). Recollect on expiry. Use `Z` UTC timestamps; never publish the snapshot or raw command output.
+
+| Section | Required observation fields and independent source |
+| --- | --- |
+| `identity` | `release`, `digest`, verified release `metadata`, `release_annotations_match`, `render_succeeded`, `source_archive_sha256`; compare the existing release, annotations, approved registry, source/build identity, pinned image, and recorded archive hash. |
+| `build` | `build_id`, `digest`, `succeeded`, `source_and_identity_match`, `image_available`; inspect the producing build and digest-addressed image. |
+| `verification` | `digest`, `build_id`, `trusted_result_retained`, `passed`; inspect retained trusted verifier execution/output, not a claimed annotation. |
+| `attestation` | `digest`, `occurrence`, `signature_verified`, `attestor_note_key_match`; use [attestation inspection](#attestation-inspection) for the exact subject and occurrence. |
+| `admission` | `cluster_enforced`, `policy_requires_attestor`, `no_bypass`; inspect the current cluster and Binary Authorization policy. |
+| `artifacts.source` and `artifacts.rendered` | Each has `release`, `available`, `live_generation`, `expected_sha256`, `actual_sha256`, `retention_expires_at`; rendered also has `target`, `digest`. Compare independently recorded expected hashes with actual source/render readbacks and generation/retention. At least 75 minutes must remain. |
+| `target_state` | `target`, `namespace`, `deployment_authority`, `approval_required`, `release_snapshot_matches_current`, `deployment_authority_matches`, `approval_gate_matches_policy`, `namespace_and_digest_match`, `target_render_succeeded`; compare release snapshot, current target, and rendered material. |
+| `rollouts` | `no_active_or_queued_conflict`, plus the action fields below; inspect all relevant target rollouts/jobs. Verify the proposed rollout ID separately before execution authorization. |
+| `caller` | `permission`, `effective_permission`, `rollout_create_permission`, `deployment_act_as_permission`; verify the exact caller's effective `clouddeploy.rollouts.create` and `iam.serviceAccounts.actAs` for the deployment identity. Rollback additionally needs `clouddeploy.rollouts.rollback`. Account for IAM conditions and deny policies. Job Runner access alone is insufficient. See [Cloud Deploy permissions](https://docs.cloud.google.com/deploy/docs/iam-roles-permissions) and the [rollback permission notice](https://docs.cloud.google.com/deploy/docs/rollout-perms-notice). |
+| `operations` | `release`, `digest`, `reviewed_target`, `review_complete`, `decision`, `health_evidence_sufficient`, `runtime_identity_stable`; use the [release review checkpoint](#release-review-checkpoint), alert/dashboard review, and a final identity reread. `decision` must be `continue`. |
+
+For promotion, `rollouts` must also contain `successful_prior_target`, `successful_prior_release`, `successful_prior_digest`, `prior_rollout_and_job_succeeded`, and `no_target_rollout_for_release`. `operations.reviewed_target` is dev for stage or stage for prod. For rollback, require `prior_target_rollout_and_job_succeeded`, `prior_target_release`, `prior_target_digest`, `previously_accepted`, `earlier_than_current`, and `different_from_current`; `operations.reviewed_target` is the affected target. The acceptance reference must be independently reviewed, not inferred from a successful historical rollout. A target's queued, pending approval, or active conflicting rollout blocks the proposed action.
+
+The CLI prints `READY`, `HOLD`, or `BLOCKED` as text by default, or a JSON decision with reason codes using `--format=json`. Exit codes are 0, 2, and 3 respectively. Missing fields or references, stale observations, and inconclusive operational evidence produce `HOLD`; a missing required section is malformed input and produces `BLOCKED`. Confirmed mismatch, unavailable artifact, insufficient retention, or missing effective permission also produces `BLOCKED`. A result never grants approval or executes a Cloud Deploy action. An independently authorized read-only live validation must confirm representative READY and BLOCKED outcomes before this control is treated as validated in the live environment; no cloud mutation is needed for that validation.
+
 ## Initial dev rollout
 
-After fresh preflight and separate authorization, create only dev for the existing release. Require no existing rollout or unexpected workload replacement.
+After a fresh manual read-only eligibility review and separate authorization, create only dev for the existing release. Require no existing rollout or unexpected workload replacement. The promotion/rollback CLI above does not evaluate an initial dev rollout.
 
 ```sh
 gcloud deploy rollouts create <DEV_ROLLOUT_ID> \

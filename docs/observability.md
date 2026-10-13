@@ -54,6 +54,8 @@ The [canonical release review checkpoint](operator-runbook.md#release-review-che
 
 The [manual rejection and rollback workflow](operator-runbook.md#manual-release-rejection-and-rollback) uses these observations to record rejection evidence and post-rollback health. Alerts never execute rollback. Candidate trust, historical acceptance, retained artifact protection, and separate authorization remain independent prerequisites.
 
+The [release decision preflight](operator-runbook.md#release-decision-preflight) consumes a fresh, independently reviewed operational evidence snapshot alongside identity, trust, target, and artifact checks. Missing or stale health evidence cannot produce `READY`; the result never authorizes or executes promotion or rollback.
+
 ## Planned signals
 
 - Deployment availability and rollout failures.
