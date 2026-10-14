@@ -87,13 +87,16 @@ Exit codes are `READY=0`, `HOLD=2`, `BLOCKED=3`, and invalid invocation `64`. A 
 
 After a fresh manual read-only eligibility review and separate authorization, create only dev for the existing release. Require no existing rollout or unexpected workload replacement. The promotion/rollback CLI above does not evaluate an initial dev rollout.
 
-```sh
-gcloud deploy rollouts create <DEV_ROLLOUT_ID> \
-  --project=<PROJECT_ID> --region=us-central1 \
-  --delivery-pipeline=sample-service --release=<RELEASE_NAME> --to-target=dev
+After separate explicit authorization, submit exactly one authenticated request using the supported [Cloud Deploy rollout-create API](https://docs.cloud.google.com/deploy/docs/api/reference/rest/v1/projects.locations.deliveryPipelines.releases.rollouts/create). The request body is a [Rollout](https://docs.cloud.google.com/deploy/docs/api/reference/rest/v1/projects.locations.deliveryPipelines.releases.rollouts) with `targetId` set only to `dev`; use a unique rollout ID and a non-zero UUID request ID. This template is not execution authorization:
+
+```http
+POST https://clouddeploy.googleapis.com/v1/projects/<PROJECT_ID>/locations/<REGION>/deliveryPipelines/sample-service/releases/<RELEASE_NAME>/rollouts?rolloutId=<DEV_ROLLOUT_ID>&requestId=<REQUEST_UUID>
+Content-Type: application/json
+
+{"targetId": "dev"}
 ```
 
-Wait for terminal success and runtime validation before considering stage.
+Use existing authorized authentication; keep credentials and raw responses private. The API returns an Operation. Observe that operation and the exact rollout read-only, and require terminal success and runtime validation before considering stage. On an error or uncertain response, stop and inspect service state read-only; do not resubmit the request. No retry, resume, cancellation, rollback, or remediation is authorized by this procedure. This creates one dev rollout only; stage/prod promotion and approval remain separate, explicitly authorized actions.
 
 ## Controlled promotion
 
