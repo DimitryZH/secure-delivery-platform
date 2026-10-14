@@ -5,16 +5,16 @@
 Current delivery supplies annotations, rollout/job results, readiness, digest inspection, and manual internal HTTP checks. The [runtime release correlation procedure](operator-runbook.md#runtime-release-correlation) composes these existing sources into a read-only baseline:
 
 ```text
-Environment / namespace → Deployment / owned Pods → running immutable digest
-  → source revision → producing build → verification context → trust reference
-  → Cloud Deploy release → target rollout → rollout state
+Environment / namespace -> Deployment / owned Pods -> running immutable digest
+  -> source revision -> producing build -> verification context -> trust reference
+  -> Cloud Deploy release -> target rollout -> rollout state
 ```
 
 The procedure compares the Pod template and actual Pods with release annotations, uses Cloud Deploy resource labels to locate the release, and checks the target snapshot against the cluster and deployment authority. Missing evidence, inconsistent identity, an unsettled workload, or multiple possible rollouts stop correlation. No release database, new workload, or infrastructure mutation is required.
 
 Runtime annotations, verification status, and trust references are correlation evidence, not cryptographic proof. Attestation inspection and Binary Authorization remain separate trust controls. A successful rollout or healthy Pod does not prove provenance or authorize promotion.
 
-Platform Logging/Monitoring access does not imply application dashboards, metrics, alerts, or automated release decisions exist.
+Platform Logging/Monitoring access alone does not establish application visibility. The implemented and bounded live-validated logging, metrics, dashboard, and availability alert capabilities are described below; none makes an automated release decision.
 
 Operational Visibility remains an architectural capability in the [Roadmap](roadmap.md), answering what runs, where, when it changed, and whether it behaves normally.
 
@@ -26,7 +26,7 @@ The existing GKE workload logging integration collects container stdout/stderr a
 
 Repository validation covers application responses, JSON shape, latency, severity, health traffic, and sensitive request-data exclusion. The baseline was live-validated in dev through the trusted build, verification, attestation, protected release, and rollout path. Runtime digest and release correlation checks passed; internal GET `/` and `/healthz` returned HTTP 200. Cloud Logging ingested structured request and startup events from the new Pod, with `/healthz` marked `health_check=true` and severity extracted into the top-level LogEntry field. Stage and prod remained unchanged; no promotion or approval occurred. Kubernetes resource labels correlate logs to the producing workload. Logs remain operational/runtime evidence, not cryptographic proof; release metadata, attestation, and Binary Authorization establish separate correlation and trust properties.
 
-The logging capability adds no dashboards, alerts, tracing, SLOs, sinks, exports, custom retention, or additional logging backend. Health probes produce request events and contribute to logging volume; queries can exclude them without changing collection or retention. See [GKE collection](https://docs.cloud.google.com/kubernetes-engine/docs/concepts/about-logs) and [structured payload handling](https://docs.cloud.google.com/logging/docs/structured-logging).
+Structured logging itself adds no dashboard or alert; the separately implemented capabilities are described below. Tracing, SLOs, sinks, exports, custom retention, and an additional logging backend are not introduced. Health probes produce request events and contribute to logging volume; queries can exclude them without changing collection or retention. See [GKE collection](https://docs.cloud.google.com/kubernetes-engine/docs/concepts/about-logs) and [structured payload handling](https://docs.cloud.google.com/logging/docs/structured-logging).
 
 ## Release-health metrics
 
@@ -34,13 +34,13 @@ The repository defines three [log-based metrics](../monitoring/log-based-metrics
 
 Workload availability uses the existing GKE deployment-state `prometheus.googleapis.com/kube_deployment_status_replicas_available/gauge` alongside `prometheus.googleapis.com/kube_deployment_spec_replicas/gauge`. Read-only inspection confirmed these signals already report the dev workload; no new Managed Service for Prometheus configuration, custom availability metric, or collector is introduced. Compare fresh available replicas with desired replicas for the same deployment/environment. A positive desired count with equal available replicas is the bounded availability signal; zero desired replicas or missing/stale data is not healthy application evidence. Confirm Deployment observed generation and Pod readiness through the existing runtime procedure. Container uptime alone would not prove readiness. See [GKE deployment-state metrics](https://docs.cloud.google.com/kubernetes-engine/docs/how-to/kube-state-metrics).
 
-Use [release-health metric inspection](operator-runbook.md#release-health-metric-inspection) for read-only Monitoring queries and release correlation. Metrics describe operational behavior, not artifact provenance, verification success, attestation validity, or Binary Authorization admission. A healthy signal never authorizes promotion. Metrics do not add dashboards, alerts, SLOs, tracing, exports, another backend, or automated decisions.
+Use [release-health metric inspection](operator-runbook.md#release-health-metric-inspection) for read-only Monitoring queries and release correlation. Metrics describe operational behavior, not artifact provenance, verification success, attestation validity, or Binary Authorization admission. A healthy signal never authorizes promotion. Metric definitions do not themselves create dashboards or alerts; those separately implemented capabilities are described below. SLOs, tracing, exports, another backend, and automated decisions are not introduced.
 
 ## Deployment health dashboard
 
 One compact [deployment health dashboard](../monitoring/dashboards/README.md) is defined declaratively for sample-service, with a dev/stage/prod selector and five views: available/desired replicas, application responses, HTTP errors, merged-distribution server handling p95, and separate health-check traffic. It reuses existing metrics and scopes queries to the configured cluster/location and selected environment. Application traffic and latency exclude probes; missing/stale or sparse data is missing evidence, not success.
 
-Use [runtime release correlation](operator-runbook.md#runtime-release-correlation) before the [read-only dashboard review](operator-runbook.md#deployment-health-dashboard-review). Health summaries do not establish provenance, verification, attestation, admission, release identity, or promotion authorization. The reviewed exact-plan apply created only the dashboard, with no changes to existing resources. Live definition and rendering were validated: the environment selector isolated dev/stage/prod, availability rendered across all three environments, dev health-check traffic was observed, and runtime release correlation remained consistent. Non-health request, p95, and error panels rendered without matching time series; their empty state is missing evidence, not proof of health or zero errors. No artificial traffic or failures were required. No alerts, SLOs, collectors, or automated decisions are added.
+Use [runtime release correlation](operator-runbook.md#runtime-release-correlation) before the [read-only dashboard review](operator-runbook.md#deployment-health-dashboard-review). Health summaries do not establish provenance, verification, attestation, admission, release identity, or promotion authorization. The reviewed exact-plan apply created only the dashboard, with no changes to existing resources. Live definition and rendering were validated: the environment selector isolated dev/stage/prod, availability rendered across all three environments, dev health-check traffic was observed, and runtime release correlation remained consistent. Non-health request, p95, and error panels rendered without matching time series; their empty state is missing evidence, not proof of health or zero errors. No artificial traffic or failures were required. The dashboard does not itself create alerts; the separately implemented availability policy is described below. No SLOs, collectors, or automated decisions are added.
 
 ## Release-health alerting
 
@@ -56,14 +56,13 @@ The [manual rejection and rollback workflow](operator-runbook.md#manual-release-
 
 The [release decision preflight](operator-runbook.md#release-decision-preflight) consumes a fresh, independently reviewed operational evidence snapshot alongside identity, trust, target, and artifact checks. Missing or stale health evidence cannot produce `READY`; the result never authorizes or executes promotion or rollback.
 
-## Planned signals
+## Validation limits and deferred capabilities
 
-- Deployment availability and rollout failures.
-- Request errors/latency after deployment.
-- Admission denials and application error bursts.
-- Dashboards for source/build/digest/verification lookup; read-only lookup already exists.
+Implemented with offline-only coverage: review hold/reject scenarios, alert-condition failure and duplicate-collector cases, and error/non-health metric and dashboard query contracts. The live baseline does not exercise a real FIRING lifecycle, establish non-health performance, or prove zero errors.
 
-Signals support explicit operator review rather than replacing trust/admission. Alert-driven promotion and automatic rollback are not current controls.
+Deferred: automated promotion and rollback, error/latency alerting, notification routing, SLOs, tracing, broader performance validation, dedicated admission-denial/error-burst views, and source/build/digest/verification lookup dashboards. Existing rollout inspection and runtime identity lookup remain manual read-only procedures.
+
+Signals support explicit operator review rather than replacing trust/admission. The preflight evaluates a fresh, independently reviewed, operator-supplied evidence snapshot. It does not collect cloud data, authorize, or execute an action. Review, eligibility, action authorization, target approval, and execution remain separate boundaries; READY is eligibility only. Representative promotion READY and retention-driven BLOCKED outcomes were live-validated read-only; rollback eligibility has offline-only coverage.
 
 ## Release correlation and directory guidance
 

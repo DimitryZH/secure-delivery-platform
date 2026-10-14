@@ -16,11 +16,21 @@ flowchart TB
 
 Cloud Deploy orchestrates existing trusted artifacts; Binary Authorization remains admission authority. Stage and prod require separate approval. Promotion never rebuilds, retags, or replaces the artifact.
 
-The implemented path includes metadata verification, digest-bound attestation, enforced admission, protected source/render storage, and controlled promotion. Manual readiness and internal HTTP checks validate deployments. Application dashboards, alert-driven promotion, and automated rollback remain planned.
+The implemented path includes metadata verification, digest-bound attestation, enforced admission, protected source/render storage, and controlled promotion. Manual readiness and internal HTTP checks validate deployments. Implemented and live-validated: structured application logging in dev, request/latency ingestion for health traffic in dev, deployment availability signals, the deployment health dashboard, and the availability alert policy in its healthy non-firing state. Empty non-health traffic, error, and p95 panels are missing evidence, not performance validation or proof of zero errors.
+
+## MVP implementation and validation
+
+The preflight evaluates a fresh, independently reviewed, operator-supplied evidence snapshot. It does not collect cloud data, authorize, or execute an action. Review, eligibility, action authorization, target approval, and execution remain separate boundaries; READY is eligibility only.
+
+Read-only live validation for #80 produced a representative `READY / 0`, then a retention-driven `BLOCKED / 3` when source and rendered-artifact protection fell below the 75-minute margin. Both evaluations were read-only and performed no Cloud Deploy action. These observations do not authorize a future action or establish current eligibility.
+
+Implemented with offline-only coverage: preflight HOLD and rollback eligibility scenarios, release review hold/reject scenarios, and manual rejection/rollback workflow contracts. No executed rollback is claimed.
+
+Deferred: automated promotion and rollback, error/latency alerting, notification routing, SLOs, tracing, and broader performance validation. MVP tagging and GitHub Release publication require a separate operator decision; this documentation does not claim publication.
 
 ## Validated delivery path
 
-End-to-end controlled promotion was validated: the same verified and attested release progressed through `dev → stage → prod` without rebuilding or replacing the artifact. This is a validation snapshot, not a live infrastructure or status dashboard.
+Historical end-to-end controlled promotion was validated: the same verified and attested release progressed through `dev → stage → prod` without rebuilding or replacing the artifact. This is a validation snapshot, not a live infrastructure or status dashboard.
 
 ![The same trusted release deployed across dev, stage, and prod](docs/images/controlled-promotion/03-promotion-complete.png)
 
@@ -34,7 +44,7 @@ See [Controlled Promotion Validation](docs/trusted-delivery.md#controlled-promot
 | `cloudbuild/` | Image, verification, and separate signing execution |
 | `deploy/` | Shared manifests, consumer, and Cloud Deploy preparation |
 | `terraform/` | Reproducible foundation |
-| `monitoring/` | Planned operational visibility assets/notes |
+| `monitoring/` | Implemented metric, dashboard, and availability alert definitions |
 | `docs/` | Canonical architecture, contracts, and operations |
 
 ## Documentation

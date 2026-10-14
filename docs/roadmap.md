@@ -10,6 +10,18 @@ The platform should remain focused on secure delivery rather than becoming a gen
 
 ---
 
+## Current implementation and validation boundaries
+
+This roadmap describes architectural sequence and scope, not proof that every scenario below was executed. Canonical procedures and validation limits remain in [Trusted Delivery](trusted-delivery.md), [Observability](observability.md), and [Operator Runbook](operator-runbook.md).
+
+- Implemented and live-validated: immutable trusted delivery and historical controlled promotion; structured logging, bounded health metrics, dashboard rendering, healthy-state availability alert inspection, and bounded release review. Read-only live validation for #80 produced a representative `READY / 0`, then a retention-driven `BLOCKED / 3` when source and rendered-artifact protection fell below the 75-minute margin. Both evaluations were read-only and performed no Cloud Deploy action. These observations do not authorize a future action or establish current eligibility.
+- Implemented with offline-only coverage: other preflight outcomes and negative cases, review hold/reject scenarios, manual rejection/rollback workflow contracts, and rollback eligibility. No executed rollback or broader performance validation is claimed.
+- Deferred: automated promotion/rollback, error/latency alerting, notification routing, SLOs, tracing, and broader performance validation. MVP tagging and GitHub Release publication require separate later authorization.
+
+The preflight evaluates a fresh, independently reviewed, operator-supplied evidence snapshot. It does not collect cloud data, authorize, or execute an action. Review, eligibility, action authorization, target approval, and execution remain separate boundaries; READY is eligibility only.
+
+---
+
 ## Trusted Release Model
 
 **Goal:** Define the governance and trust model before expanding the implementation.
@@ -177,6 +189,8 @@ A release decision evaluates evidence such as:
 The resulting decision is explicit and reproducible:
 
 ```text
+Fresh, Independently Reviewed, Operator-Supplied Snapshot
+              +
 Release + Target + Intended Action
               ↓
       Executable Preflight
@@ -202,14 +216,14 @@ This stage completes the core MVP platform capability: the system does not only 
 
 * finalize canonical public documentation
 * align architecture and roadmap with implemented behavior
-* curate representative validation screenshots and evidence
+* preserve existing historical controlled-promotion image references and sanitized validation conclusions; no new screenshots or raw evidence
 * document the executable release decision flow
 * verify repository links and public examples
-* tag and publish the first MVP release
+* leave MVP tagging and GitHub Release publication to a separate later operator decision
 
 ### Target outcome
 
-The repository presents a coherent end-to-end platform that can:
+The documentation packaging target is a coherent end-to-end platform story; it does not claim completed tagging or publication. The implemented platform can:
 
 * build and identify an immutable release candidate
 * verify and attest that candidate

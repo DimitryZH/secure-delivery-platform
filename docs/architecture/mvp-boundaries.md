@@ -16,7 +16,11 @@ Prefer readable explicit resources/IAM and the existing backend. Avoid premature
 
 Multi-cluster, multiple services/attestors, advanced vulnerability policy, complex GitOps, automated rollback, custom catalogs, enterprise change control, and organization policy are deferred. Multi-cloud, service mesh, generic developer-platform frameworks, non-Google targets, and custom orchestrators are outside MVP.
 
-Logging/Monitoring access exists; application dashboards/alerts/release metrics and observability-driven promotion remain planned [Observability](../observability.md). Manual checks do not imply those features exist.
+Implemented and live-validated: structured application logging in dev, request/latency ingestion for health traffic in dev, deployment availability signals, the deployment health dashboard, and the availability alert policy in its healthy non-firing state. Empty non-health traffic, error, and p95 panels are missing evidence, not performance validation or proof of zero errors. Metrics correlate to release identity through independent runtime review; they are not a release database. See [Observability](../observability.md).
+
+Implemented with offline-only coverage: review hold/reject and manual rejection/rollback contracts, including rollback preflight eligibility. Representative promotion READY and retention-driven BLOCKED were live-validated read-only; rollback execution was not validated.
+
+Automated promotion/rollback, error/latency alerting, notification routing, SLOs, tracing, and broader performance validation remain deferred. Tagging and GitHub Release publication are separate later decisions.
 
 ## Demonstration criteria
 

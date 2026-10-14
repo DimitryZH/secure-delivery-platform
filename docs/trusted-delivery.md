@@ -91,13 +91,19 @@ The [canonical workflow](operator-runbook.md#manual-release-rejection-and-rollba
 
 `READY` means the supplied current evidence satisfies the eligibility rules at evaluation time. Missing or stale security and required-read evidence produces `BLOCKED`; missing or stale operational evidence alone produces `HOLD`. Confirmed gate failures and malformed snapshots also produce `BLOCKED`. The CLI is an evidence-snapshot evaluator: it does not independently collect cloud data, and a fabricated snapshot cannot establish live trust. Its result is read-only and requires separate authorization before any Cloud Deploy mutation or target approval. Recollect and re-evaluate immediately before a separately authorized action.
 
+### Preflight validation status
+
+Read-only live validation for #80 produced a representative `READY / 0`, then a retention-driven `BLOCKED / 3` when source and rendered-artifact protection fell below the 75-minute margin. Both evaluations were read-only and performed no Cloud Deploy action. These observations do not authorize a future action or establish current eligibility.
+
+HOLD, rollback eligibility, malformed/stale evidence, and other negative decision scenarios have offline-only coverage. Manual rejection and rollback procedures are documented and checked offline; no rollback execution is claimed.
+
 ## Security controls
 
-Require complete identity, approved location, passed gate, separate attestation, pinned digest, explicit target authority, and enforced admission. Claimed JSON status/annotations alone establish no trust. Inspect effective IAM, integrity, jobs, running digest, annotations, and health. Preserve prior environments. Further promotion, retries, cleanup, rollback, and corrections need separate authorization. Dashboards/alert-based gates/automatic rollback are not implemented controls; see [Observability](observability.md).
+Require complete identity, approved location, passed gate, separate attestation, pinned digest, explicit target authority, and enforced admission. Claimed JSON status/annotations alone establish no trust. Inspect effective IAM, integrity, jobs, running digest, annotations, and health. Preserve prior environments. Further promotion, retries, cleanup, rollback, and corrections need separate authorization. Logs, metrics, a dashboard, and an availability alert policy support manual review; their bounded live validation is described in [Observability](observability.md). Automated promotion/rollback, error/latency alerting, notification routing, SLOs, tracing, and broader performance validation remain deferred.
 
 ## Controlled Promotion Validation
 
-The validated path created one trusted release without an initial rollout, then deployed dev and separately promoted/approved stage and prod. Checks covered the same digest and source/build/trust correlation, successful rollout/jobs, Running/Ready Pods, ClusterIP, internal HTTP 200, unchanged prior environments/IAM/admission, and no rebuild, retag, external exposure, or bypass.
+The historical controlled-promotion validation created one trusted release without an initial rollout, then deployed dev and separately promoted/approved stage and prod. Checks covered the same digest and source/build/trust correlation, successful rollout/jobs, Running/Ready Pods, ClusterIP, internal HTTP 200, unchanged prior environments/IAM/admission, and no rebuild, retag, external exposure, or bypass.
 
 ![Stage rollout waiting for separate approval](images/controlled-promotion/01-stage-pending-approval.png)
 

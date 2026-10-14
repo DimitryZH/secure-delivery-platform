@@ -30,4 +30,8 @@ All namespaces share enforced admission. Dev has no Cloud Deploy approval requir
 - [MVP Boundaries](mvp-boundaries.md): intentional limits.
 - [Diagrams](../diagrams/README.md): visual summaries.
 
-Current validation uses readiness, digest, correlation, and internal HTTP checks. Application dashboards, alerts, automated rollback, and observability-driven promotion remain planned [Observability](../observability.md), following the architectural [Roadmap](../roadmap.md).
+Implemented and live-validated: structured application logging in dev, request/latency ingestion for health traffic in dev, deployment availability signals, the deployment health dashboard, and the availability alert policy in its healthy non-firing state. Empty non-health traffic, error, and p95 panels are missing evidence, not performance validation or proof of zero errors. See [Observability](../observability.md) for validation limits.
+
+The preflight evaluates a fresh, independently reviewed, operator-supplied evidence snapshot. It does not collect cloud data, authorize, or execute an action. Review, eligibility, action authorization, target approval, and execution remain separate boundaries; READY is eligibility only. Representative promotion READY and retention-driven BLOCKED outcomes were live-validated read-only; other decision and rollback scenarios have offline-only coverage. See [Operator Runbook](../operator-runbook.md#release-decision-preflight).
+
+Automated promotion/rollback, error/latency alerting, notification routing, SLOs, tracing, and broader performance validation remain deferred in the [Roadmap](../roadmap.md).
