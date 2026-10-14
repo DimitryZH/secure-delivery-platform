@@ -60,4 +60,6 @@ The serial pipeline is `dev → stage → prod`. Dev requires explicit initial r
 
 Source, image build, verification, trust reference, and digest stay fixed; namespace, environment annotation, and `APP_ENV` vary. Preparation `--reviewed` is an operator assertion, not authenticated Cloud Deploy approval. Rollout state is progression context, not artifact identity. Hold or reject insufficient evidence. Rollback and corrective mutations need separate authorization and are never automatic.
 
+The preflight evaluates a fresh, independently reviewed, operator-supplied evidence snapshot. It does not collect cloud data, authorize, or execute an action. Review, eligibility, action authorization, target approval, and execution remain separate boundaries; READY is eligibility only. See [release decision preflight](../operator-runbook.md#release-decision-preflight). Representative promotion READY and retention-driven BLOCKED outcomes were live-validated read-only. Rollback eligibility and other decision scenarios have offline-only coverage; no executed rollback is claimed.
+
 See [Trusted Delivery](../trusted-delivery.md), [Environment Policies](environment-policies.md), and [IAM Model](../iam-model.md).

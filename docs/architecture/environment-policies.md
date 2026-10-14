@@ -18,4 +18,6 @@ Keep source/build/verification/trust/digest fixed. Namespace, environment annota
 
 Stop on failed prior rollout, unavailable artifact/attestation, hash mismatch, insufficient protection, changed IAM/admission, or unexpected replacement. No rebuild/retag, bypass, automatic expired-release recreation, or corrective mutation without authorization.
 
-Runtime review currently means rollout/readiness/digest/correlation/internal HTTP checks. Metric/alert-driven gates remain planned. See [Release Model](release-model.md), [Trusted Delivery](../trusted-delivery.md), and [Operator Runbook](../operator-runbook.md).
+Runtime review combines rollout/readiness/digest/correlation/internal HTTP checks with implemented logs, metrics, dashboard, and availability alert inspection. Live validation covers the bounded availability baseline, not application performance or a real firing incident. Automatic metric/alert-driven promotion and rollback remain deferred.
+
+The preflight evaluates a fresh, independently reviewed, operator-supplied evidence snapshot. It does not collect cloud data, authorize, or execute an action. Review, eligibility, action authorization, target approval, and execution remain separate boundaries; READY is eligibility only. Promotion READY and retention-driven BLOCKED were live-validated read-only; rollback eligibility and other decision scenarios have offline-only coverage. See [Release Model](release-model.md), [Trusted Delivery](../trusted-delivery.md), and [Operator Runbook](../operator-runbook.md).

@@ -38,24 +38,46 @@ Rollout state changes; artifact identity does not. Release Model owns field mapp
 
 ```mermaid
 flowchart TB
-    Release[Same rendered release] --> Dev[Explicit dev rollout]
-    Dev --> Review[Manual dev validation]
-    Review --> StagePending[Stage pending approval]
+    Release[Same rendered release] --> DevAuthorization[Separate initial dev authorization]
+    DevAuthorization --> Dev[Explicit dev rollout]
+    Dev --> Review[Manual dev review and fresh eligibility]
+    Review --> StageAuthorization[Separate stage promotion authorization]
+    StageAuthorization --> StagePending[Create stage rollout pending approval]
     StagePending --> StageApproval[Separate approval]
     StageApproval --> Stage[Stage deployment and validation]
-    Stage --> ProdPending[Prod pending approval]
+    Stage --> ProdReview[Manual stage review and fresh eligibility]
+    ProdReview --> ProdAuthorization[Separate prod promotion authorization]
+    ProdAuthorization --> ProdPending[Create prod rollout pending approval]
     ProdPending --> ProdApproval[Separate approval]
     ProdApproval --> Prod[Prod deployment and validation]
 ```
 
 All targets share admission. Render-all is not rollout-all; approval is separate from promotion. Failure means stop; rollback is not automatic. See [Controlled Promotion Validation](../trusted-delivery.md#controlled-promotion-validation).
 
-## Planned visibility
+## Operational visibility and review
 
 ```mermaid
 flowchart LR
-    Runtime[Release context] -. planned .-> Signals[Application logs and metrics]
-    Signals -. planned .-> Review[Dashboards and alerts]
+    Runtime[Runtime release correlation] --> Signals[Structured logs and health metrics]
+    Signals --> Visibility[Dashboard and availability alert]
+    Visibility --> Review[Operator review: continue or hold or reject]
 ```
 
-These [Observability](../observability.md) capabilities are planned, not implemented promotion gates.
+These implemented [Observability](../observability.md) capabilities have bounded live validation. A real firing incident and broader performance validation were not completed. Automated decisions remain deferred.
+
+## Evidence-snapshot preflight
+
+```mermaid
+flowchart TB
+    Operator[Operator independently collects and reviews fresh evidence] --> Snapshot[Operator-supplied snapshot]
+    Snapshot --> Evaluator[Read-only preflight evaluator]
+    Evaluator --> Eligibility{READY or HOLD or BLOCKED}
+    Eligibility -->|READY only| Authorization[Separate action authorization]
+    Authorization --> Rollout[Cloud Deploy rollout creation]
+    Rollout --> Target{Target approval required}
+    Target -->|stage or prod| Approval[Separate target approval]
+    Approval --> Execution[Deployment execution]
+    Target -->|"dev rollback (no approval)"| Execution
+```
+
+The preflight evaluates a fresh, independently reviewed, operator-supplied evidence snapshot. It does not collect cloud data, authorize, or execute an action. Review, eligibility, action authorization, target approval, and execution remain separate boundaries; READY is eligibility only. HOLD or BLOCKED stops progression. Promotion READY and retention-driven BLOCKED were live-validated read-only; rollback eligibility and other decision scenarios have offline-only coverage. Initial dev rollout uses its separate manual review procedure. Automated promotion and rollback remain deferred.
