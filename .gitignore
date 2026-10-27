@@ -20,3 +20,7 @@ docs/private/
 # Local Cloud Deploy bundles and validation output can contain private evidence.
 /.local-validation/
 /deploy/clouddeploy/rendered/
+
+# Python bytecode caches
+__pycache__/
+*.pyc
