@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Online Shop catalog-v1 release candidate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "application", "profile", "profile_sha256", "source", "configuration", "plan", "build", "components", "release_set_id"],
+  "properties": {
+    "version": {"const": 1},
+    "application": {"const": "online-shop"},
+    "profile": {"const": "catalog-v1"},
+    "profile_sha256": {"$ref": "#/$defs/digest"},
+    "release_set_id": {"$ref": "#/$defs/digest"},
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["repository", "revision"],
+      "properties": {
+        "repository": {"const": "https://github.com/DimitryZH/application-modernization-lab"},
+        "revision": {"const": "89fd1cde8285761cc2a35dfb22d145adb2eed980"}
+      }
+    },
+    "configuration": {
+      "type": "object", "additionalProperties": false,
+      "required": ["repository", "revision", "path", "request_sha256"],
+      "properties": {
+        "repository": {"const": "https://github.com/DimitryZH/secure-delivery-platform"},
+        "revision": {"$ref": "#/$defs/revision"},
+        "path": {"const": "cloudbuild/online-shop/release.py"},
+        "request_sha256": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "plan": {
+      "type": "object", "additionalProperties": false,
+      "required": ["sha256", "inputs_sha256", "planner_sha256", "contract_sha256", "uri"],
+      "properties": {
+        "sha256": {"$ref": "#/$defs/digest"},
+        "inputs_sha256": {"$ref": "#/$defs/digest"},
+        "planner_sha256": {"$ref": "#/$defs/digest"},
+        "contract_sha256": {"$ref": "#/$defs/digest"},
+        "uri": {"const": "git+https://github.com/DimitryZH/application-modernization-lab@89fd1cde8285761cc2a35dfb22d145adb2eed980#workloads/online-shop/build_plan.py"}
+      }
+    },
+    "build": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "id", "producer"],
+      "properties": {
+        "name": {"type": "string", "pattern": "^projects/[a-z0-9-]+/locations/us-central1/builds/[0-9a-f-]+$"},
+        "id": {"type": "string", "pattern": "^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$"},
+        "producer": {"type": "string", "pattern": "^projects/[a-z0-9-]+/serviceAccounts/secure-delivery-build@[a-z0-9-]+[.]iam[.]gserviceaccount[.]com$"}
+      }
+    },
+    "components": {
+      "type": "array", "minItems": 1, "maxItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "repository", "digest", "platform", "config_digest"],
+        "properties": {
+          "id": {"const": "productcatalogservice"},
+          "repository": {"type": "string", "pattern": "^us-central1-docker[.]pkg[.]dev/[a-z0-9-]+/secure-delivery/online-shop-productcatalogservice$"},
+          "digest": {"$ref": "#/$defs/digest"},
+          "platform": {"const": "linux/amd64"},
+          "config_digest": {"$ref": "#/$defs/digest"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"}
+  }
+}

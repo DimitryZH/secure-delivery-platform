@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "id": "catalog-v1",
+  "application": "online-shop",
+  "repository": "https://github.com/DimitryZH/application-modernization-lab",
+  "revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
+  "platform": "linux/amd64",
+  "required_components": ["productcatalogservice"]
+}

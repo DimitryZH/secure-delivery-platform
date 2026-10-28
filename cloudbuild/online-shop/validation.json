@@ -1,0 +1,89 @@
+{
+  "implementation_sha256": {
+    "cloudbuild/online-shop/candidate-v1.schema.json": "sha256:a1ef7bbfc8044be54d46a3dd30f956aab71363ba0df93f6ee7548b96eb3aaf93",
+    "cloudbuild/online-shop/catalog-v1.json": "sha256:1d2524bda88756297aaae39243ab3e29a4b8cf283fd981e3cfdb13ce659c40bd",
+    "cloudbuild/online-shop/release.py": "sha256:4242a8a6d954242c0acae76f757e86144e910220619e3adda1cbba1a5cecd31e",
+    "scripts/tests/test_online_shop_release.py": "sha256:8a6b2e73846618aa88310f72ba313516a0a5575a7cf8157a45e9d9f99710b957"
+  },
+  "issue": 87,
+  "limits": [
+    "Offline API fakes do not establish live acceptance.",
+    "No registry image or attestation was created; null live fields are intentional.",
+    "AML historical build/runtime evidence is not validation of this SDP path.",
+    "Builder tags and application dependencies are not fully locked; byte-identical rebuilds are not promised.",
+    "JSON Schema parsed and checked for contract shape; exact runtime policy/identity validation is enforced by code, not a new schema dependency.",
+    "No GKE, admission, Cloud Deploy, Redis, Collector, telemetry infrastructure or IAM changes."
+  ],
+  "live": {
+    "attestation_reference": null,
+    "attestation_signature_verified": null,
+    "build_id": null,
+    "build_status": null,
+    "configuration_revision": null,
+    "gcp_operations_performed": false,
+    "manifest_digest": null,
+    "platform": null,
+    "release_set_id": null,
+    "status": "pending",
+    "verification_outcome": null
+  },
+  "materialized_input_count": 15,
+  "offline": {
+    "aml_integration": "Real pinned Git objects; plan and materialized bytes verified without AML checkout or mutation.",
+    "environment_notes": [
+      "Sandbox denied loopback sockets; the existing HTTP regressions passed with local socket access.",
+      "Temporary Git fixtures disable background maintenance to avoid Windows cleanup locks."
+    ],
+    "failure_boundaries": [
+      "missing/duplicate/unexpected members",
+      "source/profile/configuration/platform mismatch",
+      "missing/tampered build evidence",
+      "unsuccessful build/step",
+      "unauthorized producer/steps/options",
+      "published/registry digest mismatch",
+      "input bytes/untracked context files",
+      "verification failure before signing",
+      "KMS/create/readback/signature failure without trusted aggregate",
+      "feature configuration rejected before cloud submission"
+    ],
+    "online_shop_tests": 23,
+    "python": "3.13.3",
+    "python_tests": 106,
+    "sample_regressions": "Existing Python suites and three Cloud Build shell regressions passed.",
+    "shell_execution": "LF Git-blob copies of unchanged tracked files; synthetic gcloud only.",
+    "shell_tests": [
+      "cloudbuild-ci-config-test.sh",
+      "cloudbuild-release-metadata-test.sh",
+      "cloudbuild-trigger-config-test.sh"
+    ],
+    "status": "passed"
+  },
+  "pending": [
+    "Review and merge code into main, then select an immutable configuration SHA containing it.",
+    "Check effective signer cloudbuild.builds.get and repository-scoped image download/read permissions; current Terraform does not declare them.",
+    "Review explicit target project/region/registry and identities against live configuration before execution.",
+    "Run one real build, independent verification, separate signing and occurrence readback; capture sanitized references.",
+    "Confirm actual Cloud Build field serialization and Artifact Registry transport without relaxing trust checks."
+  ],
+  "plan": {
+    "contract_sha256": "sha256:2a78958157874a90b8ac633def1f337449b7f5c73beaf6e46bde05b388f6995b",
+    "inputs_sha256": "sha256:dd70cd3392120ec8a9fcbcb8f408576a06af8614828237a5b7e155e7d6aeb437",
+    "planner_sha256": "sha256:f7341c26c21432af7deb334447c6d3262781bea61f827ed26e210a69bf784f01",
+    "sha256": "sha256:5b00f72accd8d033f2ead259d131336ebfcbf3528e0833ee98fb745bdf3dfbb6",
+    "uri": "git+https://github.com/DimitryZH/application-modernization-lab@89fd1cde8285761cc2a35dfb22d145adb2eed980#workloads/online-shop/build_plan.py"
+  },
+  "profile": {
+    "application": "online-shop",
+    "id": "catalog-v1",
+    "platform": "linux/amd64",
+    "repository": "https://github.com/DimitryZH/application-modernization-lab",
+    "required_components": [
+      "productcatalogservice"
+    ],
+    "revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
+    "version": 1
+  },
+  "sdp_base_revision": "4d7851504f6c073a906da012bea8495651ef8ca0",
+  "validation_date": "2026-10-28",
+  "version": 1
+}
