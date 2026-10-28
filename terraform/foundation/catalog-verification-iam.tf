@@ -5,7 +5,10 @@ resource "google_project_iam_custom_role" "catalog_build_evidence_reader" {
   role_id     = "catalogBuildEvidenceReader"
   title       = "Read catalog build evidence"
   description = "Read producing Cloud Build executions for independent catalog release verification."
-  permissions = ["cloudbuild.builds.get"]
+  permissions = [
+    "cloudbuild.builds.get",
+    "serviceusage.services.use",
+  ]
 }
 
 resource "google_project_iam_member" "attestation_build_evidence_reader" {

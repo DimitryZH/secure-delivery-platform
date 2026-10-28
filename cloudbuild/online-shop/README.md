@@ -125,11 +125,15 @@ JSON envelope. No promotion/deployment authority follows from this result.
 
 The release CLI does not change IAM. In addition to existing KMS/note/occurrence/
 attestor and bucket access, independent verification requires `cloudbuild.builds.get`
-in the configured project and Artifact Registry download/read access scoped to the
-release repository. [Catalog verification IAM](../../terraform/foundation/catalog-verification-iam.tf)
-declares a custom role containing only build-get and a repository-scoped Registry
-Reader binding for the signer. Cloud Build IAM is project-scoped, so build-get can
+and `serviceusage.services.use` in the configured project and Artifact Registry
+download/read access scoped to the release repository.
+[Catalog verification IAM](../../terraform/foundation/catalog-verification-iam.tf)
+declares a custom role containing those two permissions and a repository-scoped
+Registry Reader binding for the signer. Cloud Build IAM is project-scoped, so build-get can
 read other builds in that project; it grants no list, submission or mutation access.
+The service-usage permission satisfies the documented
+[Cloud Build custom-role requirement](https://docs.cloud.google.com/build/docs/securing-builds/configure-access-to-resources#creating_iam_custom_roles);
+it does not enable services.
 These declarations require a separately reviewed plan and authorized apply, then
 fresh effective-access checks. Configuration presence does not establish live access.
 Do not grant builder signing, deploy, impersonation or policy-administration access.
