@@ -12,17 +12,119 @@
     "AML historical build/runtime evidence is not validation of this SDP path.",
     "Builder tags and application dependencies are not fully locked; byte-identical rebuilds are not promised.",
     "JSON Schema parsed and checked for contract shape; exact runtime policy/identity validation is enforced by code, not a new schema dependency.",
-    "No GKE, admission, Cloud Deploy, Redis, Collector, telemetry infrastructure or IAM changes."
+    "No apply or manual IAM grants were performed. Only signer verification read access is proposed; no GKE, admission, Cloud Deploy, Redis, Collector or telemetry infrastructure changes."
   ],
   "live": {
     "attestation_reference": null,
     "attestation_signature_verified": null,
     "build_id": null,
     "build_status": null,
-    "configuration_revision": null,
-    "gcp_operations_performed": false,
+    "cloud_resource_mutations_performed": false,
+    "configuration_revision": "36d08a43791d5134944576331d915f1efd53b486",
+    "gcp_operations_performed": true,
     "manifest_digest": null,
     "platform": null,
+    "preflight": {
+      "aml_revision_available_from_canonical_git": true,
+      "checked_date": "2026-10-28",
+      "effective_access_limits": [
+        "Policy Troubleshooter API is disabled; its read-only troubleshooting requests returned SERVICE_DISABLED. The API was not enabled.",
+        "No execution-account impersonation or direct signer API test was performed. Missing allows are established by live policy/role inspection, not a Troubleshooter result.",
+        "Other positive execution-account permissions are allow-policy coverage, not completed build or signing operations. Recheck effective access after any authorized apply."
+      ],
+      "execution_allow_policy_review": {
+        "builder_direct_signer_delegation_present": false,
+        "builder_existing_allow_coverage": [
+          "cloudbuild.builds.get",
+          "artifactregistry.repositories.uploadArtifacts",
+          "artifactregistry.repositories.downloadArtifacts",
+          "logging.logEntries.create"
+        ],
+        "matching_signer_bindings_have_conditions": false,
+        "method": "Live project/resource allow policies and actual IAM role definitions.",
+        "project_deny_policy_count": 0,
+        "project_group_domain_public_or_principalset_members_present": false,
+        "project_parent_present": false,
+        "repository_group_domain_public_or_principalset_members_present": false,
+        "signer_existing_allow_coverage": [
+          "cloudkms.cryptoKeyVersions.useToSign",
+          "cloudkms.cryptoKeyVersions.useToVerify",
+          "binaryauthorization.attestors.verifyImageAttested",
+          "containeranalysis.notes.attachOccurrence",
+          "containeranalysis.notes.listOccurrences",
+          "containeranalysis.occurrences.create",
+          "containeranalysis.occurrences.get",
+          "containeranalysis.occurrences.list",
+          "storage.objects.get",
+          "logging.logEntries.create"
+        ],
+        "signer_missing_allow_permissions": [
+          "cloudbuild.builds.get",
+          "artifactregistry.repositories.downloadArtifacts"
+        ]
+      },
+      "execution_trust_files_match_configuration": true,
+      "flow_stages": {
+        "attestation_readback": "not_run",
+        "build": "not_started",
+        "candidate": "not_created",
+        "signing": "not_started",
+        "verification": "not_run"
+      },
+      "raw_evidence": "Stored only in an ignored local validation directory; no raw cloud responses or private inputs in the public diff.",
+      "resources_confirmed": {
+        "attestor": "secure-delivery-verification",
+        "attestor_note_and_registered_key_id_match": true,
+        "bucket_location": "US-CENTRAL1",
+        "bucket_public_access_prevention": "enforced",
+        "bucket_uniform_access": true,
+        "cloud_build_service_agent_role_present": true,
+        "dedicated_bucket": "<PROJECT_ID>-attestation-source",
+        "execution_accounts_enabled": true,
+        "key": "verification",
+        "key_algorithm": "EC_SIGN_P256_SHA256",
+        "key_ring": "secure-delivery-attestation",
+        "key_version": 1,
+        "key_version_state": "ENABLED",
+        "note": "secure-delivery-verification",
+        "project_active": true,
+        "regional_cloud_build_api": true,
+        "registry_format": "DOCKER"
+      },
+      "status": "blocked_missing_signer_read_access",
+      "submitter_permissions": {
+        "act_as_build_account": true,
+        "act_as_signing_account": true,
+        "candidate_object_create": true,
+        "candidate_object_get": true,
+        "cloudbuild.builds.create": true,
+        "cloudbuild.builds.get": true,
+        "method": "Authenticated current-user testIamPermissions; not execution-account permissions.",
+        "serviceusage.services.use": true
+      },
+      "targets": {
+        "build_identity": "secure-delivery-build@<PROJECT_ID>.iam.gserviceaccount.com",
+        "project": "<PROJECT_ID>",
+        "region": "us-central1",
+        "registry": "us-central1-docker.pkg.dev/<PROJECT_ID>/secure-delivery",
+        "signing_identity": "secure-delivery-attestation@<PROJECT_ID>.iam.gserviceaccount.com"
+      },
+      "terraform_proposal": {
+        "apply_performed": false,
+        "backend_reinitialized": false,
+        "build_access": "Project-scoped custom role containing only cloudbuild.builds.get; no list/create/update/cancel.",
+        "declared_new_resources": 3,
+        "file": "terraform/foundation/catalog-verification-iam.tf",
+        "fmt_check": "passed",
+        "manual_iam_grants_performed": false,
+        "plan": "not_created",
+        "plan_blocker": "Required private deployment_operator_principal input was not supplied. No placeholder or inferred principal was substituted.",
+        "registry_access": "roles/artifactregistry.reader on the existing secure-delivery repository only.",
+        "sha256": "sha256:817bfc0f4367baaa72a167899553564352de2a647d913dcc2d8786ee030b05ac",
+        "signer_only": true,
+        "validate": "passed"
+      }
+    },
     "release_set_id": null,
     "status": "pending",
     "verification_outcome": null
@@ -69,10 +171,9 @@
     "status": "passed"
   },
   "pending": [
-    "Review and merge code into main, then select an immutable configuration SHA containing it.",
-    "Check effective signer cloudbuild.builds.get and repository-scoped image download/read permissions; current Terraform does not declare them.",
-    "Review explicit target project/region/registry and identities against live configuration before execution.",
-    "Run one real build, independent verification, separate signing and occurrence readback; capture sanitized references.",
+    "Review and merge the minimal signer read-access proposal; obtain a fresh Terraform plan with the existing required private operator input before any separately authorized apply.",
+    "After authorized apply, recheck effective signer build-get and repository download permissions, conditions/deny boundaries and all live targets.",
+    "Run one bounded catalog build using reviewed immutable configuration, then independent verification and separate signing with occurrence readback; retain sanitized references.",
     "Confirm actual Cloud Build field serialization and Artifact Registry transport without relaxing trust checks."
   ],
   "plan": {
