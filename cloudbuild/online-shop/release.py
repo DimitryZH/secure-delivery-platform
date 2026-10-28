@@ -9,6 +9,7 @@ import importlib.util
 import json
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -280,7 +281,9 @@ def validate_candidate(record, p, config, plan_ref):
 class Cloud:
     """Live evidence adapter. There is no CLI option to supply offline evidence."""
     def __init__(self):
-        self.token = command(["gcloud", "auth", "print-access-token", "--quiet"]).decode().strip()
+        gcloud = shutil.which("gcloud")
+        require(gcloud is not None, "gcloud_executable_unavailable")
+        self.token = command([gcloud, "auth", "print-access-token", "--quiet"]).decode().strip()
         require(bool(self.token), "credentials_unavailable")
 
     def request(self, url, body=None, registry=False):
