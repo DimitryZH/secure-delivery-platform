@@ -297,6 +297,30 @@ class ReleaseTest(unittest.TestCase):
             cloud.assert_not_called()
 
 
+class AuthenticationLauncherTest(unittest.TestCase):
+    def test_resolved_sdk_launcher_is_used_for_authentication(self):
+        for launcher in (r"C:\sdk\bin\gcloud.cmd", "/usr/bin/gcloud"):
+            def execute(args):
+                # Model Windows CreateProcess: a bare name does not resolve the
+                # SDK batch launcher, although PATH/PATHEXT resolution finds it.
+                if args[0] != launcher:
+                    raise FileNotFoundError("unresolved_sdk_launcher")
+                return b"offline-test-token\n"
+
+            with self.subTest(launcher=launcher), patch("shutil.which", return_value=launcher) as resolve, \
+                    patch.object(r, "command", side_effect=execute) as command:
+                cloud = r.Cloud()
+                self.assertEqual(cloud.token, "offline-test-token")
+                resolve.assert_called_once_with("gcloud")
+                command.assert_called_once_with([launcher, "auth", "print-access-token", "--quiet"])
+
+    def test_missing_sdk_launcher_stops_before_authentication(self):
+        with patch("shutil.which", return_value=None), patch.object(r, "command") as command:
+            with self.assertRaisesRegex(ValueError, "gcloud_executable_unavailable"):
+                r.Cloud()
+            command.assert_not_called()
+
+
 class RegistryTest(unittest.TestCase):
     def test_registry_redirect_never_forwards_credentials(self):
         req = r.urllib.request.Request("https://us-central1-docker.pkg.dev/v2/p/r/i/blobs/sha256:a",
