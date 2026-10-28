@@ -122,18 +122,107 @@
         "declared_new_resources": 3,
         "file": "terraform/foundation/catalog-verification-iam.tf",
         "fmt_check": "passed",
+        "full_plan": {
+          "action_counts": {
+            "create": 3,
+            "delete": 0,
+            "read": 0,
+            "replace": 0,
+            "update": 0
+          },
+          "apply_performed": false,
+          "backend": {
+            "matches_existing_configuration": true,
+            "prefix": "secure-delivery-platform/foundation",
+            "type": "gcs"
+          },
+          "binary_plan_sha256": "sha256:abec30942515d7e31292acb1e840ddbbab52542819378575e8dcc94b4eff0604",
+          "checked_date": "2026-10-28",
+          "deployment_operator_actions": [
+            "no-op"
+          ],
+          "deployment_operator_fields_unchanged": true,
+          "exit_code": 2,
+          "imports": [],
+          "locking_enabled": true,
+          "only_three_expected_creates": true,
+          "operator_state_fields_unchanged": true,
+          "other_changes": [],
+          "output_changes": [],
+          "permissions_and_signer_repository_scope_match_proposal": true,
+          "raw_artifacts": "Binary plan and plan JSON retained only in an ignored private local directory. Raw state and full IAM policy were processed only in memory.",
+          "refresh_drift": [
+            {
+              "address": "google_container_cluster.platform",
+              "changed_attribute_paths": [
+                "master_version",
+                "node_pool[0].version",
+                "node_version"
+              ],
+              "planned_actions": [
+                "no-op"
+              ],
+              "refresh_actions": [
+                "update"
+              ]
+            },
+            {
+              "address": "google_monitoring_alert_policy.sample_service_availability",
+              "changed_attribute_paths": [
+                "conditions[0].condition_prometheus_query_language[0].labels",
+                "user_labels"
+              ],
+              "planned_actions": [
+                "no-op"
+              ],
+              "refresh_actions": [
+                "update"
+              ]
+            }
+          ],
+          "refresh_drift_limit": "These two refresh records have no-op planned actions. No values are published; they are reported separately rather than hidden with a targeted plan.",
+          "refresh_enabled": true,
+          "resource_changes": [
+            {
+              "actions": [
+                "create"
+              ],
+              "address": "google_artifact_registry_repository_iam_member.attestation_image_reader"
+            },
+            {
+              "actions": [
+                "create"
+              ],
+              "address": "google_project_iam_custom_role.catalog_build_evidence_reader"
+            },
+            {
+              "actions": [
+                "create"
+              ],
+              "address": "google_project_iam_member.attestation_build_evidence_reader"
+            }
+          ],
+          "source_head": "a82f42557bb3d4c5f7d98acc4b28872e059fa32f",
+          "state_lineage_and_serial_unchanged": true,
+          "targeted": false,
+          "terraform_version": "1.8.1",
+          "workspace": "default"
+        },
         "manual_iam_grants_performed": false,
-        "plan": "pending",
-        "plan_attempted_this_review": false,
-        "plan_blocker": "Required private deployment_operator_principal absent from existing checked local inputs and process/user/machine TF_VAR scopes. No login, placeholder or inferred principal was substituted.",
+        "plan": "created",
+        "plan_attempted_this_review": true,
         "private_input_check": {
-          "conflicting_operator_values": false,
-          "existing_input_files_checked": 1,
-          "tf_var_machine_present": false,
-          "tf_var_process_present": false,
-          "tf_var_user_present": false,
-          "unsafe_cli_plan_flags_present": false,
-          "valid_operator_input_available": false
+          "condition_present": false,
+          "configured_deployment_account_matches": true,
+          "parent_operator_variable_unchanged": true,
+          "persistent_environment_or_tracked_input_written": false,
+          "raw_state_or_iam_policy_written": false,
+          "source": "verified existing state/live binding",
+          "state_live_condition_matches": true,
+          "state_live_member_matches": true,
+          "state_resource": "google_service_account_iam_member.deployment_operator",
+          "temporary_plan_subprocess_environment_only": true,
+          "verified_role": "roles/iam.serviceAccountTokenCreator"
         },
         "registry_access": "roles/artifactregistry.reader on the existing secure-delivery repository only.",
         "service_use_evidence": "Documented Cloud Build custom-role requirement; proposed configuration only, not a newly confirmed live signer grant.",
@@ -189,7 +278,7 @@
     "status": "passed"
   },
   "pending": [
-    "Review and merge the minimal signer read-access proposal; obtain a fresh Terraform plan with the existing required private operator input before any separately authorized apply.",
+    "Review the saved full Terraform plan and the separately reported refresh drift before any separately authorized apply; recheck applicability if state or configuration changes.",
     "After authorized apply, recheck effective signer build-get, service-use and repository download permissions, conditions/deny boundaries and all live targets.",
     "Run one bounded catalog build using reviewed immutable configuration, then independent verification and separate signing with occurrence readback; retain sanitized references.",
     "Confirm actual Cloud Build field serialization and Artifact Registry transport without relaxing trust checks."
