@@ -2,8 +2,8 @@
   "implementation_sha256": {
     "cloudbuild/online-shop/candidate-v1.schema.json": "sha256:a1ef7bbfc8044be54d46a3dd30f956aab71363ba0df93f6ee7548b96eb3aaf93",
     "cloudbuild/online-shop/catalog-v1.json": "sha256:1d2524bda88756297aaae39243ab3e29a4b8cf283fd981e3cfdb13ce659c40bd",
-    "cloudbuild/online-shop/release.py": "sha256:4c18452c72417332afed4d230a3efd335f607df644c18e7626ec27bbb024f981",
-    "scripts/tests/test_online_shop_release.py": "sha256:9d06318adeea9cbbe9b18e7a48c787bc5884a6c1101df0f5f21541c1edfe1c9d"
+    "cloudbuild/online-shop/release.py": "sha256:ce65f3100c6f665fd5a4bd9f4ec6d7ceeee3d1a772962666304d80924fad8f34",
+    "scripts/tests/test_online_shop_release.py": "sha256:770400ed82d4fc4731ce758b44cddb0e1d6bc757766a8f5ac8d9e732c8c9e02c"
   },
   "issue": 87,
   "limits": [
@@ -12,27 +12,75 @@
     "AML historical build/runtime evidence is not validation of this SDP path.",
     "Builder tags and application dependencies are not fully locked; byte-identical rebuilds are not promised.",
     "JSON Schema parsed and checked for contract shape; exact runtime policy/identity validation is enforced by code, not a new schema dependency.",
-    "No apply or manual IAM grants were performed. Only signer build-evidence read/service-use access and repository reader access are proposed; no GKE, admission, Cloud Deploy, Redis, Collector or telemetry infrastructure changes."
+    "The explicitly authorized Terraform apply created exactly the three reviewed signer IAM resources. No manual grant, GKE/admission, Cloud Deploy, Redis/Collector or telemetry infrastructure mutation occurred.",
+    "The launcher fix is offline validated only and was not used for live submission or signer execution. IAM readiness does not establish release acceptance."
   ],
   "live": {
     "attestation_reference": null,
     "attestation_signature_verified": null,
     "build_id": null,
+    "build_operation": null,
     "build_status": null,
-    "cloud_resource_mutations_performed": false,
-    "configuration_revision": "36d08a43791d5134944576331d915f1efd53b486",
+    "candidate_object_generation": null,
+    "candidate_transport_sha256": null,
+    "catalog_submission_attempt": {
+      "accepted_build_submissions": 0,
+      "aml_revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
+      "blind_retry_performed": false,
+      "build_api_submission_performed": false,
+      "build_timeout_seconds": 1200,
+      "cli_exit_code": 1,
+      "configuration_revision": "b6d7552560d7ce1381c0bed68b18cf7e2bd71833",
+      "diagnostic": {
+        "bare_launcher": "FileNotFoundError",
+        "gcloud_resolved": true,
+        "platform": "win32",
+        "resolved_launcher_exit_code": 0,
+        "resolved_suffix": ".cmd"
+      },
+      "failure": "Windows bare gcloud executable resolution failed before token acquisition and Build API POST.",
+      "new_matching_builds_after_failed_attempt": 0,
+      "request_review": "passed",
+      "requested_platform": "linux/amd64",
+      "submit_cli_attempts": 1
+    },
+    "cloud_mutations": [
+      {
+        "action": "create",
+        "address": "google_artifact_registry_repository_iam_member.attestation_image_reader"
+      },
+      {
+        "action": "create",
+        "address": "google_project_iam_custom_role.catalog_build_evidence_reader"
+      },
+      {
+        "action": "create",
+        "address": "google_project_iam_member.attestation_build_evidence_reader"
+      }
+    ],
+    "cloud_resource_mutations_performed": true,
+    "configuration_revision": "b6d7552560d7ce1381c0bed68b18cf7e2bd71833",
     "gcp_operations_performed": true,
     "manifest_digest": null,
+    "pending_fix": {
+      "change": "Resolve gcloud through PATH/PATHEXT before invoking the SDK for authentication; reject missing executables before invocation.",
+      "commit": "75c37f057eba02406f77e88e088d37bf95b3c78d",
+      "executed_in_live_flow": false,
+      "offline_validated": true,
+      "regression_reproduced_before_fix": true,
+      "requires_review_and_merge_before_live_execution": true
+    },
     "platform": null,
     "preflight": {
       "aml_revision_available_from_canonical_git": true,
       "checked_date": "2026-10-28",
       "effective_access_limits": [
-        "Policy Troubleshooter API is disabled; its read-only troubleshooting requests returned SERVICE_DISABLED. The API was not enabled.",
-        "No execution-account impersonation or direct signer API test was performed. Missing allows are established by live policy/role inspection, not a Troubleshooter result.",
-        "Other positive execution-account permissions are allow-policy coverage, not completed build or signing operations. Recheck effective access after any authorized apply."
+        "Policy Troubleshooter was disabled at the earlier preflight and was not enabled or used as proof of effective access here.",
+        "No execution-account impersonation was added or performed. Post-apply permissions are confirmed policy/role coverage, not runtime signer API evidence.",
+        "The local CLI failed before Cloud Build submission; real build, independent verification, signer API access and signature readback remain unexecuted."
       ],
       "execution_allow_policy_review": {
+        "builder_and_deployment_authority_unchanged": true,
         "builder_direct_signer_delegation_present": false,
         "builder_existing_allow_coverage": [
           "cloudbuild.builds.get",
@@ -42,31 +90,29 @@
         ],
         "matching_signer_bindings_have_conditions": false,
         "method": "Live project/resource allow policies and actual IAM role definitions.",
+        "post_apply_policy_coverage_confirmed": true,
         "project_deny_policy_count": 0,
         "project_group_domain_public_or_principalset_members_present": false,
         "project_parent_present": false,
         "repository_group_domain_public_or_principalset_members_present": false,
         "signer_existing_allow_coverage": [
-          "cloudkms.cryptoKeyVersions.useToSign",
-          "cloudkms.cryptoKeyVersions.useToVerify",
+          "artifactregistry.repositories.downloadArtifacts",
           "binaryauthorization.attestors.verifyImageAttested",
+          "cloudbuild.builds.get",
+          "cloudkms.cryptoKeyVersions.useToSign",
           "containeranalysis.notes.attachOccurrence",
-          "containeranalysis.notes.listOccurrences",
           "containeranalysis.occurrences.create",
           "containeranalysis.occurrences.get",
-          "containeranalysis.occurrences.list",
-          "storage.objects.get",
-          "logging.logEntries.create"
+          "logging.logEntries.create",
+          "serviceusage.services.use",
+          "storage.objects.get"
         ],
-        "signer_missing_allow_permissions": [
-          "cloudbuild.builds.get",
-          "artifactregistry.repositories.downloadArtifacts"
-        ]
+        "signer_missing_allow_permissions": []
       },
       "execution_trust_files_match_configuration": true,
       "flow_stages": {
         "attestation_readback": "not_run",
-        "build": "not_started",
+        "build": "not_submitted_local_cli_failure",
         "candidate": "not_created",
         "signing": "not_started",
         "verification": "not_run"
@@ -91,7 +137,7 @@
         "regional_cloud_build_api": true,
         "registry_format": "DOCKER"
       },
-      "status": "blocked_missing_signer_read_access",
+      "status": "passed_policy_coverage_runtime_not_confirmed",
       "submitter_permissions": {
         "act_as_build_account": true,
         "act_as_signing_account": true,
@@ -110,7 +156,56 @@
         "signing_identity": "secure-delivery-attestation@<PROJECT_ID>.iam.gserviceaccount.com"
       },
       "terraform_proposal": {
-        "apply_performed": false,
+        "apply_performed": true,
+        "apply_readback": {
+          "action_counts": {
+            "create": 3,
+            "delete": 0,
+            "update": 0
+          },
+          "all_three_iam_resources_in_state": true,
+          "attempts": 1,
+          "builder_and_deployment_authority_unchanged": true,
+          "custom_role_permissions": [
+            "cloudbuild.builds.get",
+            "serviceusage.services.use"
+          ],
+          "custom_role_permissions_exact": true,
+          "deployment_operator_state_fields_unchanged": true,
+          "exact_saved_plan_applied": true,
+          "exit_code": 0,
+          "manual_iam_grants_performed": false,
+          "policy_comparisons": {
+            "attestor_policy": true,
+            "bucket_policy": true,
+            "builder_account_policy": true,
+            "deploy_account_policy": true,
+            "key_policy": true,
+            "note_policy": true,
+            "project_policy": true,
+            "registry_policy": true,
+            "signer_account_policy": true
+          },
+          "project_binding_signer_only": true,
+          "raw_output": "Retained only in an ignored private local directory.",
+          "repository_reader_binding_confirmed": true,
+          "saved_plan_sha256": "sha256:6c958e9150aff20d2572fd2e4a60c33cf1f739a7ad7659cd5358b90cc38426ac",
+          "signer_policy_coverage": {
+            "artifactregistry.repositories.downloadArtifacts": true,
+            "binaryauthorization.attestors.verifyImageAttested": true,
+            "cloudbuild.builds.get": true,
+            "cloudkms.cryptoKeyVersions.useToSign": true,
+            "containeranalysis.notes.attachOccurrence": true,
+            "containeranalysis.occurrences.create": true,
+            "containeranalysis.occurrences.get": true,
+            "logging.logEntries.create": true,
+            "serviceusage.services.use": true,
+            "storage.objects.get": true
+          },
+          "signer_runtime_api_access_confirmed": false,
+          "status": "passed",
+          "unrelated_policy_bindings_unchanged": true
+        },
         "backend_matches_existing_configuration": true,
         "backend_reinitialized": false,
         "build_access": "Project-scoped custom role containing cloudbuild.builds.get and serviceusage.services.use; no service enable, build list/create/update/cancel or impersonation.",
@@ -136,7 +231,7 @@
             "prefix": "secure-delivery-platform/foundation",
             "type": "gcs"
           },
-          "binary_plan_sha256": "sha256:abec30942515d7e31292acb1e840ddbbab52542819378575e8dcc94b4eff0604",
+          "binary_plan_sha256": "sha256:6c958e9150aff20d2572fd2e4a60c33cf1f739a7ad7659cd5358b90cc38426ac",
           "checked_date": "2026-10-28",
           "deployment_operator_actions": [
             "no-op"
@@ -161,9 +256,6 @@
               ],
               "planned_actions": [
                 "no-op"
-              ],
-              "refresh_actions": [
-                "update"
               ]
             },
             {
@@ -174,9 +266,6 @@
               ],
               "planned_actions": [
                 "no-op"
-              ],
-              "refresh_actions": [
-                "update"
               ]
             }
           ],
@@ -202,7 +291,8 @@
               "address": "google_project_iam_member.attestation_build_evidence_reader"
             }
           ],
-          "source_head": "a82f42557bb3d4c5f7d98acc4b28872e059fa32f",
+          "source_head": "b6d7552560d7ce1381c0bed68b18cf7e2bd71833",
+          "state_check_phase": "after_plan_before_apply",
           "state_lineage_and_serial_unchanged": true,
           "targeted": false,
           "terraform_version": "1.8.1",
@@ -225,15 +315,24 @@
           "verified_role": "roles/iam.serviceAccountTokenCreator"
         },
         "registry_access": "roles/artifactregistry.reader on the existing secure-delivery repository only.",
-        "service_use_evidence": "Documented Cloud Build custom-role requirement; proposed configuration only, not a newly confirmed live signer grant.",
+        "service_use_evidence": "Applied and read back in the custom role with build-get. Runtime signer API consumption remains untested.",
         "sha256": "sha256:82a6305f6619a1cd784fafb79379ab5e4ae9f371162420ddc7c8ec4ef32e556f",
         "signer_only": true,
+        "status": "applied",
         "validate": "passed",
         "workspace": "default"
       }
     },
     "release_set_id": null,
-    "status": "pending",
+    "selected_configuration_implementation_sha256": {
+      "cloudbuild/online-shop/candidate-v1.schema.json": "sha256:a1ef7bbfc8044be54d46a3dd30f956aab71363ba0df93f6ee7548b96eb3aaf93",
+      "cloudbuild/online-shop/catalog-v1.json": "sha256:1d2524bda88756297aaae39243ab3e29a4b8cf283fd981e3cfdb13ce659c40bd",
+      "cloudbuild/online-shop/release.py": "sha256:4c18452c72417332afed4d230a3efd335f607df644c18e7626ec27bbb024f981",
+      "scripts/tests/test_online_shop_release.py": "sha256:9d06318adeea9cbbe9b18e7a48c787bc5884a6c1101df0f5f21541c1edfe1c9d"
+    },
+    "signing_build_id": null,
+    "signing_build_status": null,
+    "status": "blocked_local_cli_compatibility",
     "verification_outcome": null
   },
   "materialized_input_count": 15,
@@ -265,11 +364,18 @@
       "feature configuration rejected before cloud submission",
       "supplied-payload identity mismatch and boolean/float versions with original or recomputed identity, before evidence/signing"
     ],
-    "online_shop_tests": 27,
+    "launcher_resolution_regressions": {
+      "missing_sdk_before_authentication": "passed",
+      "posix_sdk_launcher": "passed",
+      "real_local_windows_diagnostic": "Bare gcloud invocation raises FileNotFoundError; resolved .cmd version invocation succeeds. No build was submitted by this diagnostic.",
+      "windows_batch_launcher": "passed"
+    },
+    "online_shop_tests": 29,
     "python": "3.13.3",
-    "python_tests": 110,
-    "sample_regressions": "Existing Python suites and three Cloud Build shell regressions passed.",
+    "python_tests": 112,
+    "sample_regressions": "Existing Python suites passed in this run; shell checks remain prior unchanged-input evidence.",
     "shell_execution": "LF Git-blob copies of unchanged tracked files; synthetic gcloud only.",
+    "shell_regressions_rerun_this_attempt": false,
     "shell_tests": [
       "cloudbuild-ci-config-test.sh",
       "cloudbuild-release-metadata-test.sh",
@@ -278,10 +384,10 @@
     "status": "passed"
   },
   "pending": [
-    "Review the saved full Terraform plan and the separately reported refresh drift before any separately authorized apply; recheck applicability if state or configuration changes.",
-    "After authorized apply, recheck effective signer build-get, service-use and repository download permissions, conditions/deny boundaries and all live targets.",
-    "Run one bounded catalog build using reviewed immutable configuration, then independent verification and separate signing with occurrence readback; retain sanitized references.",
-    "Confirm actual Cloud Build field serialization and Artifact Registry transport without relaxing trust checks."
+    "Review and merge the Windows SDK launcher fix; select a new full immutable main configuration SHA containing it. Do not bypass execution-file matching or repeat the IAM apply.",
+    "Recheck live prerequisites, submit one bounded catalog build, obtain actual registry evidence and run independent verification. The failed local attempt created no build.",
+    "Only after verification, create the generation-pinned candidate object and perform one separate signing build with actual trusted result, occurrence and signature readback.",
+    "Confirm actual Cloud Build field serialization and Artifact Registry transport without relaxing fail-closed checks."
   ],
   "plan": {
     "contract_sha256": "sha256:2a78958157874a90b8ac633def1f337449b7f5c73beaf6e46bde05b388f6995b",
@@ -301,7 +407,7 @@
     "revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
     "version": 1
   },
-  "sdp_base_revision": "4d7851504f6c073a906da012bea8495651ef8ca0",
+  "sdp_base_revision": "b6d7552560d7ce1381c0bed68b18cf7e2bd71833",
   "validation_date": "2026-10-28",
   "version": 1
 }
