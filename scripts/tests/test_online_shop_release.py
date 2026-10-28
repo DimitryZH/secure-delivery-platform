@@ -72,6 +72,51 @@ class ReleaseTest(unittest.TestCase):
         artifact = self.helper.sign_and_create.call_args.args[0]
         self.assertEqual(artifact, self.record["components"][0]["repository"] + "@" + DIGEST)
 
+    def test_boolean_and_float_versions_with_original_identity_fail_before_evidence(self):
+        for version in (True, 1.0):
+            record = {**self.record, "version": version}
+            payload = {key: value for key, value in record.items() if key != "release_set_id"}
+            self.assertNotEqual(r.fingerprint(payload), record["release_set_id"])
+            with self.subTest(version=repr(version)):
+                with self.assertRaisesRegex(ValueError, "invalid_candidate_version"):
+                    r.verify(record, P, CONFIG, PLAN, REF, self.cloud)
+                with self.assertRaisesRegex(ValueError, "invalid_candidate_version"):
+                    r.sign(record, P, CONFIG, PLAN, REF, self.cloud, self.helper)
+        self.assertEqual(self.cloud.mock_calls, [])
+        self.assertEqual(self.helper.mock_calls, [])
+
+    def test_recomputed_identity_cannot_authorize_boolean_or_float_version(self):
+        for version in (True, 1.0):
+            payload = {key: value for key, value in self.record.items() if key != "release_set_id"}
+            payload["version"] = version
+            record = {**payload, "release_set_id": r.fingerprint(payload)}
+            with self.subTest(version=repr(version)):
+                with self.assertRaisesRegex(ValueError, "invalid_candidate_version"):
+                    r.verify(record, P, CONFIG, PLAN, REF, self.cloud)
+                with self.assertRaisesRegex(ValueError, "invalid_candidate_version"):
+                    r.sign(record, P, CONFIG, PLAN, REF, self.cloud, self.helper)
+        self.assertEqual(self.cloud.mock_calls, [])
+        self.assertEqual(self.helper.mock_calls, [])
+
+    def test_supplied_identity_is_checked_against_supplied_payload(self):
+        record = copy.deepcopy(self.record)
+        record["components"][0]["config_digest"] = "sha256:" + "f" * 64
+        with self.assertRaisesRegex(ValueError, "candidate_identity_mismatch"):
+            r.verify(record, P, CONFIG, PLAN, REF, self.cloud)
+        with self.assertRaisesRegex(ValueError, "candidate_identity_mismatch"):
+            r.sign(record, P, CONFIG, PLAN, REF, self.cloud, self.helper)
+        self.assertEqual(self.cloud.mock_calls, [])
+        self.assertEqual(self.helper.mock_calls, [])
+
+    def test_integer_version_one_still_verifies(self):
+        self.assertIs(type(self.record["version"]), int)
+        result = r.verify(self.record, P, CONFIG, PLAN, REF, self.cloud)
+        self.assertEqual(result["status"], "passed")
+        self.assertEqual(result["release_set_id"], self.record["release_set_id"])
+        self.cloud.build.assert_called_once_with(P, BUILD_ID)
+        self.cloud.image.assert_called_once()
+        self.assertEqual(self.helper.mock_calls, [])
+
     def test_missing_duplicate_unexpected_membership_never_calls_authority(self):
         for components in ([], self.record["components"] * 2, [{"id": "frontend"}]):
             with self.subTest(components=components):

@@ -2,8 +2,8 @@
   "implementation_sha256": {
     "cloudbuild/online-shop/candidate-v1.schema.json": "sha256:a1ef7bbfc8044be54d46a3dd30f956aab71363ba0df93f6ee7548b96eb3aaf93",
     "cloudbuild/online-shop/catalog-v1.json": "sha256:1d2524bda88756297aaae39243ab3e29a4b8cf283fd981e3cfdb13ce659c40bd",
-    "cloudbuild/online-shop/release.py": "sha256:4242a8a6d954242c0acae76f757e86144e910220619e3adda1cbba1a5cecd31e",
-    "scripts/tests/test_online_shop_release.py": "sha256:8a6b2e73846618aa88310f72ba313516a0a5575a7cf8157a45e9d9f99710b957"
+    "cloudbuild/online-shop/release.py": "sha256:4c18452c72417332afed4d230a3efd335f607df644c18e7626ec27bbb024f981",
+    "scripts/tests/test_online_shop_release.py": "sha256:9d06318adeea9cbbe9b18e7a48c787bc5884a6c1101df0f5f21541c1edfe1c9d"
   },
   "issue": 87,
   "limits": [
@@ -30,6 +30,15 @@
   "materialized_input_count": 15,
   "offline": {
     "aml_integration": "Real pinned Git objects; plan and materialized bytes verified without AML checkout or mutation.",
+    "candidate_identity_review": {
+      "independent_policy_reconstruction": "preserved",
+      "invalid_candidates_make_no_evidence_or_signing_calls": true,
+      "previous_head": "afae93ed629eac76d0de6a5f6a7d55e6443246a5",
+      "regression_reproduced_before_fix": true,
+      "supplied_payload_identity_recomputed": true,
+      "valid_integer_candidate_verification": "passed",
+      "version_requires_exact_integer_one": true
+    },
     "environment_notes": [
       "Sandbox denied loopback sockets; the existing HTTP regressions passed with local socket access.",
       "Temporary Git fixtures disable background maintenance to avoid Windows cleanup locks."
@@ -44,11 +53,12 @@
       "input bytes/untracked context files",
       "verification failure before signing",
       "KMS/create/readback/signature failure without trusted aggregate",
-      "feature configuration rejected before cloud submission"
+      "feature configuration rejected before cloud submission",
+      "supplied-payload identity mismatch and boolean/float versions with original or recomputed identity, before evidence/signing"
     ],
-    "online_shop_tests": 23,
+    "online_shop_tests": 27,
     "python": "3.13.3",
-    "python_tests": 106,
+    "python_tests": 110,
     "sample_regressions": "Existing Python suites and three Cloud Build shell regressions passed.",
     "shell_execution": "LF Git-blob copies of unchanged tracked files; synthetic gcloud only.",
     "shell_tests": [

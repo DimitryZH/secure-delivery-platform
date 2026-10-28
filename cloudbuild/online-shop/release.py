@@ -263,6 +263,9 @@ def candidate(p, config, plan_ref, build_id, digest, image_config):
 def validate_candidate(record, p, config, plan_ref):
     # Exact reconstruction fixes schema and membership against trusted catalog-v1.
     require(isinstance(record, dict), "invalid_candidate")
+    require(type(record.get("version")) is int and record["version"] == 1, "invalid_candidate_version")
+    payload = {key: value for key, value in record.items() if key != "release_set_id"}
+    require(record.get("release_set_id") == fingerprint(payload), "candidate_identity_mismatch")
     components = record.get("components")
     require(isinstance(components, list) and len(components) == 1
             and components[0].get("id") == COMPONENT, "candidate_membership")
