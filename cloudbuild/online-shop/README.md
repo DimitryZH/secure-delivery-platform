@@ -1,7 +1,9 @@
 # Trusted catalog release creation
 
 Implements the code path for [issue #87](https://github.com/DimitryZH/secure-delivery-platform/issues/87).
-Live acceptance is **pending**, not established by these files or offline tests.
+A bounded `catalog-v1` live flow completed a real build, independent verification
+and separate attestation with occurrence/signature readback. The linked evidence
+in [`validation.json`](validation.json) awaits review; its scope and limits apply.
 The existing sample-service build, metadata, verifier, signer and trigger are unchanged.
 No deployment, rendering, preflight, Redis, Collector or telemetry infrastructure is included.
 
@@ -195,7 +197,8 @@ python -B cloudbuild/online-shop/release.py submit-signing --configuration-revis
 Both submit actions call `projects.locations.builds.create` directly with the reviewed
 request and explicit target project/region. They retain `source.gitSource`; do not
 substitute a local source upload, candidate-controlled scripts or the image-build
-identity. API compatibility remains part of pending live acceptance. Keep signing logs/results private
+identity. The recorded live flow exercised these API requests; unfamiliar service
+changes still fail closed. Keep signing logs/results private
 and copy only reviewed, sanitized outcomes into durable public evidence.
 
 Cloud Build readback requires exact source, producer, steps and publication policy.

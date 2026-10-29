@@ -8,57 +8,64 @@
   },
   "issue": 87,
   "limits": [
-    "Offline API fakes and diagnostic copies do not establish live release acceptance.",
-    "A real catalog image was published. The selected-main verifier rejected build readback before candidate creation; observed registry digests are diagnostic evidence, not verified/trusted release evidence.",
-    "No candidate object, signing build or attestation was created; null unexecuted-stage fields are intentional.",
-    "The readback compatibility fix is offline validated only and requires review/merge before any new live execution. No unmerged code ran under signing identity.",
-    "AML historical build/runtime evidence is not validation of this SDP path.",
-    "Builder tags and application dependencies are not fully locked; byte-identical rebuilds are not promised.",
-    "JSON Schema is checked for shape; exact runtime policy/identity checks remain enforced independently.",
-    "Previously applied IAM grants were rechecked read-only. This attempt made no IAM, Terraform, deployment/admission, Cloud Deploy, Redis/Collector, telemetry or AML changes.",
-    "The numeric target alias is pinned in reviewed environment policy and must be independently reconfirmed when retargeting. Future API default or representation changes still fail closed."
+    "Successful live acceptance is bounded to productcatalogservice, catalog-v1, linux/amd64, the recorded AML/configuration revisions and the exact producing/signing executions.",
+    "No deployment/admission, Cloud Deploy, Redis/Collector, telemetry infrastructure, AML or roadmap changes or validation were performed.",
+    "Previously applied IAM was rechecked only; no Terraform plan/apply, IAM grants or impersonation permission changes were performed.",
+    "Builder tags, package sources and application dependencies are not fully locked; byte-identical rebuilds, dependency audit and production approval are not claimed.",
+    "Cloud Build, Artifact Registry, KMS, Binary Authorization, privileged cloud administrators and reviewed Git main remain trust roots; this is not an independent SLSA attestation.",
+    "The standard attestation signs the verified artifact digest, not the aggregate release-set JSON envelope. The trusted result links the release-set identity to that digest-bound occurrence.",
+    "Historical launcher failure and earlier successful-build/readback rejection are preserved separately and do not substitute for this successful live attempt.",
+    "Offline fakes remain regression evidence only. Existing Python sample regressions were rerun; shell suites retain clearly labelled prior evidence.",
+    "Unknown service defaults and representations still fail closed. Project ID/number mapping is reviewed target policy, independently confirmed outside the checked build."
   ],
   "live": {
+    "acceptance_review": "pending_human_review",
     "aml_revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
-    "artifact_observations": {
-      "actual_registry_bytes_retained_privately": true,
-      "build_result_digest_matches_registry_manifest": true,
-      "config_digest": "sha256:da7c9916ab5e82ee53ecefe8e08d92b607701bf9ac9b1428bda49ca78b596a99",
-      "manifest_and_config_bytes_hash_match": true,
-      "manifest_digest": "sha256:f2519a4464d4fb6a2667bbdc26ef1fc83c084d658c295ea5c536876707d1f58f",
-      "manifest_media_type": "application/vnd.docker.distribution.manifest.v2+json",
-      "materialized_pinned_aml_inputs_step_success": true,
-      "platform": "linux/amd64",
-      "registry_revision_label_matches_aml": true,
-      "release_verified": false,
-      "repository": "us-central1-docker.pkg.dev/<PROJECT_ID>/secure-delivery/online-shop-productcatalogservice",
-      "source_git_and_resolved_provenance_match_selected_configuration": true,
-      "status": "read_only_diagnostic_not_release_verification"
+    "attestation_readback": {
+      "artifact": "us-central1-docker.pkg.dev/<PROJECT_ID>/secure-delivery/online-shop-productcatalogservice@sha256:03b4d18587152a9c28a6aba743edbfffc6762234189c885a1b2e535ce4a81ee2",
+      "attestor": "projects/<PROJECT_ID>/attestors/secure-delivery-verification",
+      "exact_subject_note_key_payload_match": true,
+      "key_version": "projects/<PROJECT_ID>/locations/us-central1/keyRings/secure-delivery-attestation/cryptoKeys/verification/cryptoKeyVersions/1",
+      "method": "Existing inspect_occurrence subject/key/note/payload checks and Binary Authorization validateAttestationOccurrence; no signing retry.",
+      "note": "projects/<PROJECT_ID>/notes/secure-delivery-verification",
+      "occurrence": "projects/<PROJECT_ID>/occurrences/c274dea4-483a-43d6-b241-ed4d593e617e",
+      "operator_independent_occurrence_get_and_signature_validation": "VERIFIED",
+      "signer_precreate_and_readback_signature_validation": "VERIFIED",
+      "status": "passed"
     },
-    "attestation_reference": null,
-    "attestation_signature_verified": null,
-    "build_id": "faa7c48b-58dd-4d33-9e92-e9cab810f3ca",
-    "build_operation": "operations/build/<PROJECT_ID>/ZmFhN2M0OGItNThkZC00ZDMzLTllOTItZTljYWI4MTBmM2Nh",
-    "build_resource": "projects/<PROJECT_NUMBER>/locations/us-central1/builds/faa7c48b-58dd-4d33-9e92-e9cab810f3ca",
+    "attestation_reference": "projects/<PROJECT_ID>/occurrences/c274dea4-483a-43d6-b241-ed4d593e617e",
+    "attestation_signature_verified": true,
+    "build_id": "b4c1e382-e23a-465c-b6b4-e7093af95391",
+    "build_operation": "operations/build/<PROJECT_ID>/YjRjMWUzODItZTIzYS00NjVjLWI2YjQtZTcwOTNhZjk1Mzkx",
+    "build_resource": "projects/<PROJECT_NUMBER>/locations/us-central1/builds/b4c1e382-e23a-465c-b6b4-e7093af95391",
     "build_status": "SUCCESS",
-    "candidate_object_generation": null,
-    "candidate_transport_sha256": null,
+    "candidate_object_generation": "1793303013750824",
+    "candidate_transport": {
+      "exact_generation_bytes_readback": true,
+      "generation": "1793303013750824",
+      "if_generation_match": "0",
+      "raw_candidate_published": false,
+      "sha256": "sha256:1bef1fbc83350dc9449fee6b01c4ff6deed9121e782a7428d3542d8692a126b9",
+      "upload_attempts": 1,
+      "uri": "gs://<PROJECT_ID>-attestation-source/online-shop/catalog-v1/6043c9af617274fcdc97dc9828b4356c72061dd1/b4c1e382-e23a-465c-b6b4-e7093af95391/candidate.json#1793303013750824",
+      "utf8_json_without_bom": true
+    },
+    "candidate_transport_sha256": "sha256:1bef1fbc83350dc9449fee6b01c4ff6deed9121e782a7428d3542d8692a126b9",
     "catalog_submission_attempt": {
       "accepted_build_submissions": 1,
       "aml_revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
       "blind_retry_performed": false,
       "build_api_submission_performed": true,
       "build_timeout_seconds": 1200,
-      "configuration_revision": "61f07a0e4a1302fdb164ca4b8da9f1f12b5648ee",
+      "configuration_revision": "6043c9af617274fcdc97dc9828b4356c72061dd1",
       "credentials_acquired_by_reviewed_adapter": true,
-      "finish_time": "2026-10-29T19:06:36.606892Z",
+      "finish_time": "2026-10-29T19:42:43.795178Z",
       "matching_builds_before_submission": 0,
-      "observation_recovery": "The API returned a legacy operation reference. After a read-only operation URL lookup failed, the exact returned regional build ID was observed to terminal success; no resubmission.",
+      "observation": "Observed the exact returned regional build ID; no resubmission or source/reference substitution.",
       "request_review": "passed",
       "requested_platform": "linux/amd64",
       "sdk_launcher_resolved": true,
-      "sdk_launcher_suffix": ".CMD",
-      "start_time": "2026-10-29T19:03:58.503126370Z",
+      "start_time": "2026-10-29T19:39:57.962849061Z",
       "steps": [
         {
           "id": "materialize-verified-inputs",
@@ -76,42 +83,50 @@
     "cloud_mutations": [
       {
         "action": "create",
-        "build_id": "faa7c48b-58dd-4d33-9e92-e9cab810f3ca",
+        "id": "b4c1e382-e23a-465c-b6b4-e7093af95391",
         "resource": "catalog Cloud Build"
+      },
+      {
+        "action": "publish",
+        "manifest_digest": "sha256:03b4d18587152a9c28a6aba743edbfffc6762234189c885a1b2e535ce4a81ee2",
+        "resource": "catalog image"
+      },
+      {
+        "action": "create_only",
+        "generation": "1793303013750824",
+        "resource": "candidate object"
+      },
+      {
+        "action": "create",
+        "id": "a6ca11bf-1da5-4899-b628-84dba69cbcb7",
+        "resource": "separate signing Cloud Build"
+      },
+      {
+        "action": "sign_and_create",
+        "reference": "projects/<PROJECT_ID>/occurrences/c274dea4-483a-43d6-b241-ed4d593e617e",
+        "resource": "digest-bound attestation occurrence"
       }
     ],
     "cloud_resource_mutations_performed": true,
-    "config_digest": "sha256:da7c9916ab5e82ee53ecefe8e08d92b607701bf9ac9b1428bda49ca78b596a99",
-    "configuration_revision": "61f07a0e4a1302fdb164ca4b8da9f1f12b5648ee",
+    "config_digest": "sha256:021a0a6a92ebdadd6bce0c23b8e2dbe7ff65e2cb2f2e1c0919350caa9c9a8d35",
+    "configuration_revision": "6043c9af617274fcdc97dc9828b4356c72061dd1",
     "executing_trust_files_sha256": {
       "cloudbuild/online-shop/catalog-v1.json": "sha256:1d2524bda88756297aaae39243ab3e29a4b8cf283fd981e3cfdb13ce659c40bd",
-      "cloudbuild/online-shop/release.py": "sha256:ce65f3100c6f665fd5a4bd9f4ec6d7ceeee3d1a772962666304d80924fad8f34",
+      "cloudbuild/online-shop/release.py": "sha256:89a49c2dd55ee1e7ddd218b881784c0e41b753dccbd1ec6f12eee1b0300fe0ce",
       "cloudbuild/scripts/attest-release.py": "sha256:2266c3deab04e782a773f45d171a951ecd2d501fe6384a9817e20bca67c25d18",
-      "deploy/environments.json": "sha256:cc52c93845e368664a181b766abc368e00fb523ff6fd929ae6bfa951196c5c87"
+      "deploy/environments.json": "sha256:e3a2dfdd9a69a9a11b9f064af23205b6d71217bb3dbf260796a28bbc063caada"
     },
     "gcp_operations_performed": true,
     "iam_mutations_this_attempt": false,
-    "manifest_digest": "sha256:f2519a4464d4fb6a2667bbdc26ef1fc83c084d658c295ea5c536876707d1f58f",
-    "pending_fix": {
-      "change": "Pin the independently confirmed numeric project alias in reviewed target policy; accept only its exact build name, the observed exact legacy-worker options and the exact requested-image mirror.",
-      "commit": "c5cbd6bd1708470caa6e0b6be306da0d95b3144c",
-      "executed_in_live_flow": false,
-      "existing_signer_project_get_policy_coverage": false,
-      "new_cloud_attempts_after_code_change": 0,
-      "no_runtime_project_lookup_or_additional_signer_permission": true,
-      "offline_validated": true,
-      "project_get_limit": "No Resource Manager lookup was added to the signer; the independently confirmed project number is reviewed environment policy.",
-      "regression_reproduced_before_fix": true,
-      "requires_review_and_merge_before_live_execution": true
-    },
+    "manifest_digest": "sha256:03b4d18587152a9c28a6aba743edbfffc6762234189c885a1b2e535ce4a81ee2",
     "platform": "linux/amd64",
     "preflight": {
       "aml_revision_available_from_canonical_git": true,
       "checked_date": "2026-10-29",
       "effective_access_limits": [
-        "No execution-account impersonation, IAM mutation or Terraform operation was performed this attempt.",
-        "Actual catalog execution succeeded under the builder. Signer policy coverage was rechecked, but signer runtime API access remains untested.",
-        "Release verification failed closed before candidate creation; no candidate object, signing build, occurrence or signature readback was created."
+        "Execution accounts and existing grants were checked read-only. No impersonation, IAM mutation, runtime project lookup, Terraform plan or apply was performed.",
+        "Actual catalog execution and independent signer verification/KMS/occurrence/signature API path succeeded under distinct existing execution accounts.",
+        "Successful bounded catalog-v1 acceptance is not deployment/admission acceptance or production approval."
       ],
       "execution_allow_policy_review": {
         "builder_and_deployment_authority_unchanged": true,
@@ -142,15 +157,18 @@
           "serviceusage.services.use",
           "storage.objects.get"
         ],
-        "signer_missing_allow_permissions": []
+        "signer_missing_allow_permissions": [],
+        "signer_runtime_api_access_confirmed": true
       },
       "execution_trust_files_match_configuration": true,
       "flow_stages": {
-        "attestation_readback": "not_run",
+        "attestation_readback": "passed",
         "build": "SUCCESS",
-        "candidate": "rejected_before_creation",
-        "signing": "not_started",
-        "verification": "candidate_preverification_failed; standalone verification not run"
+        "candidate": "created",
+        "candidate_transport": "generation_pinned_bytes_readback_passed",
+        "signature_validation": "VERIFIED",
+        "signing": "SUCCESS_trusted",
+        "verification": "passed"
       },
       "previous_terraform_apply": "Completed 2026-10-28; historical full-plan/apply/readback evidence is preserved separately in live_history. Not repeated.",
       "raw_evidence": "Stored only in an ignored local validation directory; no raw cloud responses or private inputs in the public diff.",
@@ -174,7 +192,7 @@
         "regional_cloud_build_api": true,
         "registry_format": "DOCKER"
       },
-      "status": "passed_policy_coverage_build_runtime_success_signer_runtime_pending",
+      "status": "passed_live_build_and_signing_runtime",
       "submitter_permissions": {
         "act_as_build_account": true,
         "act_as_signing_account": true,
@@ -188,50 +206,101 @@
       "targets": {
         "build_identity": "secure-delivery-build@<PROJECT_ID>.iam.gserviceaccount.com",
         "project": "<PROJECT_ID>",
+        "project_number": "<PROJECT_NUMBER>",
         "region": "us-central1",
         "registry": "us-central1-docker.pkg.dev/<PROJECT_ID>/secure-delivery",
         "signing_identity": "secure-delivery-attestation@<PROJECT_ID>.iam.gserviceaccount.com"
       }
     },
-    "release_set_id": null,
+    "raw_evidence": "API responses, registry bytes, candidate transport, logs and diagnostics remain only in an ignored private local directory.",
+    "release_set_id": "sha256:b9750798a71f543d0f75d0f48b1086f7c33427804eb07a795dd289faddaa3160",
     "selected_configuration_implementation_sha256": {
       "cloudbuild/online-shop/candidate-v1.schema.json": "sha256:a1ef7bbfc8044be54d46a3dd30f956aab71363ba0df93f6ee7548b96eb3aaf93",
       "cloudbuild/online-shop/catalog-v1.json": "sha256:1d2524bda88756297aaae39243ab3e29a4b8cf283fd981e3cfdb13ce659c40bd",
-      "cloudbuild/online-shop/release.py": "sha256:ce65f3100c6f665fd5a4bd9f4ec6d7ceeee3d1a772962666304d80924fad8f34",
-      "deploy/environments.json": "sha256:cc52c93845e368664a181b766abc368e00fb523ff6fd929ae6bfa951196c5c87",
-      "scripts/tests/test_online_shop_release.py": "sha256:770400ed82d4fc4731ce758b44cddb0e1d6bc757766a8f5ac8d9e732c8c9e02c"
+      "cloudbuild/online-shop/release.py": "sha256:89a49c2dd55ee1e7ddd218b881784c0e41b753dccbd1ec6f12eee1b0300fe0ce",
+      "deploy/environments.json": "sha256:e3a2dfdd9a69a9a11b9f064af23205b6d71217bb3dbf260796a28bbc063caada",
+      "scripts/tests/test_online_shop_release.py": "sha256:47efd37be02866d7c21bfe0674077a0ba0f8fcb3fa4caf453f3efedbf8d04326"
     },
-    "signing_build_id": null,
-    "signing_build_status": null,
-    "status": "blocked_build_readback_compatibility",
-    "terraform_invoked_this_attempt": false,
-    "verification_attempt": {
-      "candidate_cli_exit_code": 1,
-      "candidate_created": false,
-      "diagnosis": {
-        "additional_exact_readback_forms": {
-          "artifacts": "images exactly mirror the reviewed request",
-          "options": {
-            "logging": "CLOUD_LOGGING_ONLY",
-            "pool": {},
-            "workerRelease": "legacy"
+    "signing": {
+      "accepted_build_submissions": 1,
+      "attested_at": "2026-10-29T19:44:34.296113+00:00",
+      "blind_retry_performed": false,
+      "build_timeout_seconds": 600,
+      "candidate_generation_and_transport_hash_checked_in_successful_reviewed_step": true,
+      "components": [
+        {
+          "artifact": "us-central1-docker.pkg.dev/<PROJECT_ID>/secure-delivery/online-shop-productcatalogservice@sha256:03b4d18587152a9c28a6aba743edbfffc6762234189c885a1b2e535ce4a81ee2",
+          "id": "productcatalogservice",
+          "occurrence": "projects/<PROJECT_ID>/occurrences/c274dea4-483a-43d6-b241-ed4d593e617e",
+          "signature_verified": true
+        }
+      ],
+      "exact_identity_steps_options_and_no_extra_publication": "passed",
+      "execution_identity": "secure-delivery-attestation@<PROJECT_ID>.iam.gserviceaccount.com",
+      "finish_time": "2026-10-29T19:44:33.930665Z",
+      "independent_verification": {
+        "build": "projects/<PROJECT_ID>/locations/us-central1/builds/b4c1e382-e23a-465c-b6b4-e7093af95391",
+        "components": [
+          {
+            "artifact": "us-central1-docker.pkg.dev/<PROJECT_ID>/secure-delivery/online-shop-productcatalogservice@sha256:03b4d18587152a9c28a6aba743edbfffc6762234189c885a1b2e535ce4a81ee2",
+            "id": "productcatalogservice",
+            "status": "passed"
           }
-        },
-        "numeric_build_name_matches_exact_configured_project_number_region_and_build_id": true,
-        "other_failure_codes_on_offline_diagnostic_copy": [
-          "unauthorized_build_options",
-          "unauthorized_build_artifacts"
         ],
-        "project_mapping_independently_confirmed_via_resource_manager": true,
-        "raw_responses": "Retained only in the ignored private local validation directory.",
-        "remaining_checks_on_diagnostic_copy": "passed after only those three representation changes; not accepted release evidence"
+        "release_set_id": "sha256:b9750798a71f543d0f75d0f48b1086f7c33427804eb07a795dd289faddaa3160",
+        "status": "passed",
+        "verified_at": "2026-10-29T19:44:32.414251+00:00",
+        "version": 1
       },
-      "failed_check": "build_identity_mismatch",
-      "release_set_id": null,
-      "signing_started": false,
-      "standalone_verify_invoked": false
+      "matching_occurrences_after": 1,
+      "matching_occurrences_before": 0,
+      "matching_signing_builds_before": 0,
+      "release_set_id": "sha256:b9750798a71f543d0f75d0f48b1086f7c33427804eb07a795dd289faddaa3160",
+      "request_review": "passed",
+      "separate_from_builder": true,
+      "source_and_resolved_provenance_match_configuration": true,
+      "start_time": "2026-10-29T19:43:41.770743535Z",
+      "submit_cli_attempts": 1,
+      "trusted_result_status": "trusted"
     },
-    "verification_outcome": "candidate_preverification_rejected_build_identity_mismatch"
+    "signing_build_id": "a6ca11bf-1da5-4899-b628-84dba69cbcb7",
+    "signing_build_resource": "projects/<PROJECT_NUMBER>/locations/us-central1/builds/a6ca11bf-1da5-4899-b628-84dba69cbcb7",
+    "signing_build_status": "SUCCESS",
+    "signing_operation": "operations/build/<PROJECT_ID>/YTZjYTExYmYtMWRhNS00ODk5LWI2MjgtODRkYmE2OWNiY2I3",
+    "status": "trusted",
+    "terraform_invoked_this_attempt": false,
+    "verification": {
+      "actual_platform": "linux/amd64",
+      "build": "projects/<PROJECT_ID>/locations/us-central1/builds/b4c1e382-e23a-465c-b6b4-e7093af95391",
+      "candidate_cli_exit_code": 0,
+      "candidate_created": true,
+      "candidate_utf8_json": "passed",
+      "components": [
+        {
+          "artifact": "us-central1-docker.pkg.dev/<PROJECT_ID>/secure-delivery/online-shop-productcatalogservice@sha256:03b4d18587152a9c28a6aba743edbfffc6762234189c885a1b2e535ce4a81ee2",
+          "id": "productcatalogservice",
+          "status": "passed"
+        }
+      ],
+      "configuration_request_sha256": "sha256:1a374d9e5563686701363bf98e6b17215381979c31e938ab7cd1da7ed94d6e27",
+      "independent_exact_policy_reconstruction": "passed",
+      "manifest_and_config_digest_addressed_bytes_match": true,
+      "plan": {
+        "contract_sha256": "sha256:2a78958157874a90b8ac633def1f337449b7f5c73beaf6e46bde05b388f6995b",
+        "inputs_sha256": "sha256:dd70cd3392120ec8a9fcbcb8f408576a06af8614828237a5b7e155e7d6aeb437",
+        "planner_sha256": "sha256:f7341c26c21432af7deb334447c6d3262781bea61f827ed26e210a69bf784f01",
+        "sha256": "sha256:5b00f72accd8d033f2ead259d131336ebfcbf3528e0833ee98fb745bdf3dfbb6",
+        "uri": "git+https://github.com/DimitryZH/application-modernization-lab@89fd1cde8285761cc2a35dfb22d145adb2eed980#workloads/online-shop/build_plan.py"
+      },
+      "registry_revision_label_matches_aml": true,
+      "release_set_id": "sha256:b9750798a71f543d0f75d0f48b1086f7c33427804eb07a795dd289faddaa3160",
+      "source_configuration_build_plan_artifact_correlation": "passed",
+      "standalone_verify_exit_code": 0,
+      "status": "passed",
+      "supplied_payload_identity_recomputed": true,
+      "verified_at": "2026-10-29T19:43:03.592309+00:00"
+    },
+    "verification_outcome": "passed"
   },
   "live_history": [
     {
@@ -448,6 +517,222 @@
         "validate": "passed",
         "workspace": "default"
       }
+    },
+    {
+      "aml_revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
+      "artifact_observations": {
+        "actual_registry_bytes_retained_privately": true,
+        "build_result_digest_matches_registry_manifest": true,
+        "config_digest": "sha256:da7c9916ab5e82ee53ecefe8e08d92b607701bf9ac9b1428bda49ca78b596a99",
+        "manifest_and_config_bytes_hash_match": true,
+        "manifest_digest": "sha256:f2519a4464d4fb6a2667bbdc26ef1fc83c084d658c295ea5c536876707d1f58f",
+        "manifest_media_type": "application/vnd.docker.distribution.manifest.v2+json",
+        "materialized_pinned_aml_inputs_step_success": true,
+        "platform": "linux/amd64",
+        "registry_revision_label_matches_aml": true,
+        "release_verified": false,
+        "repository": "us-central1-docker.pkg.dev/<PROJECT_ID>/secure-delivery/online-shop-productcatalogservice",
+        "source_git_and_resolved_provenance_match_selected_configuration": true,
+        "status": "read_only_diagnostic_not_release_verification"
+      },
+      "attestation_reference": null,
+      "attestation_signature_verified": null,
+      "build_id": "faa7c48b-58dd-4d33-9e92-e9cab810f3ca",
+      "build_operation": "operations/build/<PROJECT_ID>/ZmFhN2M0OGItNThkZC00ZDMzLTllOTItZTljYWI4MTBmM2Nh",
+      "build_resource": "projects/<PROJECT_NUMBER>/locations/us-central1/builds/faa7c48b-58dd-4d33-9e92-e9cab810f3ca",
+      "build_status": "SUCCESS",
+      "candidate_object_generation": null,
+      "candidate_transport_sha256": null,
+      "catalog_submission_attempt": {
+        "accepted_build_submissions": 1,
+        "aml_revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
+        "blind_retry_performed": false,
+        "build_api_submission_performed": true,
+        "build_timeout_seconds": 1200,
+        "configuration_revision": "61f07a0e4a1302fdb164ca4b8da9f1f12b5648ee",
+        "credentials_acquired_by_reviewed_adapter": true,
+        "finish_time": "2026-10-29T19:06:36.606892Z",
+        "matching_builds_before_submission": 0,
+        "observation_recovery": "The API returned a legacy operation reference. After a read-only operation URL lookup failed, the exact returned regional build ID was observed to terminal success; no resubmission.",
+        "request_review": "passed",
+        "requested_platform": "linux/amd64",
+        "sdk_launcher_resolved": true,
+        "sdk_launcher_suffix": ".CMD",
+        "start_time": "2026-10-29T19:03:58.503126370Z",
+        "steps": [
+          {
+            "id": "materialize-verified-inputs",
+            "status": "SUCCESS"
+          },
+          {
+            "id": "build-catalog",
+            "status": "SUCCESS"
+          }
+        ],
+        "submit_cli_attempts": 1,
+        "terminal_status": "SUCCESS",
+        "token_printed_or_persisted": false
+      },
+      "cloud_mutations": [
+        {
+          "action": "create",
+          "build_id": "faa7c48b-58dd-4d33-9e92-e9cab810f3ca",
+          "resource": "catalog Cloud Build"
+        }
+      ],
+      "cloud_resource_mutations_performed": true,
+      "config_digest": "sha256:da7c9916ab5e82ee53ecefe8e08d92b607701bf9ac9b1428bda49ca78b596a99",
+      "configuration_revision": "61f07a0e4a1302fdb164ca4b8da9f1f12b5648ee",
+      "executing_trust_files_sha256": {
+        "cloudbuild/online-shop/catalog-v1.json": "sha256:1d2524bda88756297aaae39243ab3e29a4b8cf283fd981e3cfdb13ce659c40bd",
+        "cloudbuild/online-shop/release.py": "sha256:ce65f3100c6f665fd5a4bd9f4ec6d7ceeee3d1a772962666304d80924fad8f34",
+        "cloudbuild/scripts/attest-release.py": "sha256:2266c3deab04e782a773f45d171a951ecd2d501fe6384a9817e20bca67c25d18",
+        "deploy/environments.json": "sha256:cc52c93845e368664a181b766abc368e00fb523ff6fd929ae6bfa951196c5c87"
+      },
+      "gcp_operations_performed": true,
+      "iam_mutations_this_attempt": false,
+      "manifest_digest": "sha256:f2519a4464d4fb6a2667bbdc26ef1fc83c084d658c295ea5c536876707d1f58f",
+      "pending_fix": {
+        "change": "Pin the independently confirmed numeric project alias in reviewed target policy; accept only its exact build name, the observed exact legacy-worker options and the exact requested-image mirror.",
+        "commit": "c5cbd6bd1708470caa6e0b6be306da0d95b3144c",
+        "executed_in_live_flow": false,
+        "existing_signer_project_get_policy_coverage": false,
+        "new_cloud_attempts_after_code_change": 0,
+        "no_runtime_project_lookup_or_additional_signer_permission": true,
+        "offline_validated": true,
+        "project_get_limit": "No Resource Manager lookup was added to the signer; the independently confirmed project number is reviewed environment policy.",
+        "regression_reproduced_before_fix": true,
+        "requires_review_and_merge_before_live_execution": true
+      },
+      "platform": "linux/amd64",
+      "preflight": {
+        "aml_revision_available_from_canonical_git": true,
+        "checked_date": "2026-10-29",
+        "effective_access_limits": [
+          "No execution-account impersonation, IAM mutation or Terraform operation was performed this attempt.",
+          "Actual catalog execution succeeded under the builder. Signer policy coverage was rechecked, but signer runtime API access remains untested.",
+          "Release verification failed closed before candidate creation; no candidate object, signing build, occurrence or signature readback was created."
+        ],
+        "execution_allow_policy_review": {
+          "builder_and_deployment_authority_unchanged": true,
+          "builder_direct_signer_delegation_present": false,
+          "builder_existing_allow_coverage": [
+            "cloudbuild.builds.get",
+            "artifactregistry.repositories.uploadArtifacts",
+            "artifactregistry.repositories.downloadArtifacts",
+            "logging.logEntries.create"
+          ],
+          "matching_signer_bindings_have_conditions": false,
+          "method": "Live project/resource allow policies and actual IAM role definitions.",
+          "post_apply_policy_coverage_confirmed": true,
+          "project_deny_policy_count": 0,
+          "project_group_domain_public_or_principalset_members_present": false,
+          "project_parent_present": false,
+          "rechecked_this_attempt": true,
+          "repository_group_domain_public_or_principalset_members_present": false,
+          "signer_existing_allow_coverage": [
+            "artifactregistry.repositories.downloadArtifacts",
+            "binaryauthorization.attestors.verifyImageAttested",
+            "cloudbuild.builds.get",
+            "cloudkms.cryptoKeyVersions.useToSign",
+            "containeranalysis.notes.attachOccurrence",
+            "containeranalysis.occurrences.create",
+            "containeranalysis.occurrences.get",
+            "logging.logEntries.create",
+            "serviceusage.services.use",
+            "storage.objects.get"
+          ],
+          "signer_missing_allow_permissions": []
+        },
+        "execution_trust_files_match_configuration": true,
+        "flow_stages": {
+          "attestation_readback": "not_run",
+          "build": "SUCCESS",
+          "candidate": "rejected_before_creation",
+          "signing": "not_started",
+          "verification": "candidate_preverification_failed; standalone verification not run"
+        },
+        "previous_terraform_apply": "Completed 2026-10-28; historical full-plan/apply/readback evidence is preserved separately in live_history. Not repeated.",
+        "raw_evidence": "Stored only in an ignored local validation directory; no raw cloud responses or private inputs in the public diff.",
+        "resources_confirmed": {
+          "attestor": "secure-delivery-verification",
+          "attestor_note_and_registered_key_id_match": true,
+          "bucket_location": "US-CENTRAL1",
+          "bucket_public_access_prevention": "enforced",
+          "bucket_uniform_access": true,
+          "cloud_build_service_agent_role_present": true,
+          "dedicated_bucket": "<PROJECT_ID>-attestation-source",
+          "execution_accounts_enabled": true,
+          "key": "verification",
+          "key_algorithm": "EC_SIGN_P256_SHA256",
+          "key_ring": "secure-delivery-attestation",
+          "key_version": 1,
+          "key_version_state": "ENABLED",
+          "note": "secure-delivery-verification",
+          "project_active": true,
+          "project_number_mapping_independently_confirmed": true,
+          "regional_cloud_build_api": true,
+          "registry_format": "DOCKER"
+        },
+        "status": "passed_policy_coverage_build_runtime_success_signer_runtime_pending",
+        "submitter_permissions": {
+          "act_as_build_account": true,
+          "act_as_signing_account": true,
+          "candidate_object_create": true,
+          "candidate_object_get": true,
+          "cloudbuild.builds.create": true,
+          "cloudbuild.builds.get": true,
+          "method": "Authenticated current-user testIamPermissions; not execution-account permissions.",
+          "serviceusage.services.use": true
+        },
+        "targets": {
+          "build_identity": "secure-delivery-build@<PROJECT_ID>.iam.gserviceaccount.com",
+          "project": "<PROJECT_ID>",
+          "region": "us-central1",
+          "registry": "us-central1-docker.pkg.dev/<PROJECT_ID>/secure-delivery",
+          "signing_identity": "secure-delivery-attestation@<PROJECT_ID>.iam.gserviceaccount.com"
+        }
+      },
+      "recorded_date": "2026-10-29",
+      "release_set_id": null,
+      "selected_configuration_implementation_sha256": {
+        "cloudbuild/online-shop/candidate-v1.schema.json": "sha256:a1ef7bbfc8044be54d46a3dd30f956aab71363ba0df93f6ee7548b96eb3aaf93",
+        "cloudbuild/online-shop/catalog-v1.json": "sha256:1d2524bda88756297aaae39243ab3e29a4b8cf283fd981e3cfdb13ce659c40bd",
+        "cloudbuild/online-shop/release.py": "sha256:ce65f3100c6f665fd5a4bd9f4ec6d7ceeee3d1a772962666304d80924fad8f34",
+        "deploy/environments.json": "sha256:cc52c93845e368664a181b766abc368e00fb523ff6fd929ae6bfa951196c5c87",
+        "scripts/tests/test_online_shop_release.py": "sha256:770400ed82d4fc4731ce758b44cddb0e1d6bc757766a8f5ac8d9e732c8c9e02c"
+      },
+      "signing_build_id": null,
+      "signing_build_status": null,
+      "status": "blocked_build_readback_compatibility",
+      "terraform_invoked_this_attempt": false,
+      "verification_attempt": {
+        "candidate_cli_exit_code": 1,
+        "candidate_created": false,
+        "diagnosis": {
+          "additional_exact_readback_forms": {
+            "artifacts": "images exactly mirror the reviewed request",
+            "options": {
+              "logging": "CLOUD_LOGGING_ONLY",
+              "pool": {},
+              "workerRelease": "legacy"
+            }
+          },
+          "numeric_build_name_matches_exact_configured_project_number_region_and_build_id": true,
+          "other_failure_codes_on_offline_diagnostic_copy": [
+            "unauthorized_build_options",
+            "unauthorized_build_artifacts"
+          ],
+          "project_mapping_independently_confirmed_via_resource_manager": true,
+          "raw_responses": "Retained only in the ignored private local validation directory.",
+          "remaining_checks_on_diagnostic_copy": "passed after only those three representation changes; not accepted release evidence"
+        },
+        "failed_check": "build_identity_mismatch",
+        "release_set_id": null,
+        "signing_started": false,
+        "standalone_verify_invoked": false
+      },
+      "verification_outcome": "candidate_preverification_rejected_build_identity_mismatch"
     }
   ],
   "materialized_input_count": 15,
@@ -491,7 +776,7 @@
     "readback_compatibility_regressions": {
       "changed_worker_pool_release_options_or_publication_rejected": "passed",
       "exact_observed_service_defaults_and_image_mirror": "passed",
-      "live_fix_execution": "not_run",
+      "live_fix_execution": "Merged configuration passed catalog verification and independent signer verification in this live attempt.",
       "missing_or_invalid_project_number_policy_rejected": "passed",
       "numeric_project_alias_from_reviewed_policy": "passed",
       "original_project_id_representation_preserved": "passed",
@@ -499,7 +784,8 @@
       "regression_reproduced_against_selected_main": true,
       "wrong_project_region_build_before_registry_or_signing": "passed"
     },
-    "sample_regressions": "Existing Python suites passed in this run; shell checks remain prior unchanged-input evidence.",
+    "rerun_date": "2026-10-29",
+    "sample_regressions": "Existing Python suites passed in this attempt; unchanged shell suites retain prior evidence and were not rerun.",
     "shell_execution": "LF Git-blob copies of unchanged tracked files; synthetic gcloud only.",
     "shell_regressions_rerun_this_attempt": false,
     "shell_tests": [
@@ -510,11 +796,7 @@
     "status": "passed"
   },
   "pending": [
-    "Review and merge the narrowly scoped Cloud Build readback compatibility fix, then select a new immutable main configuration containing it. Do not repeat IAM apply.",
-    "Any new live attempt requires an authorized continuation and a new immutable main configuration containing the reviewed fix. Preserve this build as recorded evidence; do not resubmit the same configuration or certify it with unmerged or byte-mismatched code.",
-    "Obtain a candidate and complete actual independent verification with release_set_id/source/build/artifact correlation through reviewed code.",
-    "Only after verification, create one create-only generation-pinned candidate object and run a separate bounded signing build; confirm independent signer verification, trusted result, occurrence and signature readback.",
-    "Keep issue #87 open until successful linked live verification and attestation evidence are established."
+    "Human review of the linked successful catalog-v1 live evidence and issue #87 acceptance criteria. The issue remains open; this task does not merge or close it."
   ],
   "plan": {
     "contract_sha256": "sha256:2a78958157874a90b8ac633def1f337449b7f5c73beaf6e46bde05b388f6995b",
@@ -534,7 +816,7 @@
     "revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
     "version": 1
   },
-  "sdp_base_revision": "61f07a0e4a1302fdb164ca4b8da9f1f12b5648ee",
+  "sdp_base_revision": "6043c9af617274fcdc97dc9828b4356c72061dd1",
   "validation_date": "2026-10-29",
   "version": 1
 }
