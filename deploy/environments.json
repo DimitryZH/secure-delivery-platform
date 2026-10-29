@@ -1,5 +1,6 @@
 {
   "project": "sre-platform-staging-507220",
+  "project_number": "465837787797",
   "cluster": "secure-delivery-platform",
   "location": "us-central1-a",
   "approved_registry": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery",

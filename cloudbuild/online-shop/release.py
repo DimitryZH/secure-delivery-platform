@@ -125,11 +125,13 @@ def policy():
     env = read(ROOT / "deploy/environments.json")
     project, registry, producer = env["project"], env["approved_registry"], env["build_service_account"]
     require(re.fullmatch(r"[a-z][a-z0-9-]{4,28}[a-z0-9]", project), "invalid_project")
+    number = env.get("project_number")
+    require(isinstance(number, str) and re.fullmatch(r"[1-9][0-9]*", number), "invalid_project_number")
     require(registry == "us-central1-docker.pkg.dev/" + project + "/secure-delivery",
             "registry_policy_mismatch")
     require(producer == "secure-delivery-build@" + project + ".iam.gserviceaccount.com",
             "producer_policy_mismatch")
-    return {"project": project, "region": "us-central1", "registry": registry,
+    return {"project": project, "project_number": number, "region": "us-central1", "registry": registry,
             "producer": "projects/" + project + "/serviceAccounts/" + producer,
             "signer": "projects/" + project + "/serviceAccounts/secure-delivery-attestation@"
                       + project + ".iam.gserviceaccount.com"}
@@ -225,8 +227,13 @@ def build_url(p, build_id):
 def check_build(build, p, config, plan, build_id):
     """Match authoritative Cloud Build input/execution/output, not log claims."""
     expected = build_request(p, config, plan)
+    # Numeric alias is independently confirmed in reviewed environment policy,
+    # never learned from a candidate or from the build being verified.
+    name = build_url(p, build_id)
+    numeric_name = name.replace("projects/" + p["project"] + "/",
+                                "projects/" + p["project_number"] + "/", 1)
     require(build.get("id") == build_id and build.get("projectId") == p["project"]
-            and build.get("name") == build_url(p, build_id), "build_identity_mismatch")
+            and build.get("name") in (name, numeric_name), "build_identity_mismatch")
     require(build.get("status") == "SUCCESS" and build.get("finishTime"), "build_not_successful")
     for key in ("source", "serviceAccount", "images", "timeout"):
         require(build.get(key) == expected[key], "build_configuration_mismatch_" + key)
@@ -239,8 +246,14 @@ def check_build(build, p, config, plan, build_id):
         steps.append({k: v for k, v in step.items()
                       if k not in ("status", "exitCode", "timing", "pullTiming")})
     require(steps == expected["steps"], "unauthorized_build_steps")
-    require(build.get("options") == expected["options"], "unauthorized_build_options")
-    for key in ("substitutions", "secrets", "availableSecrets", "dependencies", "gitConfig", "artifacts"):
+    # Cloud Build readback can add this exact default-worker representation.
+    # Do not strip arbitrary options, worker selections or future fields.
+    service_options = {**expected["options"], "pool": {}, "workerRelease": "legacy"}
+    require(build.get("options") in (expected["options"], service_options), "unauthorized_build_options")
+    # The API mirrors images into artifacts.images. Any other publication fails.
+    require(build.get("artifacts") in (None, {}, {"images": expected["images"]}),
+            "unauthorized_build_artifacts")
+    for key in ("substitutions", "secrets", "availableSecrets", "dependencies", "gitConfig"):
         require(not build.get(key), "unauthorized_build_" + key)
     images = build.get("results", {}).get("images", [])
     require(len(images) == 1 and images[0].get("name") == expected["images"][0]
