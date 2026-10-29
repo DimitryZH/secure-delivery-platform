@@ -198,10 +198,17 @@ substitute a local source upload, candidate-controlled scripts or the image-buil
 identity. API compatibility remains part of pending live acceptance. Keep signing logs/results private
 and copy only reviewed, sanitized outcomes into durable public evidence.
 
-Cloud Build readback currently requires exact input field representations. A new
-service default/serialization difference fails closed and must be inspected and
-covered by a regression before support is added. It must not be bypassed with
-supplied JSON, weakened comparisons or additional IAM authority.
+Cloud Build readback requires exact source, producer, steps and publication policy.
+The resource name may use the configured project ID or its independently confirmed
+numeric alias, pinned as `project_number` in the reviewed `deploy/environments.json`.
+Confirm that mapping read-only during environment preflight; a candidate or build
+response cannot select it. This adds no runtime project lookup or signer permission.
+The verifier also accepts the observed exact default-worker readback
+`pool: {}, workerRelease: legacy` and an `artifacts.images` mirror equal to the
+requested images. Other worker releases, nonempty pools, options, publication
+destinations or unknown fields still fail. These are narrow observed API forms,
+not a promise that service defaults will remain unchanged. New serialization
+differences require diagnosis, regression coverage and review before live use.
 
 ## Checks and acceptance status
 

@@ -20,7 +20,7 @@ CONFIG = "c" * 40
 BUILD_ID = "11111111-2222-3333-4444-555555555555"
 DIGEST = "sha256:" + "a" * 64
 IMAGE_CONFIG = "sha256:" + "b" * 64
-P = {"project": "example-project", "region": "us-central1",
+P = {"project": "example-project", "project_number": "123456789012", "region": "us-central1",
      "registry": "us-central1-docker.pkg.dev/example-project/secure-delivery",
      "producer": "projects/example-project/serviceAccounts/secure-delivery-build@example-project.iam.gserviceaccount.com",
      "signer": "projects/example-project/serviceAccounts/secure-delivery-attestation@example-project.iam.gserviceaccount.com"}
@@ -191,6 +191,65 @@ class ReleaseTest(unittest.TestCase):
             self.sign()
         self.helper.sign_and_create.assert_not_called()
 
+    def test_observed_service_defaults_and_image_mirror_preserve_verification(self):
+        build = successful_build()
+        build["options"].update(pool={}, workerRelease="legacy")
+        build["artifacts"] = {"images": list(build["images"])}
+        self.cloud.build.return_value = build
+        self.assertEqual(self.sign()["status"], "trusted")
+
+    def test_service_readback_exceptions_do_not_allow_other_execution_or_publication(self):
+        mutations = [lambda b: b["options"].update(workerRelease="other-release"),
+                     lambda b: b["options"].update(pool={"name": "projects/other/locations/us-central1/workerPools/pool"}),
+                     lambda b: b["options"].update(env=["BASH_ENV=evil"]),
+                     lambda b: b["options"].update(unrecognized=True),
+                     lambda b: b["artifacts"]["images"].append("elsewhere/image:tag"),
+                     lambda b: b["artifacts"].update(images=[]),
+                     lambda b: b["artifacts"].update(objects={"location": "gs://other", "paths": ["**"]}),
+                     lambda b: b["artifacts"].update(unrecognized=True)]
+        for mutation in mutations:
+            build = successful_build()
+            build["options"].update(pool={}, workerRelease="legacy")
+            build["artifacts"] = {"images": list(build["images"])}
+            mutation(build)
+            self.cloud.build.return_value = build
+            with self.subTest(build=build):
+                self.assert_no_signing()
+        self.cloud.image.assert_not_called()
+
+    def test_numeric_build_name_matches_independently_pinned_project_policy(self):
+        build = successful_build()
+        build["name"] = build["name"].replace(P["project"], "123456789012")
+        self.cloud.build.return_value = build
+        result = self.sign()
+        self.assertEqual(result["status"], "trusted")
+        self.assertEqual(result["release_set_id"], self.record["release_set_id"])
+        self.cloud.build.assert_called_once_with(P, BUILD_ID)
+        self.cloud.request.assert_not_called()
+        self.assertEqual(build["name"], "projects/123456789012/locations/us-central1/builds/" + BUILD_ID)
+
+    def test_wrong_numeric_project_region_or_build_stops_before_registry_and_signing(self):
+        for name in ("projects/999999999999/locations/us-central1/builds/" + BUILD_ID,
+                     "projects/123456789012/locations/other-region/builds/" + BUILD_ID,
+                     "projects/123456789012/locations/us-central1/builds/" + "2" * 36, None):
+            build = successful_build()
+            build["name"] = name
+            self.cloud.build.return_value = build
+            with self.subTest(name=name):
+                self.assert_no_signing()
+        build = successful_build()
+        build.update(name="projects/123456789012/locations/us-central1/builds/" + BUILD_ID,
+                     projectId="other-project")
+        self.cloud.build.return_value = build
+        self.assert_no_signing()
+        self.cloud.image.assert_not_called()
+
+    def test_project_id_build_name_needs_no_alias_lookup(self):
+        cloud = r.Cloud.__new__(r.Cloud)
+        cloud.request = Mock(return_value=r.canonical(successful_build()))
+        self.assertEqual(cloud.build(P, BUILD_ID), successful_build())
+        cloud.request.assert_called_once_with("https://cloudbuild.googleapis.com/v1/" + r.build_url(P, BUILD_ID))
+
     def test_registry_mismatch_and_unavailability_stop_signing(self):
         self.cloud.image.return_value = "sha256:" + "0" * 64
         self.assert_no_signing()
@@ -274,6 +333,13 @@ class ReleaseTest(unittest.TestCase):
         with patch.object(r, "read", return_value={**r.PROFILE, "required_components": []}):
             with self.assertRaisesRegex(ValueError, "unapproved_profile"):
                 r.policy()
+
+    def test_project_number_policy_requires_explicit_decimal_string(self):
+        env = r.read(ROOT / "deploy/environments.json")
+        for value in (None, True, 1.0, 123456789012, "", "0", "not-a-number"):
+            with self.subTest(value=value), patch.object(r, "read", side_effect=[r.PROFILE, {**env, "project_number": value}]):
+                with self.assertRaisesRegex(ValueError, "invalid_project_number"):
+                    r.policy()
 
     def test_signing_request_uses_separate_identity_and_data_only_transport(self):
         request = r.signing_request(P, CONFIG, "gs://example-project-attestation-source/catalog/candidate.json#123",
