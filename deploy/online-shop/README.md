@@ -2,8 +2,11 @@
 
 Implements the first stage of [#93](https://github.com/DimitryZH/secure-delivery-platform/issues/93).
 Implementation and offline checks are distinct from read-only observations and
-live acceptance. See [validation.json](validation.json). **No rollout, infrastructure
-apply, mirror or signing has been performed for this stage.** Eligibility is not authorization.
+live acceptance. See [validation.json](validation.json). The separately authorized
+infrastructure apply completed from `1b474a96ac344b3ee978b7d4df373d86d62cebee`.
+[Collector adoption](collector-adoption.md) adds the narrow mirror/separate-signing
+implementation and live publisher proof. **No Collector mirror, signing or workload
+rollout has been performed.** Eligibility is not authorization.
 
 ## Release and deployment boundaries
 
@@ -78,14 +81,17 @@ export and file-log parsing. Its exact linux/amd64 manifest/config/index digests
 upstream repository and exact Sigstore workflow identity are pinned in policy.
 The [official release](https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.164.0)
 and [exporter configuration](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/v0.164.0/exporter/googlecloudexporter/README.md)
-are the source references. Registry content addressing was checked; upstream
-publisher signature verification is still pending locally.
+are the source references. Live Cosign verification of the exact index and
+publisher, unique linux/amd64 membership and actual manifest/config/layer hashes
+passed on 2026-10-30; mirror and platform attestation remain pending.
 
 `verify_support` requires successful online Cosign verification of that signed
 index, its exact amd64 member, the same digest-addressed bytes/config/platform in
 the approved Artifact Registry mirror, and a valid platform-attestor occurrence
 for that exact mirrored URI. It never mirrors or signs. There is no arbitrary-image
 signing entry point, registry exception, namespace exception or break-glass path.
+The separate [adoption CLI](collector-adoption.md) repeats these proofs inside the
+existing attestation identity before signing only this policy-selected support image.
 The Collector is not an AML-built member of `catalog-v1`.
 
 The Collector DaemonSet runs one agent per eligible node. Only catalog log paths
@@ -113,7 +119,17 @@ requires the real native trace/span fields to match a nonempty Cloud Trace span,
 the test traffic window, service/version/dev labels, release-set ID and digest,
 plus nonzero functional application metrics. Empty views and config presence fail.
 
-## Infrastructure proposal and capacity
+## Infrastructure and capacity
+
+The following proposal was separately applied from the merged configuration above:
+8 creates, 2 updates and import of the existing default pool, without Terraform
+delete/replace. GKE internally recreated the node through surge; sample-service
+experienced approximately 43–49 seconds of sampled HTTP 503 and recovered in all
+three environments. Fresh post-apply readback confirmed workload pool, metadata
+server, scoped Collector grants/exclusion and dev-only pipeline. Historical plan
+and pre-apply observations below remain distinct from that completed apply.
+The post-apply snapshot had 1069m CPU / 4796Mi memory free by requests and 90 Pod
+slots, with no Pending Pods. Recheck this again before any workload rollout.
 
 [catalog-runtime.tf](../../terraform/foundation/catalog-runtime.tf) proposes a
 dedicated Collector GSA and only Trace Agent, Monitoring Metric Writer and Logging
@@ -142,12 +158,13 @@ the metadata server is enabled; Terraform defaults are not live capacity evidenc
 
 ## Subsequent live acceptance — separately authorized
 
-Prerequisites: review/merge, a fresh full safe infrastructure plan and separately
-authorized apply, verified Collector publisher provenance, exact mirror and bounded
+Prerequisites: review/merge, fresh read-only confirmation of the already applied
+infrastructure, verified Collector publisher provenance, exact mirror and bounded
 platform-attestor adoption for **only** the pinned supporting image. None is executed
 by this procedure automatically. If any proof is missing, stop. Do not rebuild/sign
 the application or bypass admission. Do not enable a general-purpose signing path.
-Install reviewed versions of gcloud, kubectl, Skaffold, Cosign and grpcurl locally.
+Install reviewed versions of gcloud, kubectl, Skaffold and grpcurl locally;
+the adoption verifier bootstraps checksum-pinned Cosign/crane privately.
 Local clients avoid extra in-cluster test images. Keep all raw files under ignored
 `.local-validation`; do not use public sanitized records as candidate/snapshot inputs.
 
@@ -272,6 +289,7 @@ Local clients avoid extra in-cluster test images. Keep all raw files under ignor
     compare to the preflight baseline. Record cleanup and final resource pressure.
     Retain linked sanitized conclusions; keep private responses and inputs private.
 
-All live criteria in #93 remain pending. Read-only proof of the existing release,
-native parser validation and offline fakes do not establish deployment, admission,
-functional RPC or cloud telemetry success.
+Infrastructure apply and read-only Collector publisher/content proof have completed.
+Collector mirror/attestation and workload acceptance remain pending. Proof of the
+existing release, native parser validation and offline fakes do not establish
+deployment, admission, functional RPC or catalog cloud telemetry success.

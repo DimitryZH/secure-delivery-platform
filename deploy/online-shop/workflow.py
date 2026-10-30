@@ -6,10 +6,8 @@ import importlib.util
 import json
 from pathlib import Path
 import re
-import shutil
 import subprocess
 import urllib.parse
-import urllib.request
 
 ROOT = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).resolve().parent
@@ -23,12 +21,14 @@ def module(name, path):
 
 
 r = module("catalog_release", ROOT / "cloudbuild/online-shop/release.py")
+support = module("collector_adoption", ROOT / "cloudbuild/online-shop/collector.py")
 sample = module("sample_preflight", ROOT / "deploy/clouddeploy/release-preflight.py")
 require = r.require
 MAX_AGE, MARGIN = sample.MAX_AGE, sample.PROTECTION_MARGIN
 TRUST_FILES = (*r.TRUSTED_FILES, "deploy/online-shop/workflow.py", "deploy/online-shop/policy.json",
                "deploy/online-shop/collector.json", "deploy/online-shop/skaffold.yaml", "deploy/online-shop/acceptance.py",
-               "deploy/clouddeploy/release-preflight.py", "deploy/deploy-release.py", "cloudbuild/scripts/verify-release-metadata.py")
+               "deploy/clouddeploy/release-preflight.py", "deploy/deploy-release.py", "cloudbuild/scripts/verify-release-metadata.py",
+               "cloudbuild/online-shop/collector.py", "cloudbuild/online-shop/collector-tools.json")
 
 
 def policy():
@@ -111,37 +111,8 @@ def verify_application(record, occurrence, cloud):
 
 def verify_support(cloud, occurrence):
     """Only the reviewed Collector selection; this function never mirrors or signs."""
-    c = policy()["collector"]
-    executable = shutil.which("cosign")
-    require(executable is not None, "cosign_required")
-    verified = r.decode(r.command([executable, "verify", "--certificate-identity=" + c["certificate_identity"],
-        "--certificate-oidc-issuer=" + c["certificate_oidc_issuer"],
-        c["upstream_repository"] + "@" + c["index_digest"]]))
-    require(isinstance(verified, list) and verified and all(
-        item["critical"]["image"]["docker-manifest-digest"] == c["index_digest"] for item in verified),
-        "collector_publisher_signature_mismatch")
-    repo = c["upstream_repository"].removeprefix("ghcr.io/")
-    def get(url, headers=None):
-        # Index and manifest never require a CDN redirect. Do not forward auth.
-        class NoRedirect(urllib.request.HTTPRedirectHandler):
-            def redirect_request(self, *args):
-                raise ValueError("unexpected_upstream_redirect")
-        with urllib.request.build_opener(NoRedirect()).open(urllib.request.Request(url, headers=headers or {}), timeout=60) as response:
-            return response.read()
-    token = r.decode(get("https://ghcr.io/token?scope=repository:" + repo + ":pull"))["token"]
-    headers = {"Authorization": "Bearer " + token, "Accept": "application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.v2+json"}
-    raw_index = get("https://ghcr.io/v2/" + repo + "/manifests/" + c["index_digest"], headers)
-    require("sha256:" + r.sha(raw_index) == c["index_digest"], "collector_index_hash")
-    members = [m for m in r.decode(raw_index)["manifests"] if m.get("platform", {}).get("os") == "linux"
-               and m.get("platform", {}).get("architecture") == "amd64"]
-    require(len(members) == 1 and members[0]["digest"] == c["manifest_digest"], "collector_signed_platform_membership")
-    repository, digest = c["mirror_image"].split("@")
-    host, path = repository.split("/", 1)
-    raw = cloud.request("https://" + host + "/v2/" + path + "/manifests/" + digest, registry=True)
-    require("sha256:" + r.sha(raw) == digest and r.decode(raw)["config"]["digest"] == c["config_digest"], "collector_mirror_manifest")
-    config = cloud.request("https://" + host + "/v2/" + path + "/blobs/" + c["config_digest"], registry=True)
-    require("sha256:" + r.sha(config) == c["config_digest"] and r.decode(config).get("os") == "linux"
-            and r.decode(config).get("architecture") == "amd64", "collector_mirror_platform")
+    c = support.policy()
+    support.verify(c, cloud)
     trust(cloud, c["mirror_image"], occurrence)
 
 
