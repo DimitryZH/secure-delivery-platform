@@ -233,9 +233,9 @@ class DeploymentTests(unittest.TestCase):
         snapshot["trace"]["spans"] = []
         with self.assertRaisesRegex(ValueError, "empty_trace"): a.signals(snapshot, self.record, stamp(-1))
 
-    def test_missing_cosign_fails_before_registry_or_attestation(self):
+    def test_failed_publisher_proof_precedes_mirror_or_attestation(self):
         cloud = Mock()
-        with patch.object(w.shutil, "which", return_value=None), self.assertRaisesRegex(ValueError, "cosign_required"):
+        with patch.object(w.support, "cosign", side_effect=ValueError("cosign_required")), self.assertRaisesRegex(ValueError, "cosign_required"):
             w.verify_support(cloud, "support")
         cloud.request.assert_not_called()
 

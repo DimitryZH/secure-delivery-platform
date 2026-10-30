@@ -1,19 +1,42 @@
 {
-  "base_revision": "555bfb54fc6de0d49eb992928df96943a8ad73e3",
+  "base_revision": "1b474a96ac344b3ee978b7d4df373d86d62cebee",
   "blockers_before_live": [
-    "Review and merge implementation, select full immutable deployment revision and recheck main-bound files.",
-    "Review fresh full Terraform plan including existing-pool adoption; separately authorize apply. Workload Identity/export identity/log exclusion/dev pipeline are proposed only.",
-    "Cosign, grpcurl and Skaffold are not on this host PATH; Docker daemon is unavailable. Native Collector validation/parser checks passed, not Linux runtime validation.",
-    "Exact Collector mirror currently returns 404; publisher verification and narrowly scoped platform attestation are required before preparation can pass. No blanket image exception or arbitrary-image signer is supplied.",
-    "No new Cloud Deploy source/rendered artifact exists; five-minute freshness and effective 75-minute protection must be established from actual future generations.",
-    "Fresh capacity/constraints and sample usage must be rechecked after metadata server changes; unrequested sample allowance is not a resource limit."
+    "Review/merge Collector adoption implementation and select a full immutable main revision with matching executing files.",
+    "Separately authorize live mirror and one separate signing execution; recheck existing caller/registry/signer authority without expanding IAM.",
+    "Exact Collector mirror and platform attestation remain unexecuted; require actual mirror/content and occurrence/signature readback before preparation.",
+    "No new Cloud Deploy source/rendered artifact exists; collect fresh generations and five-minute/75-minute protection evidence later.",
+    "Fresh single-node capacity, constraints, sample preservation and metadata readiness must pass immediately before any workload rollout.",
+    "Collector WIF export, Linux host-log permissions/rotation and functional catalog/admission/native-linked telemetry remain live acceptance prerequisites."
   ],
+  "collector_publisher_verification": {
+    "all_three_compressed_layer_hashes_and_sizes_verified": true,
+    "certificate_identity": "https://github.com/open-telemetry/opentelemetry-collector-releases/.github/workflows/base-release.yaml@refs/tags/v0.164.0",
+    "certificate_oidc_issuer": "https://token.actions.githubusercontent.com",
+    "certificate_trust": "verified by Cosign public Sigstore trust defaults",
+    "completed_at": "2026-10-30T17:38:14.811432+00:00",
+    "config_digest": "sha256:28ebddf51f59e38ac800c9f91120726cfb312af377da8908807e0b566a82b017",
+    "cosign_exit_code": 0,
+    "cosign_version": "v3.1.4",
+    "cosign_windows_sha256": "sha256:cbe953787074611f1334cbf37dc1cf953995bb8c45398eb4fc7bb781d29c1f2a",
+    "deployment_performed": false,
+    "index_digest": "sha256:340c9ca6a36617084c6661bdc4f0fe92b7cda5a805d61673ec8db375fddc522b",
+    "layer_bytes_verified": true,
+    "manifest_digest": "sha256:ac0bb9cdc844b55d2fd2655d03e596243787d6a8c52dd408b1dc96dd1bd372ee",
+    "mirror_performed": false,
+    "platform": "linux/amd64",
+    "raw_proof": "retained privately; not an execution input",
+    "read_only": true,
+    "signing_performed": false,
+    "status": "publisher_verified",
+    "transparency_log": "verified by Cosign; no bypass flags",
+    "unique_linux_amd64_member": true
+  },
   "collector_selection": {
     "config_digest": "sha256:28ebddf51f59e38ac800c9f91120726cfb312af377da8908807e0b566a82b017",
     "index_digest": "sha256:340c9ca6a36617084c6661bdc4f0fe92b7cda5a805d61673ec8db375fddc522b",
     "manifest_digest": "sha256:ac0bb9cdc844b55d2fd2655d03e596243787d6a8c52dd408b1dc96dd1bd372ee",
     "platform": "linux/amd64",
-    "publisher_verification": "pending; registry content addressing confirmed, not signature/provenance verification",
+    "publisher_verification": "passed live exact identity/issuer/index, platform membership and manifest/config/layer content checks; no mirror/signing",
     "release_url": "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.164.0",
     "upstream_repository": "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib",
     "version": "0.164.0"
@@ -39,6 +62,7 @@
     ],
     "deployment_operator_fields_unchanged": true,
     "first_exploratory_plan": "Rejected replacement plan caused by cluster create-time node_config; superseded by safe pool adoption plan. No apply occurred.",
+    "historical_premerge_plan": true,
     "imports": [
       "google_container_node_pool.existing_default"
     ],
@@ -368,13 +392,17 @@
     "workspace": "default"
   },
   "implementation_sha256": {
-    "deploy/online-shop/README.md": "sha256:9a10328371d3a3dd5a28681958ae3f51e1b7504abddb46dcd59def238c2f46df",
+    "cloudbuild/online-shop/collector-tools.json": "sha256:ed1a4d335e939efd848d334d9acf0105b436f65887dd852252fbf59fb8007a95",
+    "cloudbuild/online-shop/collector.py": "sha256:729e529d59c79a67ec7826eb5cfcf933d0cc1833c2864fd3e29a368f1b2f5d10",
+    "deploy/online-shop/README.md": "sha256:e2ac5d185549b73b5a5f9eb19fead089107c7adbcbb3d7c6ae007c54b727ca6d",
     "deploy/online-shop/acceptance.py": "sha256:2f91344795941b54f1b5fe7773a5149becb75d3fa31d418e132f498df5a4acac",
+    "deploy/online-shop/collector-adoption.md": "sha256:77ace7f17ed373cbb71d323f3e474893ac1c2a2bb942f7c7a4996c1b4c582095",
     "deploy/online-shop/collector.json": "sha256:9dcdb191e1ef17cd1fcc958793e2258de1f1c606635045cde43906a04db934ba",
     "deploy/online-shop/policy.json": "sha256:cb0d0cbcc0c8915f037ba633935f6adc6ae3bed95a5808dfc123e4dccb00f42c",
     "deploy/online-shop/skaffold.yaml": "sha256:160b7c968fde8b5cad2cd07e159044232618772e88fe6ae5d6d0a4761e4dbf68",
-    "deploy/online-shop/workflow.py": "sha256:a96767391296f12157472aa04d2bc38612146c2a77a09078565c994dde23e66d",
-    "scripts/tests/test_catalog_deployment.py": "sha256:90c6f5270341f0cf798bdad65919c70adc6abb3fc57c0e8eebfb1d0924bd6202",
+    "deploy/online-shop/workflow.py": "sha256:bd282eaf2533fa701f9b74790578aab6139cdbbfafd75d1aa0f8d51c4af11a46",
+    "scripts/tests/test_catalog_deployment.py": "sha256:7e80ed7334c5a8b17c75f2fd5b1ce738b4fd241d7d8e1e5c9d219c172d3e86a1",
+    "scripts/tests/test_collector_adoption.py": "sha256:b758960c111d593b62c2ebe4dd41fa8e52558681a2fd1da85fa2438e5b9c1bd3",
     "terraform/foundation/catalog-runtime.tf": "sha256:5b511b14e0e4b2bc5d234a8633ff47c9b29aecb9be1f8a672e56191d63ee7ed3",
     "terraform/foundation/gke.tf": "sha256:8e2c402743ad59094a16715bb21acf7f166b545169d2d4a9b63e42dcb9c9ca0c"
   },
@@ -386,8 +414,47 @@
     "Dev deployment/rollback eligibility only; promotion blocked and no action execution.",
     "Catalog runtime bounds, native gRPC probes and 30-second shutdown grace; internal Services only.",
     "Collector CRI/JSON/native trace mapping, Cloud Trace and Cloud Monitoring export, scoped stdout ownership and WIF-only exporter identity proposal.",
-    "Readback validators for runtime images, scheduling headroom and nonempty correctly attributed traces/metrics/native-linked logs."
+    "Readback validators for runtime images, scheduling headroom and nonempty correctly attributed traces/metrics/native-linked logs.",
+    "Policy-only supporting image mirror via digest-preserving crane copy; destination content verification and reuse/recovery without blind retries.",
+    "Separate main-bound Cloud Build attestation under existing signer identity; independent publisher/upstream/mirror proof, exact occurrence/signature readback and reuse.",
+    "Shared supporting content verifier used by deployment preparation; application release #87 policy, producing references and implementation unchanged."
   ],
+  "infrastructure_applied": {
+    "apply_completed": "2026-10-30T15:19:07.797439+00:00",
+    "backend": {
+      "prefix": "secure-delivery-platform/foundation",
+      "type": "gcs"
+    },
+    "capacity_recheck_required_before_rollout": true,
+    "configuration_revision": "1b474a96ac344b3ee978b7d4df373d86d62cebee",
+    "deployment_operator_unchanged": true,
+    "exact_collector_grants_exclusion_dev_pipeline_confirmed": true,
+    "free_requested_cpu_m": 1069,
+    "free_requested_memory_mi_floor": 4796,
+    "fresh_managed_logging_monitoring_confirmed": true,
+    "gke_internal_surge_recreated_node": true,
+    "metadata_server_ready": true,
+    "plan_sha256": "sha256:2fa5a5ba81a84c04efa24956ba4779569b421bf3b6f53a7fce259f263ebf830e",
+    "sample_service_all_environments_recovered_http_200": true,
+    "sampled_http_503_seconds_approx": {
+      "dev": 49,
+      "prod": 43,
+      "stage": 49
+    },
+    "summary": [
+      {
+        "add": 8,
+        "change": 2,
+        "import": 1,
+        "operation": "apply",
+        "remove": 0
+      }
+    ],
+    "this_adoption_change_performs_infrastructure_mutations": false,
+    "workload_pool_and_gke_metadata_ready": true,
+    "workspace": "default"
+  },
+  "initial_implementation_base_revision": "555bfb54fc6de0d49eb992928df96943a8ad73e3",
   "issue": 93,
   "limits": [
     "Offline fakes and native local parsing do not establish cloud rollout, export, correlation or admission acceptance.",
@@ -395,21 +462,22 @@
     "Metadata-server updates may disrupt the single-node cluster; prevent_destroy avoids cluster/pool replacement but does not guarantee zero downtime.",
     "Root read-only host-log visibility and unauthenticated internal OTLP remain dev trust boundaries; no multi-tenant or production hardening claim.",
     "Collector root filesystem/cursor rotation/host permissions, real image admission and exporter identity must pass later live checks.",
-    "Raw state, plans, API responses, candidate and private inputs remain ignored/private; no cloud resources were changed.",
-    "All live #93 criteria remain pending; issue stays open and no merge is performed.",
-    "Generated-label compatibility is offline-validated against the documented contract; actual Cloud Deploy release/render/rollout readback remains pending. No organization label-generation policy was changed."
+    "Raw state, plans, API responses, candidate and private inputs remain ignored/private. Prior authorized infrastructure apply is recorded separately; this adoption implementation performs no infrastructure operation.",
+    "Collector mirror/attestation, workload deployment and remaining #93 runtime acceptance remain pending; issue stays open and no merge is performed.",
+    "Generated-label compatibility is offline-validated against the documented contract; actual Cloud Deploy release/render/rollout readback remains pending. No organization label-generation policy was changed.",
+    "Live publisher proof and Windows tool bootstrap passed; no live mirror, signer Cloud Build, occurrence creation or Linux signer execution was performed.",
+    "Existing-result lookup/recovery is serialized and fail-closed, not an exactly-once guarantee against concurrent submissions or eventually consistent reads.",
+    "Linux Cloud Build tool bootstrap, Artifact Registry copy/readback and actual KMS/occurrence operations require subsequent reviewed live acceptance."
   ],
   "live_pending": {
     "bounded_normal_traffic": null,
     "catalog_release_and_rollout": null,
     "collector_mirror_and_specific_platform_attestation": null,
     "functional_rpc_success_and_expected_failure": null,
-    "infrastructure_apply": null,
     "negative_binary_authorization_admission": null,
     "real_cloud_traces_metrics_and_native_linked_logs": null,
     "running_image_and_metadata_readback": null,
     "sample_service_post_rollout_preservation": null,
-    "support_publisher_verification": null,
     "temporary_resource_cleanup": null
   },
   "offline_validated": {
@@ -430,6 +498,24 @@
       "last_targeted_rerun": "Included in final complete suite after both review fixes and CLI-before-snapshot guard.",
       "passed": 22
     },
+    "collector_adoption_tests": {
+      "failed": 0,
+      "negative_cases": [
+        "wrong/empty publisher proof, wrong or duplicate platform membership, index/manifest/config/layer hash or size mismatch",
+        "recomputed wrong platform, external layer URLs, registry denial and incomplete existing mirror",
+        "wrong execution identity, unreviewed CLI configuration, arbitrary-image/candidate/bypass flags",
+        "existing invalid attestation, post-create subject/payload/key/note/signature mismatch",
+        "uncertain copy/create/submission recovery, existing queued/running/success/failed build suppression, pagination cycles",
+        "tool cache corruption, ambient Sigstore trust overrides and authorization stripping on redirects"
+      ],
+      "passed": 37,
+      "scope": "Offline registry/Cosign/API fakes; not live mirror/signing proof"
+    },
+    "collector_tool_bootstrap": {
+      "linux_execution": "pending separate Cloud Build acceptance",
+      "windows_cosign": "v3.1.4 verified SHA-256 and live verification passed",
+      "windows_crane": "v0.22.1 release archive verified, extracted version command passed"
+    },
     "environment_notes": [
       "One intermediate full run encountered Windows loopback socket abort 10053 in an unchanged sample-service logging test. The isolated nine-test sample suite and subsequent full 140-test run passed. No sample implementation change."
     ],
@@ -445,7 +531,7 @@
     },
     "python_full_suite": {
       "failed": 0,
-      "passed": 140,
+      "passed": 177,
       "skipped": 0
     },
     "review_regressions": {
@@ -466,6 +552,7 @@
       "wrong_or_unknown_labels_and_context_mismatch": "rejected"
     },
     "shell_regressions": {
+      "current_adoption_rerun": "All four existing suites passed against LF-normalized copies of current tracked working inputs; synthetic commands only.",
       "inputs": "LF-normalized copies of tracked inputs, synthetic cloud/terraform commands only",
       "status": "passed",
       "tests": [
@@ -479,9 +566,10 @@
     "terraform_validate": "passed"
   },
   "proposed_configuration": {
-    "collector_admission": "Required platform-attestor occurrence for exact mirror URI; independent publisher/index/platform/content proof; no exceptions or signing implementation.",
+    "collector_admission": "Narrow policy-only mirror and separate attestation implementation added; fresh publisher/upstream/mirror content proof and exact platform-attestor occurrence remain mandatory. No live adoption or exceptions.",
     "current_live_configuration_changed": false,
     "federated_subject": "dev/catalog-collector",
+    "historical_initial_proposal": true,
     "host_log_mount": "read-only /var/log/pods, fixed dev/catalog path selection; root UID without capabilities/privilege; no API RBAC or host network/PID.",
     "logging": "Scoped original catalog stdout exclusion, Collector online-shop/catalog stream only; no SDK log exporter.",
     "node_builder_or_catalog_export_grants_added": false,
@@ -550,6 +638,7 @@
       "region": "us-central1",
       "registry": "us-central1-docker.pkg.dev/<PROJECT_ID>/secure-delivery"
     },
+    "historical_initial_inspection": true,
     "logging_sinks": [
       "_Default",
       "_Required"
@@ -565,6 +654,6 @@
     "trace_api_enabled": true,
     "workload_identity_enabled": false
   },
-  "stage": "local_implementation_and_read_only_inspection",
+  "stage": "collector_adoption_implementation_and_live_read_only_publisher_proof",
   "validation_date": "2026-10-30"
 }
