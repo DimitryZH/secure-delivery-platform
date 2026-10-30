@@ -3,10 +3,12 @@ import copy
 from datetime import datetime, timedelta, timezone
 import importlib.util
 import json
+import io
 from pathlib import Path
 import tempfile
 import os
 import subprocess
+import sys
 import unittest
 from unittest.mock import Mock, patch
 
@@ -20,6 +22,10 @@ w = load("catalog_deployment", ROOT / "deploy/online-shop/workflow.py")
 a = load("catalog_acceptance", ROOT / "deploy/online-shop/acceptance.py")
 REV = "d" * 40
 NOW = datetime(2026, 10, 30, 12, tzinfo=timezone.utc)
+RELEASE_ID = "catalog-review-r1"
+RESOURCE_PREFIX = "projects/" + w.r.policy()["project"] + "/locations/" + w.r.policy()["region"]
+RELEASE_RESOURCE = RESOURCE_PREFIX + "/deliveryPipelines/catalog-dev/releases/" + RELEASE_ID
+TARGET_RESOURCE = RESOURCE_PREFIX + "/targets/dev"
 def stamp(minutes=0): return (NOW + timedelta(minutes=minutes)).isoformat().replace("+00:00", "Z")
 
 
@@ -36,22 +42,88 @@ class DeploymentTests(unittest.TestCase):
         self.patches = [patch.object(w, "policy", return_value=self.policy), patch.object(a.w, "policy", return_value=self.policy)]
         for item in self.patches: item.start(); self.addCleanup(item.stop)
 
+    def clouddeploy_documents(self):
+        # Explicit service contract fixture, independently of the implementation.
+        labels = {"app.kubernetes.io/managed-by": "google-cloud-deploy",
+                  "deploy.cloud.google.com/project-id": w.r.policy()["project"],
+                  "deploy.cloud.google.com/location": w.r.policy()["region"],
+                  "deploy.cloud.google.com/delivery-pipeline-id": "catalog-dev",
+                  "deploy.cloud.google.com/release-id": RELEASE_ID,
+                  "deploy.cloud.google.com/target-id": "dev"}
+        docs = w.render(self.record, REV)
+        for doc in docs:
+            doc["metadata"].setdefault("labels", {}).update(labels)
+            if doc["kind"] in ("Deployment", "DaemonSet"):
+                doc["spec"]["template"]["metadata"]["labels"].update(labels)
+        return docs
+
     def snapshot(self):
         common = {"observed_at": stamp(), "evidence_ref": "PRIVATE-READBACK", "release_set_id": self.record["release_set_id"], "deployment_revision": REV}
         sections = {"release": ["independently_verified", "application_signature_verified", "collector_publisher_verified", "collector_signature_verified"],
             "admission": ["cluster_enforced", "exact_attestor_required", "no_bypass"],
             "target": ["namespace_dev", "pipeline_catalog_dev", "snapshot_matches_current", "deployment_identity_matches", "workload_identity_ready", "log_exclusion_ready", "capacity_and_constraints_checked", "no_rollout_conflict"],
-            "caller": ["rollout_create", "deployment_act_as"], "review": ["continue"]}
-        d = {"version": 1, "request": {"release_set_id": self.record["release_set_id"], "deployment_revision": REV, "target": "dev", "action": "deploy"},
-             "rendered_documents": w.render(self.record, REV), "artifacts": {}, "release_annotations": {}}
+            "caller": ["rollout_create", "deployment_act_as"], "review": ["continue"],
+            "clouddeploy": ["release_snapshot_matches_current"]}
+        d = {"version": 1, "request": {"release_set_id": self.record["release_set_id"], "deployment_revision": REV, "target": "dev", "action": "deploy", "clouddeploy_release": RELEASE_RESOURCE},
+             "rendered_documents": self.clouddeploy_documents(), "artifacts": {}, "release_annotations": {}}
         for section, fields in sections.items(): d[section] = {**common, **{k: True for k in fields}}
+        d["clouddeploy"].update(release_resource=RELEASE_RESOURCE, target_resource=TARGET_RESOURCE)
         for name, sha in (("source", "a" * 64), ("rendered", "b" * 64)):
             d["artifacts"][name] = {**common, "expected_sha256": sha, "actual_sha256": sha, "available": True,
                                      "live_generation": True, "retention_expires_at": stamp(90)}
             d["release_annotations"][name + "_sha256"] = sha
         return d
 
-    def decide(self, d, action="deploy"): return w.evaluate(d, self.record, REV, action, NOW)
+    def decide(self, d, action="deploy"):
+        return w.evaluate(d, self.record, REV, action, NOW, clouddeploy_release=RELEASE_RESOURCE)
+
+    def test_clouddeploy_rendered_labels_and_prepared_manifest_are_distinct(self):
+        prepared = w.render(self.record, REV)
+        w.inventory(prepared, self.record, REV)
+        self.assertEqual(self.decide(self.snapshot())["decision"], "READY")
+        with self.assertRaisesRegex(ValueError, "inventory"):
+            w.inventory(self.clouddeploy_documents(), self.record, REV)
+        d = self.snapshot(); d["rendered_documents"] = prepared
+        self.assertEqual(self.decide(d)["decision"], "BLOCKED")
+
+    def test_wrong_or_unknown_generated_labels_fail_at_explicit_paths(self):
+        for key in ("project-id", "location", "delivery-pipeline-id", "release-id", "target-id", "unknown-generated"):
+            for path in ("resource", "template"):
+                d = self.snapshot()
+                metadata = d["rendered_documents"][3]["metadata"] if path == "resource" else d["rendered_documents"][3]["spec"]["template"]["metadata"]
+                metadata["labels"]["deploy.cloud.google.com/" + key] = "wrong"
+                with self.subTest(key=key, path=path):
+                    self.assertEqual(self.decide(d)["decision"], "BLOCKED")
+        d = self.snapshot(); d["rendered_documents"][0]["metadata"]["labels"]["app.kubernetes.io/managed-by"] = "other"
+        self.assertEqual(self.decide(d)["decision"], "BLOCKED")
+
+    def test_generated_labels_cannot_supply_their_own_release_context(self):
+        for change in (lambda c: c.update(release_resource=RELEASE_RESOURCE.replace("/catalog-dev/", "/other/")),
+                       lambda c: c.update(release_resource=RELEASE_RESOURCE.replace(w.r.policy()["project"], "other-project")),
+                       lambda c: c.update(target_resource=TARGET_RESOURCE.replace("/dev", "/stage")),
+                       lambda c: c.update(observed_at=stamp(-6))):
+            d = self.snapshot(); change(d["clouddeploy"])
+            self.assertEqual(self.decide(d)["decision"], "BLOCKED")
+        d = self.snapshot()
+        d["clouddeploy"]["release_resource"] = RELEASE_RESOURCE.replace(RELEASE_ID, "other-release")
+        d["request"]["clouddeploy_release"] = d["clouddeploy"]["release_resource"]
+        for doc in d["rendered_documents"]:
+            doc["metadata"]["labels"]["deploy.cloud.google.com/release-id"] = "other-release"
+            if doc["kind"] in ("Deployment", "DaemonSet"):
+                doc["spec"]["template"]["metadata"]["labels"]["deploy.cloud.google.com/release-id"] = "other-release"
+        # Even coherently forged labels/context do not change the intended resource.
+        self.assertEqual(self.decide(d)["decision"], "BLOCKED")
+
+    def test_generated_labels_do_not_hide_image_config_container_or_bypass_changes(self):
+        mutations = [lambda d: d[3]["spec"]["template"]["spec"]["containers"][0].update(image="catalog:latest"),
+                     lambda d: d[4]["spec"]["template"]["spec"]["containers"][0].update(image="collector:latest"),
+                     lambda d: d[2]["data"].update({"config.json": "unreviewed"}),
+                     lambda d: d[3]["spec"]["template"]["spec"].update(initContainers=[{"image": "hidden:tag"}]),
+                     lambda d: d[3]["spec"]["template"]["spec"]["containers"][0]["securityContext"].update(privileged=True),
+                     lambda d: d[3]["spec"]["template"]["metadata"]["annotations"].update({"alpha.image-policy.k8s.io/break-glass": "true"})]
+        for mutation in mutations:
+            d = self.snapshot(); mutation(d["rendered_documents"])
+            self.assertEqual(self.decide(d)["decision"], "BLOCKED")
 
     def test_exact_separate_inventory_and_distinct_configuration_revisions(self):
         docs = w.render(self.record, REV)
@@ -190,17 +262,25 @@ class DeploymentTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "signing_build_unavailable"):
                 w.verify_application(self.record, "app", cloud)
 
-    def test_runtime_rejects_unknown_running_digest_and_missing_members(self):
+    def runtime_pods(self, record=None):
+        record = record or self.record
         docs = w.render(self.record, REV)
         pods = []
         for doc in (docs[3], docs[4]):
             template = copy.deepcopy(doc["spec"]["template"])
             template["metadata"]["namespace"] = "dev"
             template["spec"]["nodeName"] = "node-1"
+            template["metadata"]["annotations"] = w.annotations(record, REV)
             container = template["spec"]["containers"][0]
+            if container["name"] == "catalog":
+                container["image"] = record["components"][0]["repository"] + "@" + record["components"][0]["digest"]
             template["status"] = {"containerStatuses": [{"name": container["name"], "ready": True,
                 "imageID": "docker-pullable://" + container["image"]}]}
             pods.append(template)
+        return {"items": pods}
+
+    def test_runtime_rejects_unknown_running_digest_and_missing_members(self):
+        pods = self.runtime_pods()["items"]
         self.assertEqual(a.runtime({"items": pods}, self.record, REV)["runtime"], "passed")
         pods[0]["status"]["containerStatuses"][0]["imageID"] = "containerd://sha256:" + "0" * 64
         with self.assertRaisesRegex(ValueError, "running_digest_unproven"): a.runtime({"items": pods}, self.record, REV)
@@ -235,11 +315,12 @@ class DeploymentTests(unittest.TestCase):
             self.assertRegex(text, r"Flags:\s+1")
             self.assertNotIn("failed to process", text.lower())
 
-    def test_actual_signal_shapes_require_nonzero_metrics_and_linked_attribution(self):
+    def signal_snapshot(self, record=None):
+        record = record or self.record
         trace = "1" * 32; span = "0000000000000001"
         labels = {"service.name": "productcatalogservice", "service.version": w.r.REVISION,
-                  "deployment.environment.name": "dev", "release_set_id": self.record["release_set_id"],
-                  "component_digest": self.record["components"][0]["digest"]}
+                  "deployment.environment.name": "dev", "release_set_id": record["release_set_id"],
+                  "component_digest": record["components"][0]["digest"]}
         metric_labels = {k.replace(".", "_"): v for k, v in labels.items()}
         metric_labels.update(kind="server", operation="/hipstershop.ProductCatalogService/ListProducts")
         snapshot = {"trace": {"traceId": trace, "spans": [{"spanId": "1", "name": "hipstershop.ProductCatalogService/ListProducts", "startTime": stamp()}]},
@@ -249,11 +330,59 @@ class DeploymentTests(unittest.TestCase):
                 "jsonPayload": {"event": "request.completed", "operation": "/hipstershop.ProductCatalogService/ListProducts", "trace_id": trace, "span_id": span}}]},
             "metrics": {"timeSeries": [{"metric": {"type": "workload.googleapis.com/online_shop.transport.requests", "labels": metric_labels},
                 "points": [{"interval": {"endTime": stamp()}, "value": {"int64Value": "3"}}]}]}}
+        return snapshot
+
+    def test_actual_signal_shapes_require_nonzero_metrics_and_linked_attribution(self):
+        snapshot = self.signal_snapshot()
         with patch.object(a, "datetime") as clock:
             clock.now.return_value = NOW
             self.assertTrue(a.signals(snapshot, self.record, stamp(-1))["native_trace_linkage"])
             snapshot["metrics"]["timeSeries"] = []
             with self.assertRaisesRegex(ValueError, "metrics_missing"): a.signals(snapshot, self.record, stamp(-1))
+
+    def test_acceptance_rejects_changed_digest_even_with_matching_pods_and_signals(self):
+        record = copy.deepcopy(self.record)
+        record["components"][0]["digest"] = "sha256:" + "0" * 64
+        for recompute in (False, True):
+            if recompute:
+                record["release_set_id"] = w.r.fingerprint({k: v for k, v in record.items() if k != "release_set_id"})
+            expected = "unaccepted_catalog_release" if recompute else "candidate_identity_mismatch"
+            with self.subTest(recomputed=recompute):
+                with self.assertRaisesRegex(ValueError, expected): a.runtime(self.runtime_pods(record), record, REV)
+                with patch.object(a, "datetime") as clock:
+                    clock.now.return_value = NOW
+                    with self.assertRaisesRegex(ValueError, expected): a.signals(self.signal_snapshot(record), record, stamp(-1))
+
+    def test_acceptance_candidate_guard_precedes_all_evidence_processing(self):
+        class EvidenceMustNotBeRead:
+            def __getitem__(self, key): raise AssertionError("evidence processed before guard")
+        mutations = [lambda c: c.update(version=True), lambda c: c.update(version=1.0),
+                     lambda c: c.update(plan=None), lambda c: c.update(components=[]),
+                     lambda c: c.update(profile="other"), lambda c: c["source"].update(revision=REV),
+                     lambda c: c["build"].update(id="11111111-2222-3333-4444-555555555555"),
+                     lambda c: c.update(unexpected=True)]
+        for mutation in mutations:
+            record = copy.deepcopy(self.record); mutation(record)
+            for recompute in (False, True):
+                if recompute: record["release_set_id"] = w.r.fingerprint({k: v for k, v in record.items() if k != "release_set_id"})
+                with self.subTest(record=record), self.assertRaises(ValueError): a.runtime(EvidenceMustNotBeRead(), record, REV)
+                with self.subTest(record=record), self.assertRaises(ValueError): a.signals(EvidenceMustNotBeRead(), record, "not-a-time")
+        for record in (None, [], True):
+            with self.assertRaises(ValueError): a.runtime(EvidenceMustNotBeRead(), record, REV)
+            with self.assertRaises(ValueError): a.signals(EvidenceMustNotBeRead(), record, "not-a-time")
+
+    def test_acceptance_cli_rejects_candidate_before_reading_snapshot_file(self):
+        record = copy.deepcopy(self.record); record["version"] = True
+        original_read = a.w.r.read
+        def read(path):
+            if path == "candidate.json": return record
+            if path == "evidence.json": raise AssertionError("snapshot read before candidate guard")
+            return original_read(path)
+        for check in ("runtime", "signals"):
+            args = ["acceptance.py", check, "--candidate", "candidate.json", "--snapshot", "evidence.json"]
+            with self.subTest(check=check), patch.object(a.w.r, "read", side_effect=read), \
+                    patch.object(sys, "argv", args), patch("sys.stdout", new_callable=io.StringIO):
+                self.assertEqual(a.main(), 3)
 
 
 if __name__ == "__main__": unittest.main()

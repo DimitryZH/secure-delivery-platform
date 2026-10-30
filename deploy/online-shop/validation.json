@@ -368,13 +368,13 @@
     "workspace": "default"
   },
   "implementation_sha256": {
-    "deploy/online-shop/README.md": "sha256:b3ed32c0b2c3969fa198440a6e8aca9ce8f7b9e0359160d1bd9148743b43d31c",
-    "deploy/online-shop/acceptance.py": "sha256:47031570c1a9f6ae0baace3ed110dd73b3ac5c7bbd7d21b53583057f6e576f99",
+    "deploy/online-shop/README.md": "sha256:9a10328371d3a3dd5a28681958ae3f51e1b7504abddb46dcd59def238c2f46df",
+    "deploy/online-shop/acceptance.py": "sha256:2f91344795941b54f1b5fe7773a5149becb75d3fa31d418e132f498df5a4acac",
     "deploy/online-shop/collector.json": "sha256:9dcdb191e1ef17cd1fcc958793e2258de1f1c606635045cde43906a04db934ba",
     "deploy/online-shop/policy.json": "sha256:cb0d0cbcc0c8915f037ba633935f6adc6ae3bed95a5808dfc123e4dccb00f42c",
     "deploy/online-shop/skaffold.yaml": "sha256:160b7c968fde8b5cad2cd07e159044232618772e88fe6ae5d6d0a4761e4dbf68",
-    "deploy/online-shop/workflow.py": "sha256:bc774aef7e1a9b0c936ff261c97850eaedb26c30b72de202cb8074baba96cca5",
-    "scripts/tests/test_catalog_deployment.py": "sha256:6c076344d496bec8225dda345da48f37154a528721b0539d44ae42cd9c772d7d",
+    "deploy/online-shop/workflow.py": "sha256:a96767391296f12157472aa04d2bc38612146c2a77a09078565c994dde23e66d",
+    "scripts/tests/test_catalog_deployment.py": "sha256:90c6f5270341f0cf798bdad65919c70adc6abb3fc57c0e8eebfb1d0924bd6202",
     "terraform/foundation/catalog-runtime.tf": "sha256:5b511b14e0e4b2bc5d234a8633ff47c9b29aecb9be1f8a672e56191d63ee7ed3",
     "terraform/foundation/gke.tf": "sha256:8e2c402743ad59094a16715bb21acf7f166b545169d2d4a9b63e42dcb9c9ca0c"
   },
@@ -396,7 +396,8 @@
     "Root read-only host-log visibility and unauthenticated internal OTLP remain dev trust boundaries; no multi-tenant or production hardening claim.",
     "Collector root filesystem/cursor rotation/host permissions, real image admission and exporter identity must pass later live checks.",
     "Raw state, plans, API responses, candidate and private inputs remain ignored/private; no cloud resources were changed.",
-    "All live #93 criteria remain pending; issue stays open and no merge is performed."
+    "All live #93 criteria remain pending; issue stays open and no merge is performed.",
+    "Generated-label compatibility is offline-validated against the documented contract; actual Cloud Deploy release/render/rollout readback remains pending. No organization label-generation policy was changed."
   ],
   "live_pending": {
     "bounded_normal_traffic": null,
@@ -420,12 +421,18 @@
       "proof failure prevents bundle writing; absent cosign prevents supporting proof",
       "wrong running digest or missing member rejected",
       "JSON trace_id without native linkage rejected; empty traces/metrics rejected",
-      "sidecar-init/overhead requests and taints accounted for"
+      "sidecar-init/overhead requests and taints accounted for",
+      "Explicit prepared versus Cloud Deploy artifact modes; exact six generated labels at resource/Pod-template metadata only.",
+      "Fresh reviewed Cloud Deploy API context bound to explicit full release intent; coherent label/context substitution still blocked.",
+      "Candidate guards before both acceptance entry points and before CLI snapshot parsing; old and recomputed identity attacks rejected."
     ],
     "catalog_tests": {
-      "last_targeted_rerun": "after strict canonical inventory/snapshot type checks and CRI parser coverage extension",
-      "passed": 15
+      "last_targeted_rerun": "Included in final complete suite after both review fixes and CLI-before-snapshot guard.",
+      "passed": 22
     },
+    "environment_notes": [
+      "One intermediate full run encountered Windows loopback socket abort 10053 in an unchanged sample-service logging test. The isolated nine-test sample suite and subsequent full 140-test run passed. No sample implementation change."
+    ],
     "git_diff_check": "passed",
     "native_collector": {
       "archive_sha256": "sha256:1fb8163f9036126a1bdc59eab2d7aef4e6cda36f6c1e618f2359663cae8b0f4a",
@@ -438,8 +445,25 @@
     },
     "python_full_suite": {
       "failed": 0,
-      "passed": 133,
+      "passed": 140,
       "skipped": 0
+    },
+    "review_regressions": {
+      "actual_service_generated_render_readback": "pending live; regression fixtures follow documented labels, not live output",
+      "both_findings_reproduced_before_fix": true,
+      "candidate_digest_mutation_with_matching_readbacks_original_identity": "rejected in runtime and signals",
+      "cloud_operations_performed": false,
+      "documented_generated_labels_source": "https://docs.cloud.google.com/deploy/docs/labels-annotations",
+      "exact_generated_labels_from_reviewed_context_and_explicit_release_intent": "passed",
+      "guard_before_evidence_processing_and_cli_snapshot_file_read": "passed",
+      "image_config_container_security_and_bypass_substitutions": "rejected",
+      "prepared_and_service_labeled_rendered_positive_cases": "passed",
+      "previous_head": "b07773392118a5bcc1d53213cb1ed7d83b1bec94",
+      "recomputed_identity_of_unaccepted_release": "rejected in runtime and signals",
+      "schema_version_types_and_accepted_policy_binding": "passed",
+      "terraform_or_collector_selection_changed": false,
+      "valid_runtime_and_signals_positive_cases": "passed",
+      "wrong_or_unknown_labels_and_context_mismatch": "rejected"
     },
     "shell_regressions": {
       "inputs": "LF-normalized copies of tracked inputs, synthetic cloud/terraform commands only",

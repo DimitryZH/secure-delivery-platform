@@ -47,7 +47,13 @@ def reviewed(revision):
     return r.policy()
 
 
-def candidate_policy(record, plan_ref):
+def candidate_policy(record, plan_ref=None):
+    require(type(record) is dict, "invalid_candidate")
+    require(type(record.get("plan")) is dict, "invalid_candidate_plan")
+    if plan_ref is None:
+        # The accepted identity freezes the full original plan as well. Live
+        # preparation additionally supplies its independently reconstructed ref.
+        plan_ref = record["plan"]
     p, q = r.policy(), policy()
     accepted = q["accepted_release"]
     r.validate_candidate(record, p, accepted["configuration_revision"], plan_ref)
@@ -210,10 +216,39 @@ def render(record, revision):
             obj("Service", "catalog-collector", {"type": "ClusterIP", "selector": {"app": "catalog-collector"}, "ports": [{"name": "otlp-grpc", "port": 4317, "targetPort": 4317}]})]
 
 
-def inventory(documents, record, revision):
+def clouddeploy_labels(context):
+    """Expected values come from reviewed API context, never checked labels."""
+    p, q = r.policy(), policy()
+    prefix = "projects/" + p["project"] + "/locations/" + p["region"]
+    match = re.fullmatch(re.escape(prefix + "/deliveryPipelines/" + q["pipeline"] + "/releases/")
+                         + r"([a-z][a-z0-9-]{0,62})", context.get("release_resource", ""))
+    require(match is not None and context.get("target_resource") == prefix + "/targets/" + q["target"],
+            "clouddeploy_context_mismatch")
+    return {"app.kubernetes.io/managed-by": "google-cloud-deploy",
+            "deploy.cloud.google.com/project-id": p["project"],
+            "deploy.cloud.google.com/location": p["region"],
+            "deploy.cloud.google.com/delivery-pipeline-id": q["pipeline"],
+            "deploy.cloud.google.com/release-id": match[1],
+            "deploy.cloud.google.com/target-id": q["target"]}
+
+
+def inventory(documents, record, revision, *, artifact="prepared", release_context=None):
     # Exact object/Pod/config policy prevents hidden images, init/ephemeral
     # containers, bypass annotations, alternate commands or extra resources.
-    require(r.canonical(documents) == r.canonical(render(record, revision)), "rendered_policy_or_inventory_mismatch")
+    expected = render(record, revision)
+    require(artifact in ("prepared", "clouddeploy"), "invalid_manifest_artifact")
+    if artifact == "clouddeploy":
+        require(isinstance(release_context, dict), "clouddeploy_context_required")
+        labels = clouddeploy_labels(release_context)
+        # Add only the six documented labels at explicit resource/Pod-template
+        # metadata paths. Selectors, annotations and all other fields stay exact.
+        for document in expected:
+            metadata = [document["metadata"]]
+            if document["kind"] in ("Deployment", "DaemonSet"):
+                metadata.append(document["spec"]["template"]["metadata"])
+            for item in metadata:
+                item["labels"] = {**item.get("labels", {}), **labels}
+    require(r.canonical(documents) == r.canonical(expected), "rendered_policy_or_inventory_mismatch")
     return {"application": [record["components"][0]["repository"] + "@" + record["components"][0]["digest"]],
             "supporting": [policy()["collector"]["mirror_image"]]}
 
@@ -240,7 +275,7 @@ def prepare(record, app_occurrence, collector_occurrence, revision, output, clou
     return result
 
 
-def evaluate(snapshot, record, revision, action, now=None):
+def evaluate(snapshot, record, revision, action, now=None, *, clouddeploy_release=None):
     """Fresh independently reviewed snapshot; eligibility never runs a rollout."""
     now = now or datetime.now(timezone.utc)
     candidate_policy(record, record["plan"])
@@ -248,11 +283,12 @@ def evaluate(snapshot, record, revision, action, now=None):
     require(type(snapshot.get("version")) is int and snapshot["version"] == 1, "invalid_snapshot")
     checks = []
     def check(name, ok): checks.append({"id": name, "status": "PASS" if ok else "FAIL"})
-    check("request_binding", snapshot.get("request") == {"release_set_id": record["release_set_id"], "deployment_revision": revision, "target": "dev", "action": action})
+    check("request_binding", snapshot.get("request") == {"release_set_id": record["release_set_id"], "deployment_revision": revision, "target": "dev", "action": action, "clouddeploy_release": clouddeploy_release})
     required = {"release": ("independently_verified", "application_signature_verified", "collector_publisher_verified", "collector_signature_verified"),
         "admission": ("cluster_enforced", "exact_attestor_required", "no_bypass"),
         "target": ("namespace_dev", "pipeline_catalog_dev", "snapshot_matches_current", "deployment_identity_matches", "workload_identity_ready", "log_exclusion_ready", "capacity_and_constraints_checked", "no_rollout_conflict"),
-        "caller": ("rollout_create", "deployment_act_as"), "review": ("continue",)}
+        "caller": ("rollout_create", "deployment_act_as"), "review": ("continue",),
+        "clouddeploy": ("release_snapshot_matches_current",)}
     for section, fields in required.items():
         value = snapshot.get(section, {})
         try:
@@ -274,7 +310,11 @@ def evaluate(snapshot, record, revision, action, now=None):
               and value.get("actual_sha256") == value.get("expected_sha256"))
         check(name + "_binding", value.get("release_set_id") == record["release_set_id"] and value.get("deployment_revision") == revision)
         check(name + "_release_annotation_hash", snapshot.get("release_annotations", {}).get(name + "_sha256") == value.get("expected_sha256"))
-    try: inventory(snapshot.get("rendered_documents"), record, revision); exact = True
+    context = snapshot.get("clouddeploy", {})
+    check("clouddeploy_release_binding", isinstance(clouddeploy_release, str) and context.get("release_resource") == clouddeploy_release)
+    try:
+        inventory(snapshot.get("rendered_documents"), record, revision, artifact="clouddeploy", release_context=context)
+        exact = True
     except (ValueError, KeyError, TypeError): exact = False
     check("exact_rendered_inventory", exact)
     check("dev_only_no_promotion", action != "promotion")
@@ -296,6 +336,7 @@ def main():
     parser.add_argument("--collector-occurrence")
     parser.add_argument("--output-dir")
     parser.add_argument("--snapshot")
+    parser.add_argument("--clouddeploy-release", help="Intended full Cloud Deploy release resource; required for preflight")
     parser.add_argument("--intended-action", choices=("deploy", "promotion", "rollback"), default="deploy")
     args = parser.parse_args()
     try:
@@ -308,7 +349,8 @@ def main():
             print(json.dumps({"status": "prepared", "release_set_id": result["release_set_id"], "mutation_performed": False}))
             return 0
         reviewed(args.deployment_revision)
-        result = evaluate(r.read(args.snapshot), record, args.deployment_revision, args.intended_action)
+        result = evaluate(r.read(args.snapshot), record, args.deployment_revision, args.intended_action,
+                          clouddeploy_release=args.clouddeploy_release)
         print(json.dumps(result))
         return 0 if result["decision"] == "READY" else 3
     except (OSError, ValueError, KeyError, TypeError, AttributeError, subprocess.CalledProcessError):

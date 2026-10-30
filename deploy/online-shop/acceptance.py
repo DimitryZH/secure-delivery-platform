@@ -69,6 +69,7 @@ def capacity(nodes, pods):
 
 
 def runtime(pods, record, revision):
+    w.candidate_policy(record)
     expected = {"catalog": record["components"][0]["repository"] + "@" + record["components"][0]["digest"],
                 "collector": w.policy()["collector"]["mirror_image"]}
     counts = {"catalog": 0, "collector": 0}
@@ -99,6 +100,7 @@ def runtime(pods, record, revision):
 
 def signals(snapshot, record, since):
     """Actual Trace v1, Monitoring and Logging responses, bounded by traffic time."""
+    w.candidate_policy(record)
     start = w.sample.utc(since)
     now = datetime.now(timezone.utc)
     require(start <= now, "future_traffic_window")
@@ -149,10 +151,14 @@ def main():
     parser.add_argument("--since")
     args = parser.parse_args()
     try:
+        record = None
+        if args.check in ("runtime", "signals"):
+            record = w.r.read(args.candidate)
+            w.candidate_policy(record)
         value = w.r.read(args.snapshot)
         if args.check == "capacity": result = capacity(value["nodes"], value["pods"])
-        elif args.check == "runtime": result = runtime(value, w.r.read(args.candidate), args.deployment_revision)
-        else: result = signals(value, w.r.read(args.candidate), args.since)
+        elif args.check == "runtime": result = runtime(value, record, args.deployment_revision)
+        else: result = signals(value, record, args.since)
         print(json.dumps(result))
         return 3 if result.get("capacity_ready") is False else 0
     except (OSError, KeyError, ValueError, TypeError, AttributeError):

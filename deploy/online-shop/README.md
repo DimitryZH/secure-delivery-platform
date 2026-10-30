@@ -31,6 +31,26 @@ images, admission bypasses or changed Collector configuration. It records the
 producing and deployment revisions separately, along with both image sets,
 configuration identity and rendered bytes hash.
 
+Local prepared manifests and Cloud Deploy rendered artifacts have separate inventory
+modes. Prepared manifests remain canonical object matches to local rendering.
+Rendered preflight additionally requires the six documented
+[automatic Cloud Deploy labels](https://docs.cloud.google.com/deploy/docs/labels-annotations#automatic_labels_from_cloud_deploy)
+at resource metadata and Deployment/DaemonSet Pod-template metadata: fixed
+`app.kubernetes.io/managed-by=google-cloud-deploy` and exact project, location,
+pipeline, release and target IDs. Expected values come from separately reviewed
+Cloud Deploy API release/target context and the explicitly intended full release
+resource, never from the labels being checked. Only those additions are modeled;
+unknown labels/metadata, selectors, images, annotations, configuration and security
+changes still fail exact comparison. Label generation remains enabled.
+
+`acceptance.py runtime` and `signals` first apply the shared candidate policy guard:
+exact schema reconstruction and integer version 1, recomputed release-set identity,
+and binding to the accepted catalog-v1 membership/source/build/digest. No Pod or
+telemetry evidence is processed before that guard. Matching supplied readbacks
+cannot redefine the expected release, and recomputing an unaccepted release's
+identity does not authorize it. This local guard supplements the fresh independent
+cloud verification required by preparation/preflight; it does not replace it.
+
 The `catalog-dev` pipeline reuses the existing dev target/execution identity and
 artifact bucket. It has only a dev stage. Existing sample-service preparation,
 pipeline, stage/prod progression, manifests and decision controls remain intact.
@@ -180,11 +200,17 @@ Local clients avoid extra in-cluster test images. Keep all raw files under ignor
    expected/actual SHA-256, availability/live generation and retention expiry.
    `release_annotations.source_sha256/rendered_sha256` bind independently read
    release metadata. `rendered_documents` is the actual parsed document list.
+   Include a fresh `clouddeploy` section with the same observation/reference and
+   identity bindings, `release_snapshot_matches_current: true`, and independently
+   read `release_resource` / `target_resource` full API names. Project, location,
+   pipeline and dev target must match reviewed policy. Bind the full intended
+   release resource in `request.clouddeploy_release` and the CLI argument below;
+   do not extract it or any expected context from checked manifest labels.
    Evidence age is at most **5 minutes**, future tolerance **30 seconds**. Missing,
    unknown or conflicting facts produce BLOCKED, never an inferred success.
 
    ```powershell
-   python -B deploy/online-shop/workflow.py preflight --candidate $candidatePath --deployment-revision $deployRevision --snapshot $freshSnapshot --intended-action deploy
+   python -B deploy/online-shop/workflow.py preflight --candidate $candidatePath --deployment-revision $deployRevision --clouddeploy-release $intendedReleaseResource --snapshot $freshSnapshot --intended-action deploy
    ```
 
    READY is eligibility only. Dev promotion is blocked. Dev rollback eligibility
