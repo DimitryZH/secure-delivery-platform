@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "target": "dev",
+  "pipeline": "catalog-dev",
+  "accepted_release": {
+    "configuration_revision": "6043c9af617274fcdc97dc9828b4356c72061dd1",
+    "build_id": "b4c1e382-e23a-465c-b6b4-e7093af95391",
+    "release_set_id": "sha256:b9750798a71f543d0f75d0f48b1086f7c33427804eb07a795dd289faddaa3160",
+    "manifest_digest": "sha256:03b4d18587152a9c28a6aba743edbfffc6762234189c885a1b2e535ce4a81ee2",
+    "signing_build_id": "a6ca11bf-1da5-4899-b628-84dba69cbcb7",
+    "candidate_generation": "1793303013750824",
+    "candidate_transport_sha256": "sha256:1bef1fbc83350dc9449fee6b01c4ff6deed9121e782a7428d3542d8692a126b9"
+  },
+  "collector": {
+    "version": "0.164.0",
+    "upstream_repository": "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib",
+    "index_digest": "sha256:340c9ca6a36617084c6661bdc4f0fe92b7cda5a805d61673ec8db375fddc522b",
+    "manifest_digest": "sha256:ac0bb9cdc844b55d2fd2655d03e596243787d6a8c52dd408b1dc96dd1bd372ee",
+    "config_digest": "sha256:28ebddf51f59e38ac800c9f91120726cfb312af377da8908807e0b566a82b017",
+    "platform": "linux/amd64",
+    "mirror_image": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/otelcol-contrib@sha256:ac0bb9cdc844b55d2fd2655d03e596243787d6a8c52dd408b1dc96dd1bd372ee",
+    "certificate_identity": "https://github.com/open-telemetry/opentelemetry-collector-releases/.github/workflows/base-release.yaml@refs/tags/v0.164.0",
+    "certificate_oidc_issuer": "https://token.actions.githubusercontent.com"
+  }
+}
