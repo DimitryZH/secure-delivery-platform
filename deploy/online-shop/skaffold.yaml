@@ -1,0 +1,10 @@
+apiVersion: skaffold/v4beta7
+kind: Config
+metadata:
+  name: catalog-dev
+deploy:
+  kubectl: {}
+profiles:
+  - name: dev
+    manifests:
+      rawYaml: [rendered/dev/catalog.json]

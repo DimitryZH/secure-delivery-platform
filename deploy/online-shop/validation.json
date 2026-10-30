@@ -1,0 +1,546 @@
+{
+  "base_revision": "555bfb54fc6de0d49eb992928df96943a8ad73e3",
+  "blockers_before_live": [
+    "Review and merge implementation, select full immutable deployment revision and recheck main-bound files.",
+    "Review fresh full Terraform plan including existing-pool adoption; separately authorize apply. Workload Identity/export identity/log exclusion/dev pipeline are proposed only.",
+    "Cosign, grpcurl and Skaffold are not on this host PATH; Docker daemon is unavailable. Native Collector validation/parser checks passed, not Linux runtime validation.",
+    "Exact Collector mirror currently returns 404; publisher verification and narrowly scoped platform attestation are required before preparation can pass. No blanket image exception or arbitrary-image signer is supplied.",
+    "No new Cloud Deploy source/rendered artifact exists; five-minute freshness and effective 75-minute protection must be established from actual future generations.",
+    "Fresh capacity/constraints and sample usage must be rechecked after metadata server changes; unrequested sample allowance is not a resource limit."
+  ],
+  "collector_selection": {
+    "config_digest": "sha256:28ebddf51f59e38ac800c9f91120726cfb312af377da8908807e0b566a82b017",
+    "index_digest": "sha256:340c9ca6a36617084c6661bdc4f0fe92b7cda5a805d61673ec8db375fddc522b",
+    "manifest_digest": "sha256:ac0bb9cdc844b55d2fd2655d03e596243787d6a8c52dd408b1dc96dd1bd372ee",
+    "platform": "linux/amd64",
+    "publisher_verification": "pending; registry content addressing confirmed, not signature/provenance verification",
+    "release_url": "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.164.0",
+    "upstream_repository": "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib",
+    "version": "0.164.0"
+  },
+  "full_terraform_plan": {
+    "action_counts": {
+      "create": 8,
+      "delete": 0,
+      "read": 0,
+      "replace": 0,
+      "update": 2
+    },
+    "apply_performed": false,
+    "backend": {
+      "matches_existing_configuration": true,
+      "prefix": "secure-delivery-platform/foundation",
+      "type": "gcs"
+    },
+    "binary_plan_sha256": "sha256:912c7aa44ac65c42edd25f975cad102ecf4224b749db929b3389b373dc898a6a",
+    "declarative_import_executed": false,
+    "deployment_operator_actions": [
+      "no-op"
+    ],
+    "deployment_operator_fields_unchanged": true,
+    "first_exploratory_plan": "Rejected replacement plan caused by cluster create-time node_config; superseded by safe pool adoption plan. No apply occurred.",
+    "imports": [
+      "google_container_node_pool.existing_default"
+    ],
+    "input_source": "verified existing state/live binding",
+    "locking_enabled": true,
+    "operator_input_verified": true,
+    "operator_state_fields_unchanged": true,
+    "output_changes": [],
+    "parent_operator_variable_unchanged": true,
+    "plan_blocker": null,
+    "plan_diagnostics": null,
+    "plan_exit_code": 2,
+    "plan_scope": "8 creates, 2 updates and one declarative import of existing pool; no delete/replace, sample targets and operator no-op.",
+    "refresh_enabled": true,
+    "resource_changes": [
+      {
+        "actions": [
+          "create"
+        ],
+        "address": "google_clouddeploy_delivery_pipeline.catalog_dev"
+      },
+      {
+        "actions": [
+          "update"
+        ],
+        "address": "google_container_cluster.platform"
+      },
+      {
+        "actions": [
+          "update"
+        ],
+        "address": "google_container_node_pool.existing_default"
+      },
+      {
+        "actions": [
+          "create"
+        ],
+        "address": "google_logging_project_exclusion.catalog_stdout"
+      },
+      {
+        "actions": [
+          "create"
+        ],
+        "address": "google_project_iam_member.catalog_telemetry_export[\"roles/cloudtrace.agent\"]"
+      },
+      {
+        "actions": [
+          "create"
+        ],
+        "address": "google_project_iam_member.catalog_telemetry_export[\"roles/logging.logWriter\"]"
+      },
+      {
+        "actions": [
+          "create"
+        ],
+        "address": "google_project_iam_member.catalog_telemetry_export[\"roles/monitoring.metricWriter\"]"
+      },
+      {
+        "actions": [
+          "create"
+        ],
+        "address": "google_project_service.catalog_trace"
+      },
+      {
+        "actions": [
+          "create"
+        ],
+        "address": "google_service_account.catalog_telemetry"
+      },
+      {
+        "actions": [
+          "create"
+        ],
+        "address": "google_service_account_iam_member.catalog_collector_identity"
+      }
+    ],
+    "resource_drift": [
+      {
+        "actions": [
+          "update"
+        ],
+        "address": "google_artifact_registry_repository.release_images"
+      },
+      {
+        "actions": [
+          "update"
+        ],
+        "address": "google_artifact_registry_repository_iam_member.node_image_reader"
+      },
+      {
+        "actions": [
+          "update"
+        ],
+        "address": "google_project_iam_member.attestation_build_evidence_reader"
+      },
+      {
+        "actions": [
+          "update"
+        ],
+        "address": "google_project_iam_member.attestation_log_writer"
+      },
+      {
+        "actions": [
+          "update"
+        ],
+        "address": "google_project_iam_member.attestation_occurrences"
+      },
+      {
+        "actions": [
+          "update"
+        ],
+        "address": "google_project_iam_member.build_artifact_registry_writer"
+      },
+      {
+        "actions": [
+          "update"
+        ],
+        "address": "google_project_iam_member.build_cloud_build_builder"
+      },
+      {
+        "actions": [
+          "update"
+        ],
+        "address": "google_project_iam_member.build_log_writer"
+      },
+      {
+        "actions": [
+          "update"
+        ],
+        "address": "google_project_iam_member.deploy_clouddeploy_job_runner"
+      },
+      {
+        "actions": [
+          "update"
+        ],
+        "address": "google_project_iam_member.deploy_gke_developer"
+      },
+      {
+        "actions": [
+          "update"
+        ],
+        "address": "google_project_iam_member.deploy_log_writer"
+      },
+      {
+        "actions": [
+          "update"
+        ],
+        "address": "google_project_iam_member.node_log_writer"
+      },
+      {
+        "actions": [
+          "update"
+        ],
+        "address": "google_project_iam_member.node_monitoring_metric_writer"
+      },
+      {
+        "actions": [
+          "update"
+        ],
+        "address": "google_project_iam_member.reviewer_log_viewer"
+      },
+      {
+        "actions": [
+          "update"
+        ],
+        "address": "google_project_iam_member.reviewer_monitoring_viewer"
+      }
+    ],
+    "safe_change_details": {
+      "refresh_drift": [
+        {
+          "address": "google_artifact_registry_repository.release_images",
+          "changed_attribute_paths": [
+            "update_time"
+          ],
+          "planned_actions": [
+            "no-op"
+          ]
+        },
+        {
+          "address": "google_artifact_registry_repository_iam_member.node_image_reader",
+          "changed_attribute_paths": [
+            "etag"
+          ],
+          "planned_actions": [
+            "no-op"
+          ]
+        },
+        {
+          "address": "google_project_iam_member.attestation_build_evidence_reader",
+          "changed_attribute_paths": [
+            "etag"
+          ],
+          "planned_actions": [
+            "no-op"
+          ]
+        },
+        {
+          "address": "google_project_iam_member.attestation_log_writer",
+          "changed_attribute_paths": [
+            "etag"
+          ],
+          "planned_actions": [
+            "no-op"
+          ]
+        },
+        {
+          "address": "google_project_iam_member.attestation_occurrences",
+          "changed_attribute_paths": [
+            "etag"
+          ],
+          "planned_actions": [
+            "no-op"
+          ]
+        },
+        {
+          "address": "google_project_iam_member.build_artifact_registry_writer",
+          "changed_attribute_paths": [
+            "etag"
+          ],
+          "planned_actions": [
+            "no-op"
+          ]
+        },
+        {
+          "address": "google_project_iam_member.build_cloud_build_builder",
+          "changed_attribute_paths": [
+            "etag"
+          ],
+          "planned_actions": [
+            "no-op"
+          ]
+        },
+        {
+          "address": "google_project_iam_member.build_log_writer",
+          "changed_attribute_paths": [
+            "etag"
+          ],
+          "planned_actions": [
+            "no-op"
+          ]
+        },
+        {
+          "address": "google_project_iam_member.deploy_clouddeploy_job_runner",
+          "changed_attribute_paths": [
+            "etag"
+          ],
+          "planned_actions": [
+            "no-op"
+          ]
+        },
+        {
+          "address": "google_project_iam_member.deploy_gke_developer",
+          "changed_attribute_paths": [
+            "etag"
+          ],
+          "planned_actions": [
+            "no-op"
+          ]
+        },
+        {
+          "address": "google_project_iam_member.deploy_log_writer",
+          "changed_attribute_paths": [
+            "etag"
+          ],
+          "planned_actions": [
+            "no-op"
+          ]
+        },
+        {
+          "address": "google_project_iam_member.node_log_writer",
+          "changed_attribute_paths": [
+            "etag"
+          ],
+          "planned_actions": [
+            "no-op"
+          ]
+        },
+        {
+          "address": "google_project_iam_member.node_monitoring_metric_writer",
+          "changed_attribute_paths": [
+            "etag"
+          ],
+          "planned_actions": [
+            "no-op"
+          ]
+        },
+        {
+          "address": "google_project_iam_member.reviewer_log_viewer",
+          "changed_attribute_paths": [
+            "etag"
+          ],
+          "planned_actions": [
+            "no-op"
+          ]
+        },
+        {
+          "address": "google_project_iam_member.reviewer_monitoring_viewer",
+          "changed_attribute_paths": [
+            "etag"
+          ],
+          "planned_actions": [
+            "no-op"
+          ]
+        }
+      ],
+      "updates": [
+        {
+          "address": "google_container_cluster.platform",
+          "changed_attribute_paths": [
+            "workload_identity_config"
+          ]
+        },
+        {
+          "address": "google_container_node_pool.existing_default",
+          "changed_attribute_paths": [
+            "node_config[0].workload_metadata_config"
+          ]
+        }
+      ]
+    },
+    "state_lineage_and_serial_unchanged": true,
+    "state_mutation_performed": false,
+    "targeted": false,
+    "terraform_plan": "created",
+    "unrelated_planned_changes": [],
+    "workspace": "default"
+  },
+  "implementation_sha256": {
+    "deploy/online-shop/README.md": "sha256:b3ed32c0b2c3969fa198440a6e8aca9ce8f7b9e0359160d1bd9148743b43d31c",
+    "deploy/online-shop/acceptance.py": "sha256:47031570c1a9f6ae0baace3ed110dd73b3ac5c7bbd7d21b53583057f6e576f99",
+    "deploy/online-shop/collector.json": "sha256:9dcdb191e1ef17cd1fcc958793e2258de1f1c606635045cde43906a04db934ba",
+    "deploy/online-shop/policy.json": "sha256:cb0d0cbcc0c8915f037ba633935f6adc6ae3bed95a5808dfc123e4dccb00f42c",
+    "deploy/online-shop/skaffold.yaml": "sha256:160b7c968fde8b5cad2cd07e159044232618772e88fe6ae5d6d0a4761e4dbf68",
+    "deploy/online-shop/workflow.py": "sha256:bc774aef7e1a9b0c936ff261c97850eaedb26c30b72de202cb8074baba96cca5",
+    "scripts/tests/test_catalog_deployment.py": "sha256:6c076344d496bec8225dda345da48f37154a528721b0539d44ae42cd9c772d7d",
+    "terraform/foundation/catalog-runtime.tf": "sha256:5b511b14e0e4b2bc5d234a8633ff47c9b29aecb9be1f8a672e56191d63ee7ed3",
+    "terraform/foundation/gke.tf": "sha256:8e2c402743ad59094a16715bb21acf7f166b545169d2d4a9b63e42dcb9c9ca0c"
+  },
+  "implemented": [
+    "Dev-only catalog Cloud Deploy source/profile and exact application/supporting inventory checks.",
+    "Original candidate identity, canonical plan/build/registry verification, accepted signing build and generation-pinned transport checks, fresh occurrence signature verification.",
+    "Separate producing/deployment configuration revisions and main-only executing-file binding.",
+    "Fresh five-minute reviewed evidence evaluation with 30-second future tolerance and 75-minute source/rendered protection margins.",
+    "Dev deployment/rollback eligibility only; promotion blocked and no action execution.",
+    "Catalog runtime bounds, native gRPC probes and 30-second shutdown grace; internal Services only.",
+    "Collector CRI/JSON/native trace mapping, Cloud Trace and Cloud Monitoring export, scoped stdout ownership and WIF-only exporter identity proposal.",
+    "Readback validators for runtime images, scheduling headroom and nonempty correctly attributed traces/metrics/native-linked logs."
+  ],
+  "issue": 93,
+  "limits": [
+    "Offline fakes and native local parsing do not establish cloud rollout, export, correlation or admission acceptance.",
+    "Read-only release availability is a timestamped observation, not future eligibility.",
+    "Metadata-server updates may disrupt the single-node cluster; prevent_destroy avoids cluster/pool replacement but does not guarantee zero downtime.",
+    "Root read-only host-log visibility and unauthenticated internal OTLP remain dev trust boundaries; no multi-tenant or production hardening claim.",
+    "Collector root filesystem/cursor rotation/host permissions, real image admission and exporter identity must pass later live checks.",
+    "Raw state, plans, API responses, candidate and private inputs remain ignored/private; no cloud resources were changed.",
+    "All live #93 criteria remain pending; issue stays open and no merge is performed."
+  ],
+  "live_pending": {
+    "bounded_normal_traffic": null,
+    "catalog_release_and_rollout": null,
+    "collector_mirror_and_specific_platform_attestation": null,
+    "functional_rpc_success_and_expected_failure": null,
+    "infrastructure_apply": null,
+    "negative_binary_authorization_admission": null,
+    "real_cloud_traces_metrics_and_native_linked_logs": null,
+    "running_image_and_metadata_readback": null,
+    "sample_service_post_rollout_preservation": null,
+    "support_publisher_verification": null,
+    "temporary_resource_cleanup": null
+  },
+  "offline_validated": {
+    "boundary_cases": [
+      "invalid candidate bool/float versions, identity/membership/configuration/tag mismatch",
+      "hidden/init/extra or substituted images, modified Collector config and bypass annotation",
+      "stale or missing snapshot facts, wrong target, insufficient retention, annotation/hash mismatch",
+      "promotion blocked, rollback requires earlier accepted different dev release",
+      "proof failure prevents bundle writing; absent cosign prevents supporting proof",
+      "wrong running digest or missing member rejected",
+      "JSON trace_id without native linkage rejected; empty traces/metrics rejected",
+      "sidecar-init/overhead requests and taints accounted for"
+    ],
+    "catalog_tests": {
+      "last_targeted_rerun": "after strict canonical inventory/snapshot type checks and CRI parser coverage extension",
+      "passed": 15
+    },
+    "git_diff_check": "passed",
+    "native_collector": {
+      "archive_sha256": "sha256:1fb8163f9036126a1bdc59eab2d7aef4e6cda36f6c1e618f2359663cae8b0f4a",
+      "asset_digest_matches": true,
+      "config_validate": "passed",
+      "linux_filepath_metadata_and_permissions": "pending live",
+      "local_cri_json_timestamp_severity_trace_span_flags": "passed with debug exporter; no GCP export",
+      "platform_executed": "windows/amd64",
+      "version": "0.164.0"
+    },
+    "python_full_suite": {
+      "failed": 0,
+      "passed": 133,
+      "skipped": 0
+    },
+    "shell_regressions": {
+      "inputs": "LF-normalized copies of tracked inputs, synthetic cloud/terraform commands only",
+      "status": "passed",
+      "tests": [
+        "cloudbuild-ci-config-test.sh",
+        "cloudbuild-release-metadata-test.sh",
+        "cloudbuild-trigger-config-test.sh",
+        "preflight-foundation-test.sh"
+      ]
+    },
+    "terraform_fmt": "passed",
+    "terraform_validate": "passed"
+  },
+  "proposed_configuration": {
+    "collector_admission": "Required platform-attestor occurrence for exact mirror URI; independent publisher/index/platform/content proof; no exceptions or signing implementation.",
+    "current_live_configuration_changed": false,
+    "federated_subject": "dev/catalog-collector",
+    "host_log_mount": "read-only /var/log/pods, fixed dev/catalog path selection; root UID without capabilities/privilege; no API RBAC or host network/PID.",
+    "logging": "Scoped original catalog stdout exclusion, Collector online-shop/catalog stream only; no SDK log exporter.",
+    "node_builder_or_catalog_export_grants_added": false,
+    "roles": [
+      "roles/cloudtrace.agent",
+      "roles/monitoring.metricWriter",
+      "roles/logging.logWriter"
+    ],
+    "runtime_identity": "catalog-telemetry@<PROJECT_ID>.iam.gserviceaccount.com",
+    "static_keys": false,
+    "workload_identity": "Cluster workload pool and in-place metadata update on adopted existing default-pool; no scaling."
+  },
+  "read_only_live_observed": {
+    "accepted_release": {
+      "actual_candidate_generation_transport": "available_exact_bytes",
+      "actual_occurrence_signature": "VERIFIED",
+      "aml_revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
+      "application_rebuilt_or_reattested": false,
+      "build_id": "b4c1e382-e23a-465c-b6b4-e7093af95391",
+      "current_independent_verification": "passed",
+      "manifest_digest": "sha256:03b4d18587152a9c28a6aba743edbfffc6762234189c885a1b2e535ce4a81ee2",
+      "producing_configuration_revision": "6043c9af617274fcdc97dc9828b4356c72061dd1",
+      "release_set_id": "sha256:b9750798a71f543d0f75d0f48b1086f7c33427804eb07a795dd289faddaa3160",
+      "signing_build_id": "a6ca11bf-1da5-4899-b628-84dba69cbcb7"
+    },
+    "binary_authorization": {
+      "attestor": "projects/<PROJECT_ID>/attestors/secure-delivery-verification",
+      "cluster": "PROJECT_SINGLETON_POLICY_ENFORCE",
+      "mode": "ENFORCED_BLOCK_AND_AUDIT_LOG",
+      "rule": "REQUIRE_ATTESTATION"
+    },
+    "capacity": {
+      "allocatable_cpu_m": 1930,
+      "allocatable_memory_mi_floor": 6025,
+      "conservative_reserve_cpu_m": 600,
+      "conservative_reserve_memory_mi": 768,
+      "existing_requests_cpu_m": 753,
+      "existing_requests_memory_mi_floor": 1064,
+      "free_cpu_m": 1177,
+      "free_memory_mi_floor": 4961,
+      "includes_sample_allowance": true,
+      "machine_type": "e2-standard-2",
+      "pending_unassigned_pods": 0,
+      "pods_allocatable": 110,
+      "pods_used": 18,
+      "post_workload_identity_and_prerollout_recheck_required": true,
+      "ready_schedulable_linux_amd64_nodes": 1,
+      "scaling_proposed": false,
+      "taints": []
+    },
+    "clouddeploy_pipelines": [
+      "sample-service"
+    ],
+    "clouddeploy_targets": [
+      "dev",
+      "stage",
+      "prod"
+    ],
+    "collector_mirror_status": "404_not_found",
+    "dev_namespace_present": true,
+    "explicit_targets": {
+      "cluster": "secure-delivery-platform",
+      "location": "us-central1-a",
+      "number": "<PROJECT_NUMBER>",
+      "project": "<PROJECT_ID>",
+      "region": "us-central1",
+      "registry": "us-central1-docker.pkg.dev/<PROJECT_ID>/secure-delivery"
+    },
+    "logging_sinks": [
+      "_Default",
+      "_Required"
+    ],
+    "observed_at": "2026-10-30T12:23:23.001270+00:00",
+    "project_mapping_independently_confirmed": true,
+    "sample_service": {
+      "available_replicas": 1,
+      "replicas": 1,
+      "requests_not_explicitly_bounded": true
+    },
+    "supporting_publisher_signature_verification": "pending_cosign_not_on_PATH",
+    "trace_api_enabled": true,
+    "workload_identity_enabled": false
+  },
+  "stage": "local_implementation_and_read_only_inspection",
+  "validation_date": "2026-10-30"
+}

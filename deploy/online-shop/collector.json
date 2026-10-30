@@ -1,0 +1,224 @@
+{
+  "extensions": {
+    "health_check": {
+      "endpoint": "0.0.0.0:13133"
+    },
+    "file_storage": {
+      "directory": "/var/lib/otelcol",
+      "create_directory": true
+    }
+  },
+  "receivers": {
+    "otlp": {
+      "protocols": {
+        "grpc": {
+          "endpoint": "0.0.0.0:4317"
+        }
+      }
+    },
+    "file_log/catalog": {
+      "include": [
+        "/var/log/pods/dev_productcatalogservice-*/catalog/*.log"
+      ],
+      "start_at": "end",
+      "include_file_path": true,
+      "storage": "file_storage",
+      "max_log_size": "256KiB",
+      "operators": [
+        {
+          "type": "container",
+          "id": "container"
+        },
+        {
+          "type": "json_parser",
+          "parse_from": "body",
+          "on_error": "drop",
+          "timestamp": {
+            "parse_from": "body.timestamp",
+            "layout_type": "gotime",
+            "layout": "2006-01-02T15:04:05.999999999Z07:00"
+          },
+          "severity": {
+            "parse_from": "body.severity"
+          },
+          "parse_to": "body"
+        },
+        {
+          "type": "add",
+          "if": "body.trace_flags == 1",
+          "field": "attributes.otel_trace_flags",
+          "value": "01"
+        },
+        {
+          "type": "add",
+          "if": "body.trace_flags == 0",
+          "field": "attributes.otel_trace_flags",
+          "value": "00"
+        },
+        {
+          "type": "trace_parser",
+          "if": "body.trace_id != nil",
+          "trace_id": {
+            "parse_from": "body.trace_id"
+          },
+          "span_id": {
+            "parse_from": "body.span_id"
+          },
+          "trace_flags": {
+            "parse_from": "attributes.otel_trace_flags"
+          },
+          "on_error": "drop"
+        }
+      ]
+    }
+  },
+  "processors": {
+    "memory_limiter": {
+      "check_interval": "1s",
+      "limit_mib": 192,
+      "spike_limit_mib": 48
+    },
+    "resource/catalog": {
+      "attributes": [
+        {
+          "key": "service.name",
+          "value": "productcatalogservice",
+          "action": "upsert"
+        },
+        {
+          "key": "service.namespace",
+          "value": "online-shop",
+          "action": "upsert"
+        },
+        {
+          "key": "service.version",
+          "value": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
+          "action": "upsert"
+        },
+        {
+          "key": "deployment.environment.name",
+          "value": "dev",
+          "action": "upsert"
+        },
+        {
+          "key": "release_set_id",
+          "value": "sha256:b9750798a71f543d0f75d0f48b1086f7c33427804eb07a795dd289faddaa3160",
+          "action": "upsert"
+        },
+        {
+          "key": "component_digest",
+          "value": "sha256:03b4d18587152a9c28a6aba743edbfffc6762234189c885a1b2e535ce4a81ee2",
+          "action": "upsert"
+        },
+        {
+          "key": "cloud.provider",
+          "value": "gcp",
+          "action": "upsert"
+        },
+        {
+          "key": "cloud.platform",
+          "value": "gcp_kubernetes_engine",
+          "action": "upsert"
+        },
+        {
+          "key": "cloud.account.id",
+          "value": "sre-platform-staging-507220",
+          "action": "upsert"
+        },
+        {
+          "key": "cloud.availability_zone",
+          "value": "us-central1-a",
+          "action": "upsert"
+        },
+        {
+          "key": "k8s.cluster.name",
+          "value": "secure-delivery-platform",
+          "action": "upsert"
+        },
+        {
+          "key": "k8s.namespace.name",
+          "value": "dev",
+          "action": "upsert"
+        }
+      ]
+    },
+    "batch": {
+      "timeout": "5s",
+      "send_batch_size": 128,
+      "send_batch_max_size": 256
+    }
+  },
+  "exporters": {
+    "googlecloud": {
+      "project": "sre-platform-staging-507220",
+      "log": {
+        "default_log_name": "online-shop/catalog",
+        "resource_filters": [
+          {
+            "regex": "^(service\\.(name|namespace|version)|deployment\\.environment\\.name|release_set_id|component_digest)$"
+          }
+        ]
+      },
+      "metric": {
+        "prefix": "workload.googleapis.com",
+        "resource_filters": [
+          {
+            "regex": "^(service\\.version|deployment\\.environment\\.name|release_set_id|component_digest)$"
+          }
+        ]
+      },
+      "sending_queue": {
+        "queue_size": 128,
+        "num_consumers": 2
+      },
+      "timeout": "5s"
+    }
+  },
+  "service": {
+    "extensions": [
+      "health_check",
+      "file_storage"
+    ],
+    "pipelines": {
+      "traces": {
+        "receivers": [
+          "otlp"
+        ],
+        "processors": [
+          "memory_limiter",
+          "resource/catalog",
+          "batch"
+        ],
+        "exporters": [
+          "googlecloud"
+        ]
+      },
+      "metrics": {
+        "receivers": [
+          "otlp"
+        ],
+        "processors": [
+          "memory_limiter",
+          "resource/catalog",
+          "batch"
+        ],
+        "exporters": [
+          "googlecloud"
+        ]
+      },
+      "logs": {
+        "receivers": [
+          "file_log/catalog"
+        ],
+        "processors": [
+          "memory_limiter",
+          "resource/catalog",
+          "batch"
+        ],
+        "exporters": [
+          "googlecloud"
+        ]
+      }
+    }
+  }
+}
