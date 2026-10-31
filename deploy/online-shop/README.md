@@ -7,9 +7,12 @@ infrastructure apply completed from `1b474a96ac344b3ee978b7d4df373d86d62cebee`.
 [Collector adoption](collector-adoption.md) completed reviewed-main mirror and
 separate signing acceptance on `61b56a31bcc13e88011cb54823f72d5a1e2ea8b9`.
 Independent inspection verified the exact Collector occurrence and signature.
-The subsequent dev release rendered successfully, but preflight was **BLOCKED**;
-no rollout, runtime/RPC/telemetry or negative admission test ran. See the bounded
-attempt below and [validation.json](validation.json). Eligibility is not authorization.
+The initial dev attempt stopped at **BLOCKED** preflight. A new reviewed-main
+release subsequently passed READY, one dev rollout, runtime/RPC and real telemetry
+acceptance. The bounded negative case was unexpectedly admitted and immediately
+cleaned up: changing the URI of the already-attested digest is not a valid negative
+fixture. Admission-denial acceptance remains pending. See both attempts below and
+[validation.json](validation.json). Eligibility is not authorization.
 
 ## Release and deployment boundaries
 
@@ -316,10 +319,23 @@ Local clients avoid extra in-cluster test images. Keep all raw files under ignor
     digest attribution. Confirm the original GKE stdout copy is excluded and no
     other ingestion sink duplicates it. Observe Collector errors/drops and node
     resource pressure; an empty view, JSON trace_id alone or healthy probe is not proof.
-11. Negative admission: independently confirm the **upstream** pinned Collector
-    URI is pullable linux/amd64 and has no required platform-attestor occurrence.
+11. Negative admission requires a **separately reviewed distinct image digest**.
+    Binary Authorization evaluates attestations by digest across repository and
+    registry locations, as documented in
+    [Create attestations](https://docs.cloud.google.com/binary-authorization/docs/making-attestations).
+    The current upstream Collector manifest has the same digest as the trusted
+    mirror and therefore cannot establish a missing-attestation negative case.
+    An empty exact-URI occurrence lookup is insufficient. Do not delete the trusted
+    attestation, change policy/IAM, introduce an arbitrary image or substitute an
+    index/member digest without review to manufacture a rejection.
+
+    Before another authorized test, review a specific pullable linux/amd64 fixture
+    whose tested image digest lacks a valid required-attestor proof at **any** URI.
+    Inspect complete occurrence pages and matching signed payload digests/keys,
+    including proofs at other repository locations. If no reviewed fixture meets
+    those prerequisites, stop and leave negative acceptance pending.
     Copy the otherwise-valid rendered Collector Pod template into a uniquely named
-    temporary dev Pod, changing only its name and image to that upstream digest.
+    temporary dev Pod, changing only its name and image to that reviewed fixture.
     Preserve valid config, resources, WI, mounts and placement. No extra test image
     is introduced. Budget the 150m/256Mi Pod and stop immediately if admission
     unexpectedly succeeds (it could otherwise duplicate log collection).
@@ -351,10 +367,11 @@ the required retention. This staging error is distinct from the code findings.
 The approved rendered bucket retained manifest/config generations for 24 hours;
 soft delete on another bucket was not counted as retention protection.
 
-This PR corrects label scope and introduces the precreation canonical inventory
-commitment above. These changes were tested locally only and were **not** used to
-authorize the live release. That release has zero rollouts and lacks the new
-commitment; it cannot be repaired by changing a snapshot or immutable annotations.
+PR #97 corrected label scope and introduced the precreation canonical inventory
+commitment above. Those changes were tested locally only during that attempt and
+were **not** used to authorize that live release. That release has zero rollouts
+and lacks the new commitment; it cannot be repaired by changing a snapshot or
+immutable annotations.
 After review/merge, a new explicitly authorized release must use the selected
 merged configuration, correct staging, fresh artifact proof and a new preflight.
 
@@ -366,3 +383,57 @@ dev/stage/prod remained unchanged. No Terraform, GKE or manual IAM operation was
 performed. The extra source bucket above is an explicitly reported gcloud side
 effect; trusted application/Collector images and occurrences were not changed.
 Issue #93 remains open for review and the remaining workload acceptance.
+
+## Dev runtime acceptance on 2026-10-31
+
+Deployment configuration `9934c9d2766ec46b52dd1aaed51cea63b5ee17a9` used the
+unchanged accepted application #87 and trusted Collector. New release
+`catalog-93-9934c9d-20261031` was created with the explicit approved source staging
+flag and initial rollout disabled. Its actual source archive stayed in the approved
+bucket, matched the predeclared raw SHA-256 and contained exactly the two prepared
+files. Actual rendered objects matched the precreation canonical commitment
+`2fe9f5e4890044cc899399575ed6d76cbf131e8965fb07887789fe98866dcc37`.
+Source, manifest and resolved Skaffold generation readbacks had about 24 hours of
+effective retention. Fresh prerequisites and every main-bound preflight check passed.
+
+Render build `173d0d2a-18d1-4ce1-b991-486b5020f503` succeeded. The single dev
+rollout `dev-9934c9d-001` and its deploy job/build
+`68ce9f4a-0ab1-4be8-86bc-623b0a198649` succeeded. Actual catalog/Collector
+imageIDs exactly matched their policy manifest digests. Release metadata and
+ready/available controller counts passed `acceptance.py runtime`, with zero restarts.
+
+Checksum-verified grpcurl 1.9.3 used explicit demo/health proto Git bytes from the
+accepted AML revision. Health returned SERVING; ListProducts, GetProduct and
+SearchProducts passed; the missing product returned NOT_FOUND. Exactly 30 normal
+ListProducts RPCs at one/second carried a chosen sampled parent. The owned
+localhost-only catalog Service port-forward was then stopped.
+
+Within the five-minute ingestion budget, `acceptance.py signals` passed against
+actual Cloud Trace, Monitoring and Logging responses: 30 gRPC server spans plus
+30 application spans, 29 correlated request.completed logs (58 total linked
+entries), and a nonzero qualified server request metric series. The actual metric
+type was `workload.googleapis.com/online_shop.transport.requests`; four request
+series were returned in total. Native trace/span fields and version/dev/release-set/
+digest attribution passed. The original managed-agent catalog stdout query returned
+zero entries. Initial Trace reads returned `_Trace bucket not found`; storage became
+available within the bounded wait, consistent with documented automatic provisioning,
+without a manual bucket operation or additional traffic. Collector diagnostics retained two parser errors
+for one non-JSON startup stderr line; no exporter-failure record was observed.
+This is bounded functional proof, not lossless export, rotation or durability proof.
+
+The single negative Pod changed the Collector image to the **same digest** at its
+upstream URI. Kubernetes returned HTTP 201 (Pending); the exact created UID was
+immediately deleted with HTTP 200 and final GET returned 404. No second attempt
+ran. Read-only validation of the existing signed attestation for the upstream URI
+returned VERIFIED, confirming the documented digest-based semantics. No denial or
+missing-attestation result is claimed, and this does not demonstrate disabled
+enforcement. A distinct reviewed negative fixture and successful explicit denial
+remain required before closing admission acceptance.
+
+Final catalog/Collector runtime remained healthy. Sample-service dev/stage/prod
+remained Ready/Available with HTTP 200 and unchanged Deployment/Pod UIDs, templates
+and images. The node had no pressure or unassigned Pods, with 819m CPU / 4476Mi
+memory and 88 Pod slots free by requests; active metadata/logging/metrics agents
+were ready. Only the exact temporary Pod and owned port-forward were cleaned up.
+No rebuild, mirror, signing, Terraform, manual IAM or GKE configuration change was
+performed. Raw evidence remains private. This evidence awaits review; #93 stays open.
