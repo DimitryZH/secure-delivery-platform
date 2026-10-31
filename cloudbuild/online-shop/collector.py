@@ -132,13 +132,63 @@ class Upstream:
             return response.read()
 
 
+class MirrorBlobRedirect(urllib.request.HTTPRedirectHandler):
+    """One observed AR blob -> scoped download hop, confined to its HTTPS origin."""
+    def __init__(self, repository, digest):
+        super().__init__()
+        p = r.policy()
+        require(repository == p["registry"] + "/otelcol-contrib" and re.fullmatch(r.DIGEST, digest),
+                "unapproved_collector_blob")
+        host, path = repository.split("/", 1)
+        self.host = host
+        self.start = "https://" + host + "/v2/" + path + "/blobs/" + digest
+        self.download_path = (r"/artifacts-downloads/namespaces/" + re.escape(p["project"])
+                              + r"/repositories/secure-delivery/downloads/[A-Za-z0-9_-]{16}")
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        # urllib resolves relative Location values before invoking this callback;
+        # explicit urljoin also makes direct callers follow the same rule.
+        target_url = urllib.parse.urljoin(req.full_url, newurl)
+        target = urllib.parse.urlsplit(target_url)
+        location = headers.get("Location", newurl)
+        original = urllib.parse.urlsplit(location)
+        require(code == 302 and req.get_method() == "GET" and req.full_url == self.start
+                and not any(ord(char) <= 32 or ord(char) == 127 for char in location + newurl)
+                and not any(char in location for char in ("?", "#", "\\"))
+                and original.scheme in ("", "https") and original.netloc == (self.host if original.scheme else "")
+                and re.fullmatch(self.download_path, original.path)
+                and target_url == urllib.parse.urljoin(req.full_url, location)
+                and target.scheme == "https" and target.netloc == self.host
+                and not target.query and not target.fragment
+                and re.fullmatch(self.download_path, target.path), "unexpected_collector_blob_redirect")
+        auth = req.get_header("Authorization")
+        require(isinstance(auth, str) and auth.startswith("Basic "), "collector_blob_credentials_required")
+        # Only this same-origin, repository-scoped GET retains registry auth.
+        # No Cookie, Proxy-Authorization, Host or other ambient headers propagate.
+        return urllib.request.Request(target_url, headers={"Authorization": auth,
+            "Accept": req.get_header("Accept", "*/*")})
+
+
+def blob_bytes(cloud, repository, digest):
+    redirect = MirrorBlobRedirect(repository, digest)
+    require(isinstance(cloud.token, str) and bool(cloud.token), "collector_blob_credentials_required")
+    auth = "Basic " + base64.b64encode(("oauth2accesstoken:" + cloud.token).encode()).decode()
+    request = urllib.request.Request(redirect.start, headers={"Authorization": auth, "Accept": ACCEPT})
+    with urllib.request.build_opener(redirect).open(request, timeout=120) as response:
+        return response.read()
+
+
 class Mirror:
     def __init__(self, c, cloud):
         repository = c["mirror_image"].split("@")[0]
         host, path = repository.split("/", 1)
+        self.repository = repository
         self.base, self.cloud = "https://" + host + "/v2/" + path, cloud
 
     def get(self, kind, digest):
+        require(kind in ("manifests", "blobs") and re.fullmatch(r.DIGEST, digest), "invalid_mirror_reference")
+        if kind == "blobs":
+            return blob_bytes(self.cloud, self.repository, digest)
         return self.cloud.request(self.base + "/" + kind + "/" + digest, registry=True)
 
 

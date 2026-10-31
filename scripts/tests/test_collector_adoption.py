@@ -45,6 +45,9 @@ class CollectorTests(unittest.TestCase):
         self.layer = b"compressed-layer-fixture"
         self.make_image()
         self.reader = Registry(self.data)
+        self.blobs = patch.object(c, "blob_bytes", side_effect=lambda cloud, repository, identity: self.reader.get("blobs", identity))
+        self.blobs.start()
+        self.addCleanup(self.blobs.stop)
         self.cloud = Mock(token="private-token")
         self.occurrences = {}
         self.pages = None
@@ -368,6 +371,99 @@ class CollectorTests(unittest.TestCase):
             cache=root/".local-validation/collector-tools/cosign"/lock["cosign"]["version"]/"windows";cache.mkdir(parents=True);(cache/asset["asset"]).write_bytes(b"corrupt")
             with patch.object(c,"ROOT",root),patch.object(c.platform,"system",return_value="Windows"),patch.object(c.platform,"machine",return_value="AMD64"),self.assertRaisesRegex(ValueError,"tool_cache_hash_mismatch"):
                 c.tool("cosign")
+
+    def blob_redirect(self):
+        repository=self.policy["mirror_image"].split("@")[0]
+        redirect=c.MirrorBlobRedirect(repository,digest(self.layer))
+        route="/artifacts-downloads/namespaces/"+c.r.policy()["project"]+"/repositories/secure-delivery/downloads/Ab0123456789_-CD"
+        request=c.urllib.request.Request(redirect.start,headers={"Authorization":"Basic offline-secret","Accept":"application/octet-stream",
+            "Cookie":"private-cookie","Proxy-Authorization":"private-proxy","Host":"ignored-host"})
+        return redirect,request,route
+
+    def test_scoped_relative_and_absolute_blob_redirect_keep_only_same_origin_auth(self):
+        redirect,request,route=self.blob_redirect()
+        for location in (route,"https://"+redirect.host+route):
+            with self.subTest(location=location):
+                result=redirect.redirect_request(request,None,302,"",{"Location":location},"https://"+redirect.host+route)
+                self.assertEqual(result.full_url,"https://"+redirect.host+route)
+                self.assertEqual(result.get_header("Authorization"),"Basic offline-secret")
+                self.assertEqual(result.get_header("Accept"),"application/octet-stream")
+                self.assertIsNone(result.get_header("Cookie"))
+                self.assertIsNone(result.get_header("Proxy-authorization"))
+                self.assertIsNone(result.get_header("Host"))
+
+    def test_blob_redirect_rejects_other_origin_scheme_port_and_userinfo_before_auth_forwarding(self):
+        redirect,request,route=self.blob_redirect()
+        forbidden=("http://"+redirect.host+route,"https://attacker.invalid"+route,"https://storage.googleapis.com"+route,
+                   "https://"+redirect.host+".attacker.invalid"+route,"https://"+redirect.host+":444"+route,
+                   "https://"+redirect.host+":443"+route,"https://user@"+redirect.host+route,"//"+redirect.host+route)
+        for location in forbidden:
+            with self.subTest(location=location),patch.object(c.urllib.request,"Request") as forwarded,self.assertRaisesRegex(ValueError,"collector_blob_redirect"):
+                redirect.redirect_request(request,None,302,"",{"Location":location},location)
+            forwarded.assert_not_called()
+
+    def test_blob_redirect_rejects_unscoped_encoded_traversal_query_fragment_and_unknown_routes(self):
+        redirect,request,route=self.blob_redirect()
+        forbidden=(route.replace(c.r.policy()["project"],"another-project"),route.replace("/secure-delivery/","/another-repository/"),
+                   route.replace("/downloads/","/uploads/"),route+"/extra",route+"?token=secret",route+"?",route+"#fragment",route+"#",
+                   route.replace("/downloads/","/downloads/../downloads/"),route.replace("/downloads/","/downloads/%2e%2e/downloads/"),
+                   route.replace("/downloads/","/downloads%2f"),route.replace("/artifacts-downloads/","/v2/"),
+                   route[:-1],route+"X",route+"\n",route.replace("/downloads/","\\downloads\\"))
+        for location in forbidden:
+            with self.subTest(location=location),self.assertRaises(ValueError):
+                redirect.redirect_request(request,None,302,"",{"Location":location},c.urllib.parse.urljoin(request.full_url,location))
+
+    def test_blob_redirect_requires_bound_initial_get_and_one_302_hop(self):
+        redirect,request,route=self.blob_redirect()
+        for code in (301,303,307,308):
+            with self.subTest(code=code),self.assertRaises(ValueError):redirect.redirect_request(request,None,code,"",{},route)
+        for source in (request.full_url.replace("/blobs/","/manifests/"),request.full_url.replace(digest(self.layer),"sha256:"+"0"*64),
+                       "https://"+redirect.host+route):
+            changed=c.urllib.request.Request(source,headers={"Authorization":"Basic offline-secret"})
+            with self.subTest(source=source),self.assertRaises(ValueError):redirect.redirect_request(changed,None,302,"",{},route)
+        changed=c.urllib.request.Request(request.full_url,method="HEAD",headers={"Authorization":"Basic offline-secret"})
+        with self.assertRaises(ValueError):redirect.redirect_request(changed,None,302,"",{},route)
+        with self.assertRaises(ValueError):redirect.redirect_request(request,None,302,"",{"Location":route},route.replace("/downloads/","/uploads/"))
+
+    def test_blob_credentials_only_go_to_exact_policy_repository_and_digest(self):
+        redirect,request,route=self.blob_redirect()
+        request.remove_header("Authorization")
+        with self.assertRaisesRegex(ValueError,"credentials_required"):redirect.redirect_request(request,None,302,"",{},route)
+        for repository in ("attacker.invalid/repo",c.r.policy()["registry"]+"/other-image"):
+            with self.assertRaisesRegex(ValueError,"unapproved_collector_blob"):c.MirrorBlobRedirect(repository,digest(self.layer))
+        with self.assertRaisesRegex(ValueError,"unapproved_collector_blob"):
+            c.MirrorBlobRedirect(self.policy["mirror_image"].split("@")[0],"../other")
+
+    def test_blob_bytes_builds_authenticated_get_with_collector_only_redirect_handler(self):
+        self.blobs.stop()
+        response=Mock();response.__enter__=Mock(return_value=response);response.__exit__=Mock(return_value=False);response.read.return_value=self.layer
+        opener=Mock();opener.open.return_value=response
+        with patch.object(c.urllib.request,"build_opener",return_value=opener) as build:
+            result=c.Mirror(self.policy,self.cloud).get("blobs",digest(self.layer))
+        self.assertEqual(result,self.layer)
+        self.assertIsInstance(build.call_args.args[0],c.MirrorBlobRedirect)
+        request=opener.open.call_args.args[0]
+        self.assertEqual(request.get_method(),"GET")
+        self.assertEqual(request.full_url,build.call_args.args[0].start)
+        self.assertEqual(request.get_header("Authorization"),"Basic "+c.base64.b64encode(b"oauth2accesstoken:private-token").decode())
+        self.cloud.request.assert_not_called()
+
+    def test_actual_blob_transport_bytes_still_require_exact_layer_hash_and_size(self):
+        self.blobs.stop()
+        for wrong_size in (False,True):
+            self.make_image()
+            if wrong_size:
+                self.manifest["layers"][0]["size"]+=1;self.encode_manifest()
+            self.reader.data=self.data
+            def open_blob(request,timeout):
+                identity=request.full_url.rsplit("/",1)[-1]
+                raw=self.data[("blobs",identity)]
+                if not wrong_size and identity==digest(self.layer):raw=b"corrupt layer bytes"
+                response=Mock();response.__enter__=Mock(return_value=response);response.__exit__=Mock(return_value=False);response.read.return_value=raw
+                return response
+            opener=Mock();opener.open.side_effect=open_blob
+            with self.subTest(wrong_size=wrong_size),patch.object(c.urllib.request,"build_opener",return_value=opener),self.assertRaisesRegex(ValueError,"collector_layer_hash"):
+                c.content(c.Mirror(self.policy,self.cloud),self.policy)
 
 
 if __name__ == "__main__":

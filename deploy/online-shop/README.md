@@ -5,8 +5,10 @@ Implementation and offline checks are distinct from read-only observations and
 live acceptance. See [validation.json](validation.json). The separately authorized
 infrastructure apply completed from `1b474a96ac344b3ee978b7d4df373d86d62cebee`.
 [Collector adoption](collector-adoption.md) adds the narrow mirror/separate-signing
-implementation and live publisher proof. **No Collector mirror, signing or workload
-rollout has been performed.** Eligibility is not authorization.
+implementation and live publisher proof. The authorized mirror upload completed;
+a Collector-specific blob transport fix now has read-only verification of its
+existing layers and awaits review/merge. **Signing and workload rollout remain
+pending.** Eligibility is not authorization.
 
 ## Release and deployment boundaries
 
@@ -83,7 +85,8 @@ The [official release](https://github.com/open-telemetry/opentelemetry-collector
 and [exporter configuration](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/v0.164.0/exporter/googlecloudexporter/README.md)
 are the source references. Live Cosign verification of the exact index and
 publisher, unique linux/amd64 membership and actual manifest/config/layer hashes
-passed on 2026-10-30; mirror and platform attestation remain pending.
+passed on 2026-10-30. The uploaded mirror passed read-only content verification
+with the proposed Collector-specific redirect fix; platform attestation remains pending.
 
 `verify_support` requires successful online Cosign verification of that signed
 index, its exact amd64 member, the same digest-addressed bytes/config/platform in
@@ -290,6 +293,7 @@ Local clients avoid extra in-cluster test images. Keep all raw files under ignor
     Retain linked sanitized conclusions; keep private responses and inputs private.
 
 Infrastructure apply and read-only Collector publisher/content proof have completed.
-Collector mirror/attestation and workload acceptance remain pending. Proof of the
+Reviewed-main mirror verification, platform attestation and workload acceptance
+remain pending. Proof of the
 existing release, native parser validation and offline fakes do not establish
 deployment, admission, functional RPC or catalog cloud telemetry success.
