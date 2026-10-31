@@ -4,11 +4,12 @@ Implements the first stage of [#93](https://github.com/DimitryZH/secure-delivery
 Implementation and offline checks are distinct from read-only observations and
 live acceptance. See [validation.json](validation.json). The separately authorized
 infrastructure apply completed from `1b474a96ac344b3ee978b7d4df373d86d62cebee`.
-[Collector adoption](collector-adoption.md) adds the narrow mirror/separate-signing
-implementation and live publisher proof. The authorized mirror upload completed;
-a Collector-specific blob transport fix now has read-only verification of its
-existing layers and awaits review/merge. **Signing and workload rollout remain
-pending.** Eligibility is not authorization.
+[Collector adoption](collector-adoption.md) completed reviewed-main mirror and
+separate signing acceptance on `61b56a31bcc13e88011cb54823f72d5a1e2ea8b9`.
+Independent inspection verified the exact Collector occurrence and signature.
+The subsequent dev release rendered successfully, but preflight was **BLOCKED**;
+no rollout, runtime/RPC/telemetry or negative admission test ran. See the bounded
+attempt below and [validation.json](validation.json). Eligibility is not authorization.
 
 ## Release and deployment boundaries
 
@@ -40,13 +41,30 @@ Local prepared manifests and Cloud Deploy rendered artifacts have separate inven
 modes. Prepared manifests remain canonical object matches to local rendering.
 Rendered preflight additionally requires the six documented
 [automatic Cloud Deploy labels](https://docs.cloud.google.com/deploy/docs/labels-annotations#automatic_labels_from_cloud_deploy)
-at resource metadata and Deployment/DaemonSet Pod-template metadata: fixed
+at Deployment/DaemonSet/Service resource metadata and Deployment/DaemonSet
+Pod-template metadata: fixed
 `app.kubernetes.io/managed-by=google-cloud-deploy` and exact project, location,
 pipeline, release and target IDs. Expected values come from separately reviewed
 Cloud Deploy API release/target context and the explicitly intended full release
 resource, never from the labels being checked. Only those additions are modeled;
 unknown labels/metadata, selectors, images, annotations, configuration and security
-changes still fail exact comparison. Label generation remains enabled.
+changes still fail exact comparison. ServiceAccount and ConfigMap metadata stays
+exactly as prepared; the observed renderer does not add generated labels there.
+Label generation remains enabled.
+
+The [Release API](https://docs.cloud.google.com/deploy/docs/api/reference/rest/v1/projects.locations.deliveryPipelines.releases#methods)
+has no update method. Before creation, preparation can calculate
+`rendered_inventory_sha256` from the complete expected ordered document list,
+including the six labels derived from the intended release and dev target. This
+is SHA-256 of ASCII JSON with sorted keys and `,`/`:` separators, not a prediction
+of server-generated YAML bytes. Record it as
+`release.secure-delivery.dev/rendered-inventory-sha256` during release creation.
+Preflight requires that commitment to match both the independently reconstructed
+policy inventory and every parsed field of the actual rendered documents. A
+recomputed commitment for changed images/configuration/metadata still fails.
+Exact raw source/archive and rendered manifest/config bytes, generation readback,
+independently recorded raw hashes, freshness and retention remain separate checks.
+An old `rendered-sha256` annotation alone does not satisfy the new commitment.
 
 `acceptance.py runtime` and `signals` first apply the shared candidate policy guard:
 exact schema reconstruction and integer version 1, recomputed release-set identity,
@@ -85,8 +103,10 @@ The [official release](https://github.com/open-telemetry/opentelemetry-collector
 and [exporter configuration](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/v0.164.0/exporter/googlecloudexporter/README.md)
 are the source references. Live Cosign verification of the exact index and
 publisher, unique linux/amd64 membership and actual manifest/config/layer hashes
-passed on 2026-10-30. The uploaded mirror passed read-only content verification
-with the proposed Collector-specific redirect fix; platform attestation remains pending.
+passed on 2026-10-30. The merged transport passed full reviewed-main verification
+on 2026-10-31; the separate signer and independent inspect returned `trusted` with
+signature validation `VERIFIED`. This establishes supporting-image trust, not
+workload acceptance.
 
 `verify_support` requires successful online Cosign verification of that signed
 index, its exact amd64 member, the same digest-addressed bytes/config/platform in
@@ -192,23 +212,39 @@ Local clients avoid extra in-cluster test images. Keep all raw files under ignor
 3. Prepare a **new** local bundle after every proof passes:
 
    ```powershell
-   python -B deploy/online-shop/workflow.py prepare --candidate $candidatePath --deployment-revision $deployRevision --application-occurrence $catalogOccurrence --collector-occurrence $collectorOccurrence --output-dir $bundle
+   python -B deploy/online-shop/workflow.py prepare --candidate $candidatePath --deployment-revision $deployRevision --clouddeploy-release $intendedReleaseResource --application-occurrence $catalogOccurrence --collector-occurrence $collectorOccurrence --output-dir $bundle
    ```
 
    Check exit code, preparation.json, exact rendered inventory and Collector config
    hash. Render locally with Skaffold from the bundle directory, profile dev,
    `--offline=true --digest-source=none`, no image overrides. Compare resulting
    objects against the canonical prepared List; do not accept hidden/default images.
-4. Create a uniquely named release in pipeline `catalog-dev` with explicit project/
-   region, source staging location in the existing Cloud Deploy bucket, and
-   `--disable-initial-rollout`. No implicit initial rollout is allowed. Record
-   source URI/generation and actual staged archive SHA-256 from readback. Annotate
-   release-set ID, producing revision and deployment revision; separately record
-   source/rendered hashes as release annotations after render. Check terminal render
-   success, exact pipeline/target/source snapshot and Skaffold source path.
-5. Download source and rendered generations privately. Hash the **actual archive
-   bytes**, compare to independent recorded release annotations, safely parse the
-   target manifest, check exact inventory and actual source/configuration files.
+   Give the local client an isolated `KUBECONFIG` with the explicit target context;
+   `--offline` alone does not isolate ambient minikube/client configuration.
+4. Create a source tar.gz containing only `skaffold.yaml` and the prepared
+   `rendered/dev/catalog.json`. Upload create-only into the existing approved bucket,
+   read back that exact generation and independently record its actual archive hash.
+   Record the source byte hash as `release.secure-delivery.dev/source-sha256` and
+   preparation's canonical inventory commitment as
+   `release.secure-delivery.dev/rendered-inventory-sha256`, together with release-set,
+   producing configuration and deployment configuration annotations **at create**.
+   Do not predict server YAML byte hashes or try to update annotations after render.
+   Use a unique release ID and explicit flags, including the staging directory even
+   when `--source` is already a Cloud Storage archive:
+
+   ```powershell
+   gcloud deploy releases create $releaseId --project=sre-platform-staging-507220 --region=us-central1 --delivery-pipeline=catalog-dev --source=$sourceArchiveUri --gcs-source-staging-dir=gs://sre-platform-staging-507220-clouddeploy/source --skaffold-file=skaffold.yaml --disable-initial-rollout --annotations=$reviewedAnnotations
+   ```
+
+   No implicit rollout is allowed. Check terminal render success and the actual
+   release `skaffoldConfigUri`, archive generation/hash, pipeline/target snapshots
+   and source path. An approved input URI does not establish where gcloud stages it.
+5. Download the **actual release source archive** and target manifest/resolved
+   Skaffold generations privately. Source is an archive; rendered target outputs
+   are individual files, not an assumed archive. Hash their exact bytes and record
+   those raw hashes independently for the fresh review. Compare source hash to its
+   immutable annotation and parsed rendered inventory to its precreation commitment.
+   Safely parse the actual manifest and check exact source/configuration files.
    Require availability/live generation and effective retention/delete protection
    of at least **75 minutes** for both artifacts. Soft-deleted objects and lifecycle
    age alone are insufficient. Do not extend observations from earlier runs.
@@ -218,8 +254,13 @@ Local clients avoid extra in-cluster test images. Keep all raw files under ignor
    private `evidence_ref`, both identity bindings and all explicitly named boolean
    checks in `evaluate`. Both `artifacts.source/rendered` require those bindings,
    expected/actual SHA-256, availability/live generation and retention expiry.
-   `release_annotations.source_sha256/rendered_sha256` bind independently read
-   release metadata. `rendered_documents` is the actual parsed document list.
+   `release_annotations.source_sha256/rendered_inventory_sha256` come from
+   independently read immutable release metadata. The source commitment covers raw
+   archive bytes; the rendered commitment covers the full canonical document list.
+   `artifacts.rendered.expected_sha256/actual_sha256` still compare independently
+   recorded and freshly downloaded **raw manifest bytes**. Do not substitute the
+   canonical inventory hash for either raw byte hash. Check resolved Skaffold bytes
+   and protection as well. `rendered_documents` is the actual parsed document list.
    Include a fresh `clouddeploy` section with the same observation/reference and
    identity bindings, `release_snapshot_matches_current: true`, and independently
    read `release_resource` / `target_resource` full API names. Project, location,
@@ -292,8 +333,36 @@ Local clients avoid extra in-cluster test images. Keep all raw files under ignor
     compare to the preflight baseline. Record cleanup and final resource pressure.
     Retain linked sanitized conclusions; keep private responses and inputs private.
 
-Infrastructure apply and read-only Collector publisher/content proof have completed.
-Reviewed-main mirror verification, platform attestation and workload acceptance
-remain pending. Proof of the
-existing release, native parser validation and offline fakes do not establish
-deployment, admission, functional RPC or catalog cloud telemetry success.
+## Bounded dev attempt on 2026-10-31
+
+Configuration `61b56a31bcc13e88011cb54823f72d5a1e2ea8b9` passed fresh prerequisites,
+application #87 verification and Collector publisher/content/signature proof.
+Single-node free requests were 1069m CPU / 4796Mi memory with 90 Pod slots;
+metadata-server/WI, grants/exclusion and all three sample environments were ready.
+Release `catalog-93-61b56a3-20261031` rendered successfully with initial rollout
+disabled. Render build: `cc57a295-e7cf-4ae1-afc1-90f453201629`.
+
+The merged preflight correctly stopped before deployment. Its generated-label
+model incorrectly expected labels on two ServiceAccounts and ConfigMap. A locally
+predicted YAML byte hash also differed from actual server serialization. In
+addition, the operator create call omitted `--gcs-source-staging-dir`: gcloud created
+a pipeline default source bucket and copied the verified input archive there, without
+the required retention. This staging error is distinct from the code findings.
+The approved rendered bucket retained manifest/config generations for 24 hours;
+soft delete on another bucket was not counted as retention protection.
+
+This PR corrects label scope and introduces the precreation canonical inventory
+commitment above. These changes were tested locally only and were **not** used to
+authorize the live release. That release has zero rollouts and lacks the new
+commitment; it cannot be repaired by changing a snapshot or immutable annotations.
+After review/merge, a new explicitly authorized release must use the selected
+merged configuration, correct staging, fresh artifact proof and a new preflight.
+
+No catalog/Collector Pod or temporary negative Pod was created, so no RPCs or
+runtime/cloud telemetry/admission acceptance was attempted. No owned port-forward
+needed cleanup. Source/render evidence is retained privately; no bucket or blanket
+cleanup was performed. Sample-service UID/template/images and HTTP 200 health in
+dev/stage/prod remained unchanged. No Terraform, GKE or manual IAM operation was
+performed. The extra source bucket above is an explicitly reported gcloud side
+effect; trusted application/Collector images and occurrences were not changed.
+Issue #93 remains open for review and the remaining workload acceptance.

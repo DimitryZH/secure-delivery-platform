@@ -52,6 +52,8 @@ class DeploymentTests(unittest.TestCase):
                   "deploy.cloud.google.com/target-id": "dev"}
         docs = w.render(self.record, REV)
         for doc in docs:
+            if doc["kind"] not in ("Deployment", "DaemonSet", "Service"):
+                continue
             doc["metadata"].setdefault("labels", {}).update(labels)
             if doc["kind"] in ("Deployment", "DaemonSet"):
                 doc["spec"]["template"]["metadata"]["labels"].update(labels)
@@ -71,7 +73,8 @@ class DeploymentTests(unittest.TestCase):
         for name, sha in (("source", "a" * 64), ("rendered", "b" * 64)):
             d["artifacts"][name] = {**common, "expected_sha256": sha, "actual_sha256": sha, "available": True,
                                      "live_generation": True, "retention_expires_at": stamp(90)}
-            d["release_annotations"][name + "_sha256"] = sha
+            if name == "source": d["release_annotations"]["source_sha256"] = sha
+        d["release_annotations"]["rendered_inventory_sha256"] = w.r.sha(w.r.canonical(d["rendered_documents"]))
         return d
 
     def decide(self, d, action="deploy"):
@@ -94,8 +97,23 @@ class DeploymentTests(unittest.TestCase):
                 metadata["labels"]["deploy.cloud.google.com/" + key] = "wrong"
                 with self.subTest(key=key, path=path):
                     self.assertEqual(self.decide(d)["decision"], "BLOCKED")
-        d = self.snapshot(); d["rendered_documents"][0]["metadata"]["labels"]["app.kubernetes.io/managed-by"] = "other"
+        d = self.snapshot(); d["rendered_documents"][3]["metadata"]["labels"]["app.kubernetes.io/managed-by"] = "other"
         self.assertEqual(self.decide(d)["decision"], "BLOCKED")
+
+    def test_live_label_scope_rejects_additions_to_untransformed_objects(self):
+        docs = self.clouddeploy_documents()
+        self.assertEqual([d["kind"] for d in docs[:3]], ["ServiceAccount", "ServiceAccount", "ConfigMap"])
+        self.assertTrue(all("labels" not in d["metadata"] for d in docs[:3]))
+        self.assertEqual(self.decide(self.snapshot())["decision"], "READY")
+        for index in range(3):
+            for labels in ({"app.kubernetes.io/managed-by": "google-cloud-deploy"},
+                           {"deploy.cloud.google.com/unknown-generated": "value"}, {"unexpected": "value"}):
+                d = self.snapshot(); d["rendered_documents"][index]["metadata"]["labels"] = labels
+                with self.subTest(index=index, labels=labels):
+                    self.assertEqual(self.decide(d)["decision"], "BLOCKED")
+        for index in range(3, 7):
+            d = self.snapshot(); d["rendered_documents"][index]["metadata"]["labels"].pop("deploy.cloud.google.com/release-id")
+            with self.subTest(index=index): self.assertEqual(self.decide(d)["decision"], "BLOCKED")
 
     def test_generated_labels_cannot_supply_their_own_release_context(self):
         for change in (lambda c: c.update(release_resource=RELEASE_RESOURCE.replace("/catalog-dev/", "/other/")),
@@ -108,11 +126,50 @@ class DeploymentTests(unittest.TestCase):
         d["clouddeploy"]["release_resource"] = RELEASE_RESOURCE.replace(RELEASE_ID, "other-release")
         d["request"]["clouddeploy_release"] = d["clouddeploy"]["release_resource"]
         for doc in d["rendered_documents"]:
+            if doc["kind"] not in ("Deployment", "DaemonSet", "Service"): continue
             doc["metadata"]["labels"]["deploy.cloud.google.com/release-id"] = "other-release"
             if doc["kind"] in ("Deployment", "DaemonSet"):
                 doc["spec"]["template"]["metadata"]["labels"]["deploy.cloud.google.com/release-id"] = "other-release"
+        d["release_annotations"]["rendered_inventory_sha256"] = w.r.sha(w.r.canonical(d["rendered_documents"]))
         # Even coherently forged labels/context do not change the intended resource.
         self.assertEqual(self.decide(d)["decision"], "BLOCKED")
+
+    def test_precreation_inventory_commitment_and_raw_artifact_hashes_are_separate(self):
+        d = self.snapshot()
+        identity = w.rendered_inventory_sha256(self.record, REV, d["clouddeploy"])
+        self.assertEqual(identity, d["release_annotations"]["rendered_inventory_sha256"])
+        # A newly reviewed serialization has new exact byte hashes but the same
+        # full canonical objects. No post-create Release mutation is needed.
+        d["artifacts"]["rendered"].update(expected_sha256="c" * 64, actual_sha256="c" * 64)
+        self.assertEqual(self.decide(d)["decision"], "READY")
+        d["artifacts"]["rendered"]["actual_sha256"] = "e" * 64
+        self.assertEqual(self.decide(d)["decision"], "BLOCKED")
+        for value in (None, "0" * 64, identity.upper()):
+            d = self.snapshot()
+            if value is None: d["release_annotations"].pop("rendered_inventory_sha256")
+            else: d["release_annotations"]["rendered_inventory_sha256"] = value
+            with self.subTest(value=value): self.assertEqual(self.decide(d)["decision"], "BLOCKED")
+        d = self.snapshot()
+        d["release_annotations"]["rendered_sha256"] = d["artifacts"]["rendered"]["actual_sha256"]
+        d["release_annotations"].pop("rendered_inventory_sha256")
+        self.assertEqual(self.decide(d)["decision"], "BLOCKED")
+
+    def test_inventory_commitment_cannot_authorize_changed_policy_or_context(self):
+        for mutation in (lambda d: d[2]["data"].update({"config.json": "changed"}),
+                         lambda d: d[3]["spec"]["template"]["spec"]["containers"][0].update(image="changed@sha256:" + "0" * 64),
+                         lambda d: d[3]["spec"]["template"]["metadata"]["annotations"].update({"alpha.image-policy.k8s.io/break-glass": "true"}),
+                         lambda d: d[0]["metadata"].update(labels={"unexpected": "label"})):
+            d = self.snapshot(); mutation(d["rendered_documents"])
+            # Recomputing a commitment from altered documents cannot replace the
+            # expected inventory independently reconstructed from reviewed policy.
+            d["release_annotations"]["rendered_inventory_sha256"] = w.r.sha(w.r.canonical(d["rendered_documents"]))
+            self.assertEqual(self.decide(d)["decision"], "BLOCKED")
+        context = {"release_resource": RELEASE_RESOURCE, "target_resource": TARGET_RESOURCE}
+        identity = w.rendered_inventory_sha256(self.record, REV, context)
+        self.assertNotEqual(identity, w.rendered_inventory_sha256(self.record, REV, {**context, "release_resource": RELEASE_RESOURCE + "-other"}))
+        self.assertNotEqual(identity, w.rendered_inventory_sha256(self.record, "e" * 40, context))
+        with self.assertRaises(ValueError):
+            w.rendered_inventory_sha256(self.record, REV, {**context, "target_resource": TARGET_RESOURCE.replace("/dev", "/prod")})
 
     def test_generated_labels_do_not_hide_image_config_container_or_bypass_changes(self):
         mutations = [lambda d: d[3]["spec"]["template"]["spec"]["containers"][0].update(image="catalog:latest"),
@@ -200,6 +257,18 @@ class DeploymentTests(unittest.TestCase):
             self.assertTrue((dest / "rendered/dev/catalog.json").is_file())
             self.assertEqual(w.r.sha((dest / "rendered/dev/catalog.json").read_bytes()), result["rendered_sha256"])
             self.assertFalse((dest / "rendered/stage").exists())
+
+    def test_prepare_records_reviewed_release_inventory_commitment(self):
+        with tempfile.TemporaryDirectory() as tmp, patch.object(w, "reviewed"), patch.object(w, "verify_application", return_value={"status": "passed"}), patch.object(w, "verify_support"):
+            dest = Path(tmp) / "bundle"
+            result = w.prepare(self.record, "app", "support", REV, dest, Mock(), clouddeploy_release=RELEASE_RESOURCE)
+            self.assertEqual(result["clouddeploy_release"], RELEASE_RESOURCE)
+            self.assertEqual(result["rendered_inventory_sha256"], w.r.sha(w.r.canonical(self.clouddeploy_documents())))
+            self.assertEqual(w.r.read(dest / "preparation.json")["rendered_inventory_sha256"], result["rendered_inventory_sha256"])
+        with patch.object(w, "reviewed"), patch.object(w.r, "Cloud") as cloud:
+            with self.assertRaisesRegex(ValueError, "clouddeploy_context_mismatch"):
+                w.prepare(self.record, "app", "support", REV, "not-created", clouddeploy_release=RELEASE_RESOURCE.replace("/catalog-dev/", "/other/"))
+            cloud.assert_not_called()
 
     def test_collector_policy_no_generic_sdk_log_export_or_credentials(self):
         config = w.r.read(w.HERE / "collector.json")
