@@ -203,29 +203,46 @@ def clouddeploy_labels(context):
             "deploy.cloud.google.com/target-id": q["target"]}
 
 
+def clouddeploy_documents(record, revision, release_context):
+    require(isinstance(release_context, dict), "clouddeploy_context_required")
+    expected = render(record, revision)
+    labels = clouddeploy_labels(release_context)
+    for document in expected:
+        # Skaffold's label transformer covers these resource kinds. ServiceAccount
+        # and ConfigMap metadata stays exactly as prepared, including no labels.
+        if document["kind"] not in ("Deployment", "DaemonSet", "Service"):
+            continue
+        metadata = [document["metadata"]]
+        if document["kind"] in ("Deployment", "DaemonSet"):
+            metadata.append(document["spec"]["template"]["metadata"])
+        for item in metadata:
+            item["labels"] = {**item.get("labels", {}), **labels}
+    return expected
+
+
+def rendered_inventory_sha256(record, revision, release_context):
+    # This can be committed to immutable release annotations before server render.
+    # It identifies every expected object/field, independent of YAML serialization.
+    return r.sha(r.canonical(clouddeploy_documents(record, revision, release_context)))
+
+
 def inventory(documents, record, revision, *, artifact="prepared", release_context=None):
     # Exact object/Pod/config policy prevents hidden images, init/ephemeral
     # containers, bypass annotations, alternate commands or extra resources.
-    expected = render(record, revision)
     require(artifact in ("prepared", "clouddeploy"), "invalid_manifest_artifact")
-    if artifact == "clouddeploy":
-        require(isinstance(release_context, dict), "clouddeploy_context_required")
-        labels = clouddeploy_labels(release_context)
-        # Add only the six documented labels at explicit resource/Pod-template
-        # metadata paths. Selectors, annotations and all other fields stay exact.
-        for document in expected:
-            metadata = [document["metadata"]]
-            if document["kind"] in ("Deployment", "DaemonSet"):
-                metadata.append(document["spec"]["template"]["metadata"])
-            for item in metadata:
-                item["labels"] = {**item.get("labels", {}), **labels}
+    expected = (render(record, revision) if artifact == "prepared"
+                else clouddeploy_documents(record, revision, release_context))
     require(r.canonical(documents) == r.canonical(expected), "rendered_policy_or_inventory_mismatch")
     return {"application": [record["components"][0]["repository"] + "@" + record["components"][0]["digest"]],
             "supporting": [policy()["collector"]["mirror_image"]]}
 
 
-def prepare(record, app_occurrence, collector_occurrence, revision, output, cloud=None):
+def prepare(record, app_occurrence, collector_occurrence, revision, output, cloud=None, *, clouddeploy_release=None):
     reviewed(revision)
+    release_context = {"release_resource": clouddeploy_release,
+                       "target_resource": "projects/" + r.policy()["project"] + "/locations/" + r.policy()["region"] + "/targets/dev"}
+    if clouddeploy_release is not None:
+        clouddeploy_labels(release_context)
     cloud = cloud or r.Cloud()
     verification = verify_application(record, app_occurrence, cloud)
     verify_support(cloud, collector_occurrence)
@@ -242,6 +259,9 @@ def prepare(record, app_occurrence, collector_occurrence, revision, output, clou
         "deployment_configuration_revision": revision, "verification": verification, "inventory": images,
         "rendered_sha256": r.sha(manifest.encode()), "collector_configuration_sha256": annotations(record, revision)["release.secure-delivery.dev/collector-config-sha256"],
         "application_occurrence": app_occurrence, "collector_occurrence": collector_occurrence, "mutation_performed": False}
+    if clouddeploy_release is not None:
+        result.update(clouddeploy_release=clouddeploy_release,
+                      rendered_inventory_sha256=rendered_inventory_sha256(record, revision, release_context))
     (output / "preparation.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     return result
 
@@ -280,8 +300,16 @@ def evaluate(snapshot, record, revision, action, now=None, *, clouddeploy_releas
               and re.fullmatch(r"[0-9a-f]{64}", value.get("expected_sha256", "")) is not None
               and value.get("actual_sha256") == value.get("expected_sha256"))
         check(name + "_binding", value.get("release_set_id") == record["release_set_id"] and value.get("deployment_revision") == revision)
-        check(name + "_release_annotation_hash", snapshot.get("release_annotations", {}).get(name + "_sha256") == value.get("expected_sha256"))
+        if name == "source":
+            check("source_release_annotation_hash", snapshot.get("release_annotations", {}).get("source_sha256") == value.get("expected_sha256"))
     context = snapshot.get("clouddeploy", {})
+    try:
+        expected_inventory = rendered_inventory_sha256(record, revision, context)
+        inventory_bound = (snapshot.get("release_annotations", {}).get("rendered_inventory_sha256") == expected_inventory
+                           == r.sha(r.canonical(snapshot.get("rendered_documents"))))
+    except (ValueError, KeyError, TypeError, AttributeError):
+        inventory_bound = False
+    check("rendered_release_annotation_inventory", inventory_bound)
     check("clouddeploy_release_binding", isinstance(clouddeploy_release, str) and context.get("release_resource") == clouddeploy_release)
     try:
         inventory(snapshot.get("rendered_documents"), record, revision, artifact="clouddeploy", release_context=context)
@@ -316,7 +344,8 @@ def main():
             candidate_policy(record, r.plan_reference(source, source.plan()))
         if args.action == "prepare":
             require(bool(args.output_dir), "output_required")
-            result = prepare(record, args.application_occurrence, args.collector_occurrence, args.deployment_revision, args.output_dir)
+            result = prepare(record, args.application_occurrence, args.collector_occurrence, args.deployment_revision, args.output_dir,
+                             clouddeploy_release=args.clouddeploy_release)
             print(json.dumps({"status": "prepared", "release_set_id": result["release_set_id"], "mutation_performed": False}))
             return 0
         reviewed(args.deployment_revision)

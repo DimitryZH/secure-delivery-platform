@@ -1,12 +1,11 @@
 {
-  "base_revision": "dd2e496a1b65f07c3897bdf316613136cf6ff572",
+  "base_revision": "61b56a31bcc13e88011cb54823f72d5a1e2ea8b9",
   "blockers_before_live": [
-    "Review/merge the Collector-specific blob transport fix, select a full immutable main revision and recheck executing files.",
-    "Separately authorize live mirror and one separate signing execution; recheck existing caller/registry/signer authority without expanding IAM.",
-    "The exact mirror is uploaded and all layers passed read-only verification with the proposed transport fix. Reviewed-main verification and platform attestation remain pending; do not reupload to work around verification failure.",
-    "No new Cloud Deploy source/rendered artifact exists; collect fresh generations and five-minute/75-minute protection evidence later.",
-    "Fresh single-node capacity, constraints, sample preservation and metadata readiness must pass immediately before any workload rollout.",
-    "Collector WIF export, Linux host-log permissions/rotation and functional catalog/admission/native-linked telemetry remain live acceptance prerequisites."
+    "Review/merge the label-scope and precreation canonical rendered-inventory commitment fix; select its immutable merged-main SHA before executing it.",
+    "The existing unrolled release lacks the new inventory commitment and its actual default source bucket has no retention. Do not repair snapshots, mutate annotations or reuse it for rollout.",
+    "After separate authorization, create a new unique release with explicit approved source staging, raw archive hash and precreation inventory commitment; read all actual artifact generations and effective protection again.",
+    "Fresh five-minute evidence and at least 75-minute protection of actual source/rendered artifacts must produce READY before the one dev rollout.",
+    "Runtime images/metadata/readiness, functional RPC including NOT_FOUND, bounded traffic, real traces/metrics/native-linked logs, negative admission and final cleanup/sample preservation remain unexecuted."
   ],
   "collector_blob_transport_fix": {
     "allowed_transition": {
@@ -86,7 +85,29 @@
     "raw_diagnostics": "retained privately; actual download IDs and credentials not published",
     "root_cause": "The inherited application SafeRedirect permits storage.googleapis.com only; Artifact Registry returned relative same-origin HTTPS redirects for two Collector layers.",
     "scope": "Collector mirror blob GET only; shared application release #87 transport unchanged.",
-    "signing_and_deployment": "pending review/merge; not executed for this fix"
+    "signing_and_deployment": "Historical PR96 fix stage: no signing/deployment then. Later reviewed-main Collector signing is recorded separately above."
+  },
+  "collector_live_adoption": {
+    "application_release_changed": false,
+    "build_submissions": 1,
+    "config_digest": "sha256:28ebddf51f59e38ac800c9f91120726cfb312af377da8908807e0b566a82b017",
+    "configuration_revision": "61b56a31bcc13e88011cb54823f72d5a1e2ea8b9",
+    "deployment_performed": false,
+    "full_publisher_and_all_layer_verification": "passed",
+    "iam_changed": false,
+    "independent_inspection": "trusted",
+    "index_digest": "sha256:340c9ca6a36617084c6661bdc4f0fe92b7cda5a805d61673ec8db375fddc522b",
+    "manifest_digest": "sha256:ac0bb9cdc844b55d2fd2655d03e596243787d6a8c52dd408b1dc96dd1bd372ee",
+    "mirror_reuploaded": false,
+    "occurrence": "projects/<PROJECT_ID>/occurrences/2b1c6135-42d3-453a-9942-f473dea60444",
+    "original_mirror_timestamps_unchanged": true,
+    "original_mirror_upload_time": "2026-10-31T02:14:35.939311Z",
+    "platform": "linux/amd64",
+    "signature_validation": "VERIFIED",
+    "signer_status": "trusted",
+    "signing_build_id": "d1c15e5f-a6b4-40fb-ac25-cb47f79e07f1",
+    "signing_build_status": "SUCCESS",
+    "source_provenance_matches_configuration": true
   },
   "collector_publisher_verification": {
     "all_three_compressed_layer_hashes_and_sizes_verified": true,
@@ -121,6 +142,147 @@
     "release_url": "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.164.0",
     "upstream_repository": "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib",
     "version": "0.164.0"
+  },
+  "dev_acceptance_attempt": {
+    "actual_artifacts": {
+      "actual_yaml_sha256": "38bf31207d7a8f2cfea669a14cbe447a3e3d5fbc666684662cce9101aae914a4",
+      "approved_rendered_bucket_24_hour_retention": true,
+      "predicted_yaml_hash_matches_actual": false,
+      "predicted_yaml_sha256": "49de6fb5905da2c4d0631efc094e1f8d96564ee305cb474d732b470cfa78a79d",
+      "rendered": [
+        {
+          "bytes": 20502,
+          "generation": "1793459194484612",
+          "label": "actual-rendered-manifest",
+          "retention_expires_at": "2026-11-01T15:06:34.492Z",
+          "sha256": "38bf31207d7a8f2cfea669a14cbe447a3e3d5fbc666684662cce9101aae914a4",
+          "uri": "gs://<PROJECT_ID>-clouddeploy/rendered/dev/catalog-dev-6bb9801802d94227b56a2b48669c126e/catalog-93-61b56a3-20261031/dev/stable/manifest.yaml"
+        },
+        {
+          "bytes": 247,
+          "generation": "1793459194520025",
+          "label": "actual-rendered-skaffold",
+          "retention_expires_at": "2026-11-01T15:06:34.526Z",
+          "sha256": "7d2450abf5d9851483f59a84ca4f040e8b2296eb141599595e130e1f360bec09",
+          "uri": "gs://<PROJECT_ID>-clouddeploy/rendered/dev/catalog-dev-6bb9801802d94227b56a2b48669c126e/catalog-93-61b56a3-20261031/dev/stable/skaffold.yaml"
+        }
+      ],
+      "source": {
+        "approved_staging_bucket": false,
+        "bytes": 3506,
+        "contents_match_prepared_bundle": true,
+        "effective_75_minute_protection": false,
+        "generation": "1793459175607993",
+        "hash_matches_precreation_source_annotation": true,
+        "retention_expires_at": null,
+        "sha256": "571363929ab95fe9ff8841308c43f2fe628a063692486220eb18f7b33119a79e",
+        "uri": "gs://<PIPELINE_UID>_clouddeploy/source/<STAGED_ARCHIVE>.gz"
+      }
+    },
+    "application_or_collector_rebuild_mirror_or_signing": false,
+    "cleanup": {
+      "application_collector_or_sample_resources_deleted": false,
+      "evidence_retained": true,
+      "port_forward_started": false,
+      "temporary_negative_pod_created": false,
+      "temporary_workload_cleanup_required": false
+    },
+    "configuration_revision": "61b56a31bcc13e88011cb54823f72d5a1e2ea8b9",
+    "disable_initial_rollout": true,
+    "final_observed_at": "2026-10-31T15:15:53.575551+00:00",
+    "final_sample_health": [
+      {
+        "deployment_uid_unchanged": true,
+        "http_200_healthz": true,
+        "namespace": "dev",
+        "pod_ready": true,
+        "pod_uid_unchanged": true,
+        "ready_available": true,
+        "template_and_image_unchanged": true
+      },
+      {
+        "deployment_uid_unchanged": true,
+        "http_200_healthz": true,
+        "namespace": "stage",
+        "pod_ready": true,
+        "pod_uid_unchanged": true,
+        "ready_available": true,
+        "template_and_image_unchanged": true
+      },
+      {
+        "deployment_uid_unchanged": true,
+        "http_200_healthz": true,
+        "namespace": "prod",
+        "pod_ready": true,
+        "pod_uid_unchanged": true,
+        "ready_available": true,
+        "template_and_image_unchanged": true
+      }
+    ],
+    "fresh_prerequisites": {
+      "application_verification": "passed",
+      "capacity": {
+        "capacity_ready": true,
+        "limit": "Fresh WI node labels, affinities, quotas and rollout conflicts must also pass target preflight; this does not scale a cluster.",
+        "nodes": [
+          {
+            "eligible": true,
+            "free_cpu_m": 1069.0,
+            "free_memory_mi": 4796.5323486328125,
+            "headroom": true,
+            "pod_slots": 90
+          }
+        ],
+        "reserve_cpu_m": 600,
+        "reserve_memory_mi": 768,
+        "unassigned_pods": 0
+      },
+      "collector_publisher_content_signature": "passed",
+      "node_ready_no_pressure": true,
+      "observed_at": "2026-10-31T15:12:07.127047Z",
+      "project_mapping": true,
+      "sample_all_ready_http200": true,
+      "workload_identity_metadata_grants_exclusion": "passed"
+    },
+    "generated_label_finding": {
+      "organization_policy_changed": false,
+      "other_object_fields_match": true,
+      "unexpected_difference": "Only missing generated labels on two ServiceAccounts and ConfigMap; Deployment/DaemonSet/Service and Pod-template labels match independent intended release context."
+    },
+    "manual_iam_or_terraform_operations": false,
+    "merged_preflight": {
+      "decision": "BLOCKED",
+      "exit_code": 3,
+      "failed_checks": [
+        "review_continue",
+        "source_fresh_protected",
+        "rendered_bytes",
+        "exact_rendered_inventory"
+      ],
+      "observed_at": "2026-10-31T15:12:38.390538Z"
+    },
+    "negative_binary_authorization_case": "not_run",
+    "normal_rpc_count": 0,
+    "operator_staging_error": {
+      "approved_input_archive_preserved": true,
+      "bucket_created_at": "2026-10-31T15:06:15.444Z",
+      "bucket_has_retention_policy": false,
+      "default_bucket_and_source_retained_no_blanket_cleanup": true,
+      "default_source_bucket_created_by_gcloud": true,
+      "gcs_source_staging_dir_omitted": true
+    },
+    "raw_evidence": "Private ignored responses/archives/snapshots only; not committed.",
+    "release_create_cli_exit_code": 0,
+    "release_id": "catalog-93-61b56a3-20261031",
+    "release_resource": "projects/<PROJECT_ID>/locations/us-central1/deliveryPipelines/catalog-dev/releases/catalog-93-61b56a3-20261031",
+    "render_build_id": "cc57a295-e7cf-4ae1-afc1-90f453201629",
+    "render_state": "SUCCEEDED",
+    "rollout_count": 0,
+    "rollout_ids": [],
+    "rpc_acceptance": "not_run",
+    "running_digests": null,
+    "runtime_acceptance": "not_run_preflight_blocked",
+    "traces_metrics_native_linked_logs": "not_run"
   },
   "full_terraform_plan": {
     "action_counts": {
@@ -472,17 +634,25 @@
     "unrelated_planned_changes": [],
     "workspace": "default"
   },
+  "historical_pr96_blockers_before_live": [
+    "Review/merge the Collector-specific blob transport fix, select a full immutable main revision and recheck executing files.",
+    "Separately authorize live mirror and one separate signing execution; recheck existing caller/registry/signer authority without expanding IAM.",
+    "The exact mirror is uploaded and all layers passed read-only verification with the proposed transport fix. Reviewed-main verification and platform attestation remain pending; do not reupload to work around verification failure.",
+    "No new Cloud Deploy source/rendered artifact exists; collect fresh generations and five-minute/75-minute protection evidence later.",
+    "Fresh single-node capacity, constraints, sample preservation and metadata readiness must pass immediately before any workload rollout.",
+    "Collector WIF export, Linux host-log permissions/rotation and functional catalog/admission/native-linked telemetry remain live acceptance prerequisites."
+  ],
   "implementation_sha256": {
     "cloudbuild/online-shop/collector-tools.json": "sha256:ed1a4d335e939efd848d334d9acf0105b436f65887dd852252fbf59fb8007a95",
     "cloudbuild/online-shop/collector.py": "sha256:21ee5e5c5cb84380c8f4f14ac60cb42a851cff128ae4f11815ef21248c1e01e9",
-    "deploy/online-shop/README.md": "sha256:04e696bca5dd8d633b2a88e09c499361410da361c98b7875ffe2c7eb18f10b0e",
+    "deploy/online-shop/README.md": "sha256:e823ee1ec263d206a524918d10c6592231d83876ca4e7092f6dd0dc482051f27",
     "deploy/online-shop/acceptance.py": "sha256:2f91344795941b54f1b5fe7773a5149becb75d3fa31d418e132f498df5a4acac",
     "deploy/online-shop/collector-adoption.md": "sha256:615e4ca1fc69d40b7d45a9d11cf18faa355509a080c69f813fcc6b1d4212b25a",
     "deploy/online-shop/collector.json": "sha256:9dcdb191e1ef17cd1fcc958793e2258de1f1c606635045cde43906a04db934ba",
     "deploy/online-shop/policy.json": "sha256:cb0d0cbcc0c8915f037ba633935f6adc6ae3bed95a5808dfc123e4dccb00f42c",
     "deploy/online-shop/skaffold.yaml": "sha256:160b7c968fde8b5cad2cd07e159044232618772e88fe6ae5d6d0a4761e4dbf68",
-    "deploy/online-shop/workflow.py": "sha256:bd282eaf2533fa701f9b74790578aab6139cdbbfafd75d1aa0f8d51c4af11a46",
-    "scripts/tests/test_catalog_deployment.py": "sha256:7e80ed7334c5a8b17c75f2fd5b1ce738b4fd241d7d8e1e5c9d219c172d3e86a1",
+    "deploy/online-shop/workflow.py": "sha256:d2e89d743a81b9c1362f414d79dc3f72456aa8859b505c004bd21576b1f055b7",
+    "scripts/tests/test_catalog_deployment.py": "sha256:9b95d130b832738462063c49403736e85eedb8b659eea0ebcca5f5948dacc827",
     "scripts/tests/test_collector_adoption.py": "sha256:c1fec22055f15ac0c4592e69a0120634bbdae858b671cb5586600d97330e336f",
     "terraform/foundation/catalog-runtime.tf": "sha256:5b511b14e0e4b2bc5d234a8633ff47c9b29aecb9be1f8a672e56191d63ee7ed3",
     "terraform/foundation/gke.tf": "sha256:8e2c402743ad59094a16715bb21acf7f166b545169d2d4a9b63e42dcb9c9ca0c"
@@ -499,7 +669,9 @@
     "Policy-only supporting image mirror via digest-preserving crane copy; destination content verification and reuse/recovery without blind retries.",
     "Separate main-bound Cloud Build attestation under existing signer identity; independent publisher/upstream/mirror proof, exact occurrence/signature readback and reuse.",
     "Shared supporting content verifier used by deployment preparation; application release #87 policy, producing references and implementation unchanged.",
-    "Collector-specific same-origin HTTPS blob/download transport with exact observed route scope; shared #87 application transport unchanged."
+    "Collector-specific same-origin HTTPS blob/download transport with exact observed route scope; shared #87 application transport unchanged.",
+    "Proposed exact Cloud Deploy generated-label resource scope based on actual readback; no metadata stripping.",
+    "Proposed immutable precreation full rendered-inventory commitment, distinct from exact reviewed raw artifact byte hashes."
   ],
   "infrastructure_applied": {
     "apply_completed": "2026-10-30T15:19:07.797439+00:00",
@@ -539,34 +711,26 @@
   "initial_implementation_base_revision": "555bfb54fc6de0d49eb992928df96943a8ad73e3",
   "issue": 93,
   "limits": [
-    "Offline fakes and native local parsing do not establish cloud rollout, export, correlation or admission acceptance.",
-    "Read-only release availability is a timestamped observation, not future eligibility.",
-    "Metadata-server updates may disrupt the single-node cluster; prevent_destroy avoids cluster/pool replacement but does not guarantee zero downtime.",
-    "Root read-only host-log visibility and unauthenticated internal OTLP remain dev trust boundaries; no multi-tenant or production hardening claim.",
-    "Collector root filesystem/cursor rotation/host permissions, real image admission and exporter identity must pass later live checks.",
-    "Raw state, plans, API responses, candidate and private inputs remain ignored/private. Prior authorized infrastructure apply is recorded separately; this adoption implementation performs no infrastructure operation.",
-    "Collector mirror/attestation, workload deployment and remaining #93 runtime acceptance remain pending; issue stays open and no merge is performed.",
-    "Generated-label compatibility is offline-validated against the documented contract; actual Cloud Deploy release/render/rollout readback remains pending. No organization label-generation policy was changed.",
-    "Publisher proof and Windows tool bootstrap passed. A later authorized run uploaded the mirror but failed verification; this fix performed only read-only verification, with no repeat upload, signing or deployment.",
-    "Existing-result lookup/recovery is serialized and fail-closed, not an exactly-once guarantee against concurrent submissions or eventually consistent reads.",
-    "Linux Cloud Build tool bootstrap, Artifact Registry copy/readback and actual KMS/occurrence operations require subsequent reviewed live acceptance.",
-    "The new Collector blob transport passed real read-only registry verification; unmerged mutation execution and signer use remain prohibited by the unchanged reviewed-main guard."
+    "Live deployment configuration was the recorded merged SHA only. Proposed execution changes were tested locally and require review/merge before use.",
+    "The release rendered but preflight BLOCKED; no rollout, running image identity, functional RPC, telemetry ingestion or negative admission acceptance is claimed.",
+    "Current unrolled release cannot satisfy the new commitment or source retention; select a new immutable merged configuration and unique release after separate authorization.",
+    "Actual source staging differed from the approved input archive location because the operator omitted --gcs-source-staging-dir; the default bucket/source are retained and explicitly reported.",
+    "Collector mirror and platform attestation passed independently. That does not establish runtime exporter identity, Linux host-log permissions/rotation, native log correlation or production readiness.",
+    "Fresh capacity, all sample environments, artifact generations/protection, admission and caller authority must be rechecked before future rollout.",
+    "Root read-only host-log visibility and internal unauthenticated OTLP remain dev trust boundaries; no multi-tenant or production hardening claim.",
+    "Raw responses, archives, candidate, diagnostics, credentials, state and private inputs remain private/ignored. No manual IAM, Terraform, GKE, AML or application-release operations were performed; gcloud's extra source bucket is reported separately.",
+    "Existing result recovery is serialized and fail-closed, not an exactly-once guarantee against concurrent operators. Issue #93 remains open; no merge performed."
   ],
   "live_pending": {
     "bounded_normal_traffic": null,
-    "catalog_release_and_rollout": null,
-    "collector_mirror_and_specific_platform_attestation": {
-      "all_layer_bytes_verified_read_only_with_proposed_fix": true,
-      "mirror_uploaded": true,
-      "platform_attestation": "pending",
-      "reviewed_main_verification": "pending merge"
-    },
+    "catalog_dev_rollout": "not_run_preflight_blocked",
     "functional_rpc_success_and_expected_failure": null,
     "negative_binary_authorization_admission": null,
+    "new_correctly_staged_release_and_fresh_READY": "pending review/merge and separate authorization",
     "real_cloud_traces_metrics_and_native_linked_logs": null,
     "running_image_and_metadata_readback": null,
     "sample_service_post_rollout_preservation": null,
-    "temporary_resource_cleanup": null
+    "temporary_resource_cleanup": "No test workload or port-forward was started; no blanket cleanup performed."
   },
   "offline_validated": {
     "boundary_cases": [
@@ -583,8 +747,9 @@
       "Candidate guards before both acceptance entry points and before CLI snapshot parsing; old and recomputed identity attacks rejected."
     ],
     "catalog_tests": {
-      "last_targeted_rerun": "Included in final complete suite after both review fixes and CLI-before-snapshot guard.",
-      "passed": 22
+      "last_targeted_rerun": "Included in current 188-test suite with native Collector enabled.",
+      "passed": 26,
+      "skipped": 0
     },
     "collector_adoption_tests": {
       "failed": 0,
@@ -612,7 +777,7 @@
       "status": "passed"
     },
     "collector_tool_bootstrap": {
-      "linux_execution": "pending separate Cloud Build acceptance",
+      "linux_execution": "Passed in the reviewed-main Collector signing build; historical Windows bootstrap evidence retained.",
       "windows_cosign": "v3.1.4 verified SHA-256 and live verification passed",
       "windows_crane": "v0.22.1 release archive verified, extracted version command passed"
     },
@@ -631,11 +796,11 @@
     },
     "python_full_suite": {
       "failed": 0,
-      "passed": 184,
+      "passed": 188,
       "skipped": 0
     },
     "review_regressions": {
-      "actual_service_generated_render_readback": "pending live; regression fixtures follow documented labels, not live output",
+      "actual_service_generated_render_readback": "Observed live in the blocked dev release; proposed correction tested offline against saved actual bytes.",
       "both_findings_reproduced_before_fix": true,
       "candidate_digest_mutation_with_matching_readbacks_original_identity": "rejected in runtime and signals",
       "cloud_operations_performed": false,
@@ -652,7 +817,7 @@
       "wrong_or_unknown_labels_and_context_mismatch": "rejected"
     },
     "shell_regressions": {
-      "current_adoption_rerun": "All four existing suites passed against LF-normalized copies of current tracked working inputs; synthetic commands only.",
+      "current_adoption_rerun": "Historical PR95 four-suite pass retained; shell suites not rerun for this Python/docs-only fix.",
       "inputs": "LF-normalized copies of tracked inputs, synthetic cloud/terraform commands only",
       "status": "passed",
       "tests": [
@@ -681,6 +846,23 @@
     "runtime_identity": "catalog-telemetry@<PROJECT_ID>.iam.gserviceaccount.com",
     "static_keys": false,
     "workload_identity": "Cluster workload pool and in-place metadata update on adopted existing default-pool; no scaling."
+  },
+  "proposed_render_preflight_fix": {
+    "label_scope": "Exact six reviewed-context labels on Deployment/DaemonSet/Service; Pod templates on Deployment/DaemonSet only. ServiceAccounts and ConfigMap remain exactly prepared.",
+    "live_execution_of_proposed_fix": false,
+    "new_regression_tests": 4,
+    "new_release_or_rollout_attempts_after_code_change": 0,
+    "offline_replay": {
+      "actual_saved_rendered_inventory_with_proposed_model": "passed",
+      "canonical_inventory_sha256": "1fa0f26b658834f3bd3e3b8986a722b562f36124a337909d41c2a5400b82d9b6",
+      "old_release_still_blocked": true,
+      "original_actual_source_archive_bytes_and_contents_match": true,
+      "proposed_workflow_sha256": "d2e89d743a81b9c1362f414d79dc3f72456aa8859b505c004bd21576b1f055b7",
+      "validation_mode": "Offline replay of saved API bytes only; no modified code used in live prepare/preflight/rollout."
+    },
+    "old_rendered_sha256_only_release": "BLOCKED; no compatibility bypass",
+    "precreation_commitment": "SHA-256 of the full ordered canonical rendered document list; independently reconstructed policy and actual parsed documents must both match immutable rendered-inventory-sha256 annotation.",
+    "raw_artifacts": "Exact independently reviewed raw byte hashes, generation/freshness and retention checks retained; raw source hash still bound to immutable annotation."
   },
   "read_only_live_observed": {
     "accepted_release": {
@@ -754,6 +936,6 @@
     "trace_api_enabled": true,
     "workload_identity_enabled": false
   },
-  "stage": "collector_specific_blob_redirect_fix_and_read_only_live_validation",
+  "stage": "Reviewed-main dev release rendered; preflight BLOCKED. Proposed label-scope/inventory-commitment fix for review; no rollout.",
   "validation_date": "2026-10-31"
 }
