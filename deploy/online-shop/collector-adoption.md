@@ -19,6 +19,17 @@ independently reads and hashes the same content from Artifact Registry. External
 layer URLs are rejected; public GHCR CDN redirects strip auth and have an explicit
 HTTPS host allowlist. Registry digest addressing alone is not publisher proof.
 
+Collector mirror blobs have a separate transport from application release #87.
+It accepts only a GET of the exact policy repository's digest-addressed blob and
+one HTTP 302 hop to the same canonical HTTPS origin. The observed relative route is
+`/artifacts-downloads/namespaces/<project>/repositories/secure-delivery/downloads/<id>`;
+the project is policy-bound and the opaque ID must be exactly 16 URL-safe characters.
+Other hosts, ports, userinfo, schemes, namespaces/repositories, routes, encoded or
+traversal paths, queries, fragments and further redirects fail closed. Only
+Authorization and Accept propagate to that allowed same-origin download; Cookie,
+Proxy-Authorization and Host headers do not. Returned bytes must still match every
+descriptor's SHA-256 and size. The shared application transport is unchanged.
+
 Cosign 3.1.4 and crane 0.22.1 are pinned by platform/release SHA-256 in
 [`collector-tools.json`](../../cloudbuild/online-shop/collector-tools.json).
 The CLI downloads official GitHub release assets into an ignored private cache,
@@ -40,6 +51,15 @@ On 2026-10-30 this command passed live for the unchanged policy index,
 linux/amd64 manifest/config and all three layers. This does not establish mirror,
 platform attestation or runtime acceptance. Raw proof/tool diagnostics stay private;
 sanitized results are in [`validation.json`](validation.json).
+
+The authorized run using `dd2e496a1b65f07c3897bdf316613136cf6ff572` uploaded the
+exact mirror on 2026-10-31, then its verification failed because the shared
+transport rejected Artifact Registry's relative blob/download redirects. The
+Collector-specific fix passed read-only publisher/manifest/config/all-three-layer
+verification against that existing mirror. Registry upload/update timestamps were
+unchanged. This proposed fix was exercised through a read-only Python API harness;
+main-bound CLI and signing execution still require review/merge. No repeat upload,
+signing or deployment was performed for the fix; original failure evidence is retained.
 
 ## Subsequent live adoption — after merge and separate authorization
 

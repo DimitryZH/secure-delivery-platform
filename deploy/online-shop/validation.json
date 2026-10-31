@@ -1,13 +1,93 @@
 {
-  "base_revision": "1b474a96ac344b3ee978b7d4df373d86d62cebee",
+  "base_revision": "dd2e496a1b65f07c3897bdf316613136cf6ff572",
   "blockers_before_live": [
-    "Review/merge Collector adoption implementation and select a full immutable main revision with matching executing files.",
+    "Review/merge the Collector-specific blob transport fix, select a full immutable main revision and recheck executing files.",
     "Separately authorize live mirror and one separate signing execution; recheck existing caller/registry/signer authority without expanding IAM.",
-    "Exact Collector mirror and platform attestation remain unexecuted; require actual mirror/content and occurrence/signature readback before preparation.",
+    "The exact mirror is uploaded and all layers passed read-only verification with the proposed transport fix. Reviewed-main verification and platform attestation remain pending; do not reupload to work around verification failure.",
     "No new Cloud Deploy source/rendered artifact exists; collect fresh generations and five-minute/75-minute protection evidence later.",
     "Fresh single-node capacity, constraints, sample preservation and metadata readiness must pass immediately before any workload rollout.",
     "Collector WIF export, Linux host-log permissions/rotation and functional catalog/admission/native-linked telemetry remain live acceptance prerequisites."
   ],
+  "collector_blob_transport_fix": {
+    "allowed_transition": {
+      "authorization": "Basic registry auth retained only on that allowed same-origin transition; unrelated headers stripped.",
+      "initial": "exact policy repository /otelcol-contrib/blobs/<sha256 digest>",
+      "maximum_hops": 1,
+      "method": "GET",
+      "origin": "same canonical HTTPS origin us-central1-docker.pkg.dev, without explicit port/userinfo",
+      "rejected": "other origins/schemes/ports/userinfo, repositories/namespaces/routes, query/fragment, encoded/traversal/control-character paths, further hops or other redirect statuses",
+      "status": 302,
+      "target_route": "/artifacts-downloads/namespaces/<POLICY_PROJECT>/repositories/secure-delivery/downloads/<16 URL-safe characters>"
+    },
+    "base_revision": "dd2e496a1b65f07c3897bdf316613136cf6ff572",
+    "live_read_only_verification": {
+      "base_configuration_sha": "dd2e496a1b65f07c3897bdf316613136cf6ff572",
+      "collector_source_sha256": "sha256:21ee5e5c5cb84380c8f4f14ac60cb42a851cff128ae4f11815ef21248c1e01e9",
+      "config_sha256": "sha256:28ebddf51f59e38ac800c9f91120726cfb312af377da8908807e0b566a82b017",
+      "deployment_performed": false,
+      "full_layer_verification_passed": true,
+      "layers": [
+        {
+          "actual_sha256": "sha256:4feedf748afdf50f97ae849e31f6e22038c7fa363e0ab7bf527129cb1e7585b8",
+          "bytes": 104528,
+          "digest": "sha256:4feedf748afdf50f97ae849e31f6e22038c7fa363e0ab7bf527129cb1e7585b8",
+          "expected_size": 104528,
+          "hash_and_size_match": true,
+          "kind": "blobs"
+        },
+        {
+          "actual_sha256": "sha256:b65cc2746c3b6007074f9de911d25efab5f22243df75ccf06ba5dc1997629b59",
+          "bytes": 115966437,
+          "digest": "sha256:b65cc2746c3b6007074f9de911d25efab5f22243df75ccf06ba5dc1997629b59",
+          "expected_size": 115966437,
+          "hash_and_size_match": true,
+          "kind": "blobs"
+        },
+        {
+          "actual_sha256": "sha256:cd02e9ac82834db16db9391a15bb9ebcbd0bda1265964887eba323e8ce93fa73",
+          "bytes": 830,
+          "digest": "sha256:cd02e9ac82834db16db9391a15bb9ebcbd0bda1265964887eba323e8ce93fa73",
+          "expected_size": 830,
+          "hash_and_size_match": true,
+          "kind": "blobs"
+        }
+      ],
+      "manifest_sha256": "sha256:ac0bb9cdc844b55d2fd2655d03e596243787d6a8c52dd408b1dc96dd1bd372ee",
+      "mirror_image": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/otelcol-contrib@sha256:ac0bb9cdc844b55d2fd2655d03e596243787d6a8c52dd408b1dc96dd1bd372ee",
+      "mirror_reuploaded": false,
+      "observed_at": "2026-10-31T02:42:09.604185+00:00",
+      "original_upload_time": "2026-10-31T02:14:35.939311Z",
+      "publisher_proof": {
+        "certificate_identity": "https://github.com/open-telemetry/opentelemetry-collector-releases/.github/workflows/base-release.yaml@refs/tags/v0.164.0",
+        "certificate_oidc_issuer": "https://token.actions.githubusercontent.com",
+        "config_digest": "sha256:28ebddf51f59e38ac800c9f91120726cfb312af377da8908807e0b566a82b017",
+        "index_digest": "sha256:340c9ca6a36617084c6661bdc4f0fe92b7cda5a805d61673ec8db375fddc522b",
+        "layer_bytes_verified": true,
+        "manifest_digest": "sha256:ac0bb9cdc844b55d2fd2655d03e596243787d6a8c52dd408b1dc96dd1bd372ee",
+        "platform": "linux/amd64",
+        "status": "publisher_verified"
+      },
+      "shared_application_transport_unchanged": true,
+      "signing_submitted": false,
+      "upload_and_update_times_unchanged": true,
+      "verification_mode": "Read-only Python publisher/content API harness using the new Collector transport; CLI main-ancestry guard is unchanged and not bypassed for mutations."
+    },
+    "no_shared_application_transport_change": true,
+    "prior_authorized_mirror_upload": {
+      "configuration_revision": "dd2e496a1b65f07c3897bdf316613136cf6ff572",
+      "error": "unexpected_api_redirect",
+      "independent_verify_exit_code": 1,
+      "matching_builds": [],
+      "matching_occurrences": [],
+      "mirror_cli_exit_code": 1,
+      "signing_submitted": false,
+      "upload_time": "2026-10-31T02:14:35.939311Z"
+    },
+    "raw_diagnostics": "retained privately; actual download IDs and credentials not published",
+    "root_cause": "The inherited application SafeRedirect permits storage.googleapis.com only; Artifact Registry returned relative same-origin HTTPS redirects for two Collector layers.",
+    "scope": "Collector mirror blob GET only; shared application release #87 transport unchanged.",
+    "signing_and_deployment": "pending review/merge; not executed for this fix"
+  },
   "collector_publisher_verification": {
     "all_three_compressed_layer_hashes_and_sizes_verified": true,
     "certificate_identity": "https://github.com/open-telemetry/opentelemetry-collector-releases/.github/workflows/base-release.yaml@refs/tags/v0.164.0",
@@ -19,6 +99,7 @@
     "cosign_version": "v3.1.4",
     "cosign_windows_sha256": "sha256:cbe953787074611f1334cbf37dc1cf953995bb8c45398eb4fc7bb781d29c1f2a",
     "deployment_performed": false,
+    "historical_initial_publisher_proof": true,
     "index_digest": "sha256:340c9ca6a36617084c6661bdc4f0fe92b7cda5a805d61673ec8db375fddc522b",
     "layer_bytes_verified": true,
     "manifest_digest": "sha256:ac0bb9cdc844b55d2fd2655d03e596243787d6a8c52dd408b1dc96dd1bd372ee",
@@ -393,16 +474,16 @@
   },
   "implementation_sha256": {
     "cloudbuild/online-shop/collector-tools.json": "sha256:ed1a4d335e939efd848d334d9acf0105b436f65887dd852252fbf59fb8007a95",
-    "cloudbuild/online-shop/collector.py": "sha256:729e529d59c79a67ec7826eb5cfcf933d0cc1833c2864fd3e29a368f1b2f5d10",
-    "deploy/online-shop/README.md": "sha256:e2ac5d185549b73b5a5f9eb19fead089107c7adbcbb3d7c6ae007c54b727ca6d",
+    "cloudbuild/online-shop/collector.py": "sha256:21ee5e5c5cb84380c8f4f14ac60cb42a851cff128ae4f11815ef21248c1e01e9",
+    "deploy/online-shop/README.md": "sha256:04e696bca5dd8d633b2a88e09c499361410da361c98b7875ffe2c7eb18f10b0e",
     "deploy/online-shop/acceptance.py": "sha256:2f91344795941b54f1b5fe7773a5149becb75d3fa31d418e132f498df5a4acac",
-    "deploy/online-shop/collector-adoption.md": "sha256:77ace7f17ed373cbb71d323f3e474893ac1c2a2bb942f7c7a4996c1b4c582095",
+    "deploy/online-shop/collector-adoption.md": "sha256:615e4ca1fc69d40b7d45a9d11cf18faa355509a080c69f813fcc6b1d4212b25a",
     "deploy/online-shop/collector.json": "sha256:9dcdb191e1ef17cd1fcc958793e2258de1f1c606635045cde43906a04db934ba",
     "deploy/online-shop/policy.json": "sha256:cb0d0cbcc0c8915f037ba633935f6adc6ae3bed95a5808dfc123e4dccb00f42c",
     "deploy/online-shop/skaffold.yaml": "sha256:160b7c968fde8b5cad2cd07e159044232618772e88fe6ae5d6d0a4761e4dbf68",
     "deploy/online-shop/workflow.py": "sha256:bd282eaf2533fa701f9b74790578aab6139cdbbfafd75d1aa0f8d51c4af11a46",
     "scripts/tests/test_catalog_deployment.py": "sha256:7e80ed7334c5a8b17c75f2fd5b1ce738b4fd241d7d8e1e5c9d219c172d3e86a1",
-    "scripts/tests/test_collector_adoption.py": "sha256:b758960c111d593b62c2ebe4dd41fa8e52558681a2fd1da85fa2438e5b9c1bd3",
+    "scripts/tests/test_collector_adoption.py": "sha256:c1fec22055f15ac0c4592e69a0120634bbdae858b671cb5586600d97330e336f",
     "terraform/foundation/catalog-runtime.tf": "sha256:5b511b14e0e4b2bc5d234a8633ff47c9b29aecb9be1f8a672e56191d63ee7ed3",
     "terraform/foundation/gke.tf": "sha256:8e2c402743ad59094a16715bb21acf7f166b545169d2d4a9b63e42dcb9c9ca0c"
   },
@@ -417,7 +498,8 @@
     "Readback validators for runtime images, scheduling headroom and nonempty correctly attributed traces/metrics/native-linked logs.",
     "Policy-only supporting image mirror via digest-preserving crane copy; destination content verification and reuse/recovery without blind retries.",
     "Separate main-bound Cloud Build attestation under existing signer identity; independent publisher/upstream/mirror proof, exact occurrence/signature readback and reuse.",
-    "Shared supporting content verifier used by deployment preparation; application release #87 policy, producing references and implementation unchanged."
+    "Shared supporting content verifier used by deployment preparation; application release #87 policy, producing references and implementation unchanged.",
+    "Collector-specific same-origin HTTPS blob/download transport with exact observed route scope; shared #87 application transport unchanged."
   ],
   "infrastructure_applied": {
     "apply_completed": "2026-10-30T15:19:07.797439+00:00",
@@ -465,14 +547,20 @@
     "Raw state, plans, API responses, candidate and private inputs remain ignored/private. Prior authorized infrastructure apply is recorded separately; this adoption implementation performs no infrastructure operation.",
     "Collector mirror/attestation, workload deployment and remaining #93 runtime acceptance remain pending; issue stays open and no merge is performed.",
     "Generated-label compatibility is offline-validated against the documented contract; actual Cloud Deploy release/render/rollout readback remains pending. No organization label-generation policy was changed.",
-    "Live publisher proof and Windows tool bootstrap passed; no live mirror, signer Cloud Build, occurrence creation or Linux signer execution was performed.",
+    "Publisher proof and Windows tool bootstrap passed. A later authorized run uploaded the mirror but failed verification; this fix performed only read-only verification, with no repeat upload, signing or deployment.",
     "Existing-result lookup/recovery is serialized and fail-closed, not an exactly-once guarantee against concurrent submissions or eventually consistent reads.",
-    "Linux Cloud Build tool bootstrap, Artifact Registry copy/readback and actual KMS/occurrence operations require subsequent reviewed live acceptance."
+    "Linux Cloud Build tool bootstrap, Artifact Registry copy/readback and actual KMS/occurrence operations require subsequent reviewed live acceptance.",
+    "The new Collector blob transport passed real read-only registry verification; unmerged mutation execution and signer use remain prohibited by the unchanged reviewed-main guard."
   ],
   "live_pending": {
     "bounded_normal_traffic": null,
     "catalog_release_and_rollout": null,
-    "collector_mirror_and_specific_platform_attestation": null,
+    "collector_mirror_and_specific_platform_attestation": {
+      "all_layer_bytes_verified_read_only_with_proposed_fix": true,
+      "mirror_uploaded": true,
+      "platform_attestation": "pending",
+      "reviewed_main_verification": "pending merge"
+    },
     "functional_rpc_success_and_expected_failure": null,
     "negative_binary_authorization_admission": null,
     "real_cloud_traces_metrics_and_native_linked_logs": null,
@@ -508,8 +596,20 @@
         "uncertain copy/create/submission recovery, existing queued/running/success/failed build suppression, pagination cycles",
         "tool cache corruption, ambient Sigstore trust overrides and authorization stripping on redirects"
       ],
-      "passed": 37,
+      "passed": 44,
       "scope": "Offline registry/Cosign/API fakes; not live mirror/signing proof"
+    },
+    "collector_blob_redirect_regressions": {
+      "cases": [
+        "observed root-relative and equivalent absolute same-origin download routes",
+        "Authorization retained only for allowed scoped origin; Cookie/Proxy-Authorization/Host stripped",
+        "rejected foreign hosts (including storage), HTTP, ports, userinfo and protocol-relative URLs before request construction",
+        "rejected wrong project/repository/routes, percent encodings, traversal, queries/fragments/control characters and invalid IDs",
+        "only exact initial blob GET, HTTP 302 and a single hop; changed digest, manifest source or further redirect blocked",
+        "new transport bytes still fail content verification on layer hash or size mismatch"
+      ],
+      "new_tests": 7,
+      "status": "passed"
     },
     "collector_tool_bootstrap": {
       "linux_execution": "pending separate Cloud Build acceptance",
@@ -531,7 +631,7 @@
     },
     "python_full_suite": {
       "failed": 0,
-      "passed": 177,
+      "passed": 184,
       "skipped": 0
     },
     "review_regressions": {
@@ -654,6 +754,6 @@
     "trace_api_enabled": true,
     "workload_identity_enabled": false
   },
-  "stage": "collector_adoption_implementation_and_live_read_only_publisher_proof",
-  "validation_date": "2026-10-30"
+  "stage": "collector_specific_blob_redirect_fix_and_read_only_live_validation",
+  "validation_date": "2026-10-31"
 }
