@@ -1,5 +1,7 @@
 # Trusted catalog release creation
 
+[Complete application implementation (#100)](../../deploy/online-shop/complete-README.md) has a separate versioned profile, Redis decision and review-only validation.
+
 Implements the code path for [issue #87](https://github.com/DimitryZH/secure-delivery-platform/issues/87).
 A bounded `catalog-v1` live flow completed a real build, independent verification
 and separate attestation with occurrence/signature readback. The linked evidence

@@ -1,0 +1,465 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Complete shop candidate v2 (runtime exact-type and independent verification required)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "application",
+    "profile",
+    "profile_sha256",
+    "configuration_revision",
+    "components",
+    "release_set_id"
+  ],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 2
+    },
+    "application": {
+      "const": "online-shop"
+    },
+    "profile": {
+      "const": "complete-shop-v1"
+    },
+    "profile_sha256": {
+      "const": "sha256:4766ad8f2c1d3c771fb9c02a6c81a76f152fdf723de7c0013fb910a5f4143126"
+    },
+    "configuration_revision": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "components": {
+      "type": "array",
+      "minItems": 11,
+      "maxItems": 11,
+      "prefixItems": [
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/application"
+            },
+            {
+              "properties": {
+                "id": {
+                  "const": "adservice"
+                },
+                "repository": {
+                  "const": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-adservice"
+                },
+                "configuration": {
+                  "properties": {
+                    "path": {
+                      "const": "cloudbuild/online-shop/complete.py"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/application"
+            },
+            {
+              "properties": {
+                "id": {
+                  "const": "cartservice"
+                },
+                "repository": {
+                  "const": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-cartservice"
+                },
+                "configuration": {
+                  "properties": {
+                    "path": {
+                      "const": "cloudbuild/online-shop/complete.py"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/application"
+            },
+            {
+              "properties": {
+                "id": {
+                  "const": "checkoutservice"
+                },
+                "repository": {
+                  "const": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-checkoutservice"
+                },
+                "configuration": {
+                  "properties": {
+                    "path": {
+                      "const": "cloudbuild/online-shop/complete.py"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/application"
+            },
+            {
+              "properties": {
+                "id": {
+                  "const": "currencyservice"
+                },
+                "repository": {
+                  "const": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-currencyservice"
+                },
+                "configuration": {
+                  "properties": {
+                    "path": {
+                      "const": "cloudbuild/online-shop/complete.py"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/application"
+            },
+            {
+              "properties": {
+                "id": {
+                  "const": "emailservice"
+                },
+                "repository": {
+                  "const": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-emailservice"
+                },
+                "configuration": {
+                  "properties": {
+                    "path": {
+                      "const": "cloudbuild/online-shop/complete.py"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/application"
+            },
+            {
+              "properties": {
+                "id": {
+                  "const": "frontend"
+                },
+                "repository": {
+                  "const": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-frontend"
+                },
+                "configuration": {
+                  "properties": {
+                    "path": {
+                      "const": "cloudbuild/online-shop/complete.py"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/application"
+            },
+            {
+              "properties": {
+                "id": {
+                  "const": "paymentservice"
+                },
+                "repository": {
+                  "const": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-paymentservice"
+                },
+                "configuration": {
+                  "properties": {
+                    "path": {
+                      "const": "cloudbuild/online-shop/complete.py"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/application"
+            },
+            {
+              "properties": {
+                "id": {
+                  "const": "productcatalogservice"
+                },
+                "repository": {
+                  "const": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-productcatalogservice"
+                },
+                "configuration": {
+                  "properties": {
+                    "path": {
+                      "const": "cloudbuild/online-shop/release.py"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/application"
+            },
+            {
+              "properties": {
+                "id": {
+                  "const": "recommendationservice"
+                },
+                "repository": {
+                  "const": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-recommendationservice"
+                },
+                "configuration": {
+                  "properties": {
+                    "path": {
+                      "const": "cloudbuild/online-shop/complete.py"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/application"
+            },
+            {
+              "properties": {
+                "id": {
+                  "const": "shippingservice"
+                },
+                "repository": {
+                  "const": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-shippingservice"
+                },
+                "configuration": {
+                  "properties": {
+                    "path": {
+                      "const": "cloudbuild/online-shop/complete.py"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "const": {
+            "id": "redis-cart",
+            "role": "dependency",
+            "repository": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/redis-cart",
+            "digest": "sha256:81be8a1f52db5f99fe3de0bbbd2efce827f51ce409155a95e9bdbac8c2721ba6",
+            "config_digest": "sha256:aa189b5a1954929c393585e6dc5717a75b18f75a931df8bdcc00a3d3bd546be6",
+            "platform": "linux/amd64",
+            "source": {
+              "kind": "selection_contract_not_publisher_provenance",
+              "repository": "https://github.com/DimitryZH/application-modernization-lab",
+              "revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
+              "workload_path": "workloads/online-shop",
+              "contracts_sha256": {
+                "images.lock.json": "sha256:94f4074cd6d0bfaaa91268719b3b0fefc12793735a5d172f1bf4008ae7829ac9",
+                "redis.runtime.json": "sha256:37290e790f046ad89acc8bc2af5c2df6bad51dc64895b7896fad39d67c1c621b"
+              }
+            },
+            "build": {
+              "kind": "external_unresolved",
+              "producing_source": null,
+              "producing_build": null
+            },
+            "admission_decision": "blocked_unresolved_publisher_lineage"
+          }
+        }
+      ],
+      "items": false
+    },
+    "release_set_id": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "revision"
+      ],
+      "properties": {
+        "repository": {
+          "const": "https://github.com/DimitryZH/application-modernization-lab"
+        },
+        "revision": {
+          "const": "89fd1cde8285761cc2a35dfb22d145adb2eed980"
+        }
+      }
+    },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sha256",
+        "inputs_sha256",
+        "planner_sha256",
+        "contract_sha256",
+        "uri"
+      ],
+      "properties": {
+        "sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "inputs_sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "planner_sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "contract_sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "uri": {
+          "const": "git+https://github.com/DimitryZH/application-modernization-lab@89fd1cde8285761cc2a35dfb22d145adb2eed980#workloads/online-shop/build_plan.py"
+        }
+      }
+    },
+    "build": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "producer"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$"
+        },
+        "name": {
+          "type": "string"
+        },
+        "producer": {
+          "const": "projects/sre-platform-staging-507220/serviceAccounts/secure-delivery-build@sre-platform-staging-507220.iam.gserviceaccount.com"
+        }
+      }
+    },
+    "application": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "role",
+        "source",
+        "configuration",
+        "plan",
+        "build",
+        "repository",
+        "digest",
+        "config_digest",
+        "platform"
+      ],
+      "properties": {
+        "id": {
+          "enum": [
+            "adservice",
+            "cartservice",
+            "checkoutservice",
+            "currencyservice",
+            "emailservice",
+            "frontend",
+            "paymentservice",
+            "productcatalogservice",
+            "recommendationservice",
+            "shippingservice"
+          ]
+        },
+        "role": {
+          "const": "application"
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        },
+        "configuration": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "repository",
+            "revision",
+            "path"
+          ],
+          "properties": {
+            "repository": {
+              "const": "https://github.com/DimitryZH/secure-delivery-platform"
+            },
+            "revision": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{40}$"
+            },
+            "path": {
+              "enum": [
+                "cloudbuild/online-shop/release.py",
+                "cloudbuild/online-shop/complete.py"
+              ]
+            }
+          }
+        },
+        "plan": {
+          "$ref": "#/$defs/plan"
+        },
+        "build": {
+          "$ref": "#/$defs/build"
+        },
+        "repository": {
+          "type": "string"
+        },
+        "digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "config_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "platform": {
+          "const": "linux/amd64"
+        }
+      }
+    }
+  }
+}

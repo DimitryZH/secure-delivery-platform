@@ -1,0 +1,24 @@
+{
+  "admission_decision": "blocked_unresolved_publisher_lineage",
+  "config_digest": "sha256:aa189b5a1954929c393585e6dc5717a75b18f75a931df8bdcc00a3d3bd546be6",
+  "id": "redis-cart",
+  "intended_mirror_suffix": "/redis-cart",
+  "manifest_digest": "sha256:81be8a1f52db5f99fe3de0bbbd2efce827f51ce409155a95e9bdbac8c2721ba6",
+  "mirror_or_sign_authorized": false,
+  "platform": "linux/amd64",
+  "producing_build": null,
+  "producing_source": null,
+  "publisher_provenance": "unresolved",
+  "required_resolution": "Owner-produced traceable upstream/source/build publication plus reviewed independent adoption and profile revision. Content equality alone does not authorize signing or admission.",
+  "selection_contracts_sha256": {
+    "images.lock.json": "sha256:94f4074cd6d0bfaaa91268719b3b0fefc12793735a5d172f1bf4008ae7829ac9",
+    "redis.runtime.json": "sha256:37290e790f046ad89acc8bc2af5c2df6bad51dc64895b7896fad39d67c1c621b"
+  },
+  "selection_repository": "docker.io/dmitryzhuravlev/online-shop-redis-cart",
+  "selection_source": {
+    "repository": "https://github.com/DimitryZH/application-modernization-lab",
+    "revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
+    "workload_path": "workloads/online-shop"
+  },
+  "version": 1
+}

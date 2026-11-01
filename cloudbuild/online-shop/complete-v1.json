@@ -1,0 +1,55 @@
+{
+  "application": "online-shop",
+  "auxiliary": {
+    "loadgenerator": "excluded; optional separately reviewed bounded trusted Job only"
+  },
+  "build_contexts": {
+    "adservice": "src/adservice",
+    "cartservice": "src/cartservice/src",
+    "checkoutservice": "src/checkoutservice",
+    "currencyservice": "src/currencyservice",
+    "emailservice": "src/emailservice",
+    "frontend": "src/frontend",
+    "paymentservice": "src/paymentservice",
+    "productcatalogservice": "src/productcatalogservice",
+    "recommendationservice": "src/recommendationservice",
+    "shippingservice": "src/shippingservice"
+  },
+  "candidate_version": 2,
+  "catalog_reuse": "exact accepted catalog-v1 build, candidate generation, independent verification and occurrence; no republish or reattestation",
+  "contracts_sha256": {
+    "build.contract.json": "sha256:2a78958157874a90b8ac633def1f337449b7f5c73beaf6e46bde05b388f6995b",
+    "build_plan.py": "sha256:f7341c26c21432af7deb334447c6d3262781bea61f827ed26e210a69bf784f01",
+    "docs/RUNTIME.md": "sha256:4ba68431a559d16b06764afa8050a3df2f2d6cf30e655e87ab931b679a5a9368",
+    "docs/TELEMETRY.md": "sha256:ce31c54cb60006e913aea9ddd664a129cf0f5460072afb6da061b00eff7bcfd0",
+    "images.lock.json": "sha256:94f4074cd6d0bfaaa91268719b3b0fefc12793735a5d172f1bf4008ae7829ac9",
+    "kubernetes/online-shop.yaml": "sha256:fee1d2c0b62bd322b1ed7e2c877258b905e65641dfd6755b9c0d3bf559a892f7",
+    "redis.runtime.json": "sha256:37290e790f046ad89acc8bc2af5c2df6bad51dc64895b7896fad39d67c1c621b"
+  },
+  "id": "complete-shop-v1",
+  "platform": "linux/amd64",
+  "required_application_services": [
+    "adservice",
+    "cartservice",
+    "checkoutservice",
+    "currencyservice",
+    "emailservice",
+    "frontend",
+    "paymentservice",
+    "productcatalogservice",
+    "recommendationservice",
+    "shippingservice"
+  ],
+  "required_dependencies": [
+    "redis-cart"
+  ],
+  "source": {
+    "repository": "https://github.com/DimitryZH/application-modernization-lab",
+    "revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
+    "workload_path": "workloads/online-shop"
+  },
+  "supporting_images": [
+    "collector"
+  ],
+  "version": 1
+}

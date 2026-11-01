@@ -1,5 +1,7 @@
 # Catalog deployment in dev
 
+[Complete application implementation (#100)](complete-README.md) has a separate versioned profile, Redis decision and review-only validation.
+
 Implements the first stage of [#93](https://github.com/DimitryZH/secure-delivery-platform/issues/93).
 Implementation and offline checks are distinct from read-only observations and
 live acceptance. See [validation.json](validation.json). The separately authorized

@@ -1,0 +1,376 @@
+{
+  "version": 1,
+  "issue": 100,
+  "phase": "implementation_review_only",
+  "observed_date": "2026-11-01",
+  "base_configuration_revision": "2d808445ba154143de5a02be93b445744a474456",
+  "aml_revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
+  "profile": "complete-shop-v1",
+  "candidate_version": 2,
+  "implementation_status": "unmerged; no complete release accepted",
+  "membership": {
+    "application_services": [
+      "adservice",
+      "cartservice",
+      "checkoutservice",
+      "currencyservice",
+      "emailservice",
+      "frontend",
+      "paymentservice",
+      "productcatalogservice",
+      "recommendationservice",
+      "shippingservice"
+    ],
+    "required_dependencies": [
+      "redis-cart"
+    ],
+    "separate_supporting_image": "accepted Collector 0.164.0",
+    "loadgenerator": "excluded; no reviewed trusted load job"
+  },
+  "preservation": {
+    "catalog_v1_and_existing_execution_files_unchanged": [
+      "cloudbuild/online-shop/release.py",
+      "cloudbuild/online-shop/catalog-v1.json",
+      "cloudbuild/online-shop/collector.py",
+      "cloudbuild/online-shop/collector-tools.json",
+      "deploy/online-shop/workflow.py",
+      "deploy/online-shop/acceptance.py",
+      "deploy/online-shop/policy.json",
+      "deploy/online-shop/collector.json",
+      "deploy/online-shop/skaffold.yaml"
+    ],
+    "aml_worktree_unchanged": true,
+    "accepted_catalog_build": "b4c1e382-e23a-465c-b6b4-e7093af95391",
+    "catalog_manifest_digest": "sha256:03b4d18587152a9c28a6aba743edbfffc6762234189c885a1b2e535ce4a81ee2"
+  },
+  "read_only_prerequisites": {
+    "accepted_artifacts": {
+      "accepted_catalog": {
+        "verification": "passed"
+      },
+      "trusted_collector": {
+        "verification": "passed"
+      }
+    },
+    "redis_content": {
+      "admission_decision": "blocked_unresolved_publisher_lineage",
+      "config_digest": "sha256:aa189b5a1954929c393585e6dc5717a75b18f75a931df8bdcc00a3d3bd546be6",
+      "layers_verified": 8,
+      "manifest_digest": "sha256:81be8a1f52db5f99fe3de0bbbd2efce827f51ce409155a95e9bdbac8c2721ba6",
+      "mirror_or_sign_performed": false,
+      "platform": "linux/amd64",
+      "publisher_provenance": "unresolved",
+      "status": "content_verified_untrusted"
+    },
+    "capacity": {
+      "snapshot_observed_at": "2026-11-01T15:09:44.573672+00:00",
+      "candidate_images": "synthetic offline placeholders; only resource requests used",
+      "actual_single_node": {
+        "capacity_ready": false,
+        "unscheduled_budget_items": 24,
+        "unassigned_pods": 0,
+        "node_count": 1,
+        "application_overlap_replicas": 2,
+        "redis_overlap_replicas": 1,
+        "collector_per_node": 1,
+        "remaining_bins": [
+          {
+            "cpu_m": 69.0,
+            "memory_mi": 3336.5323486328125,
+            "slots": 87
+          }
+        ]
+      },
+      "proposed_two_node_estimate": {
+        "capacity_ready": true,
+        "unscheduled_budget_items": 0,
+        "unassigned_pods": 0,
+        "node_count": 2,
+        "application_overlap_replicas": 2,
+        "redis_overlap_replicas": 1,
+        "collector_per_node": 1,
+        "remaining_bins": [
+          {
+            "cpu_m": 69.0,
+            "memory_mi": 3336.5323486328125,
+            "slots": 87
+          },
+          {
+            "cpu_m": 230.0,
+            "memory_mi": 7044.0,
+            "slots": 87
+          }
+        ]
+      },
+      "estimate_not_live_capacity": true,
+      "proposed_node_allocatable_assumptions": {
+        "cpu_m": 3800,
+        "memory_mi": 11000,
+        "system_cpu_m": 600,
+        "system_memory_mi": 1024
+      },
+      "live_before_rollout_required": true
+    },
+    "regional_quotas": {
+      "region": "us-central1",
+      "quotas": [
+        {
+          "metric": "CPUS",
+          "limit": 200,
+          "usage": 2
+        },
+        {
+          "metric": "DISKS_TOTAL_GB",
+          "limit": 3277,
+          "usage": 0
+        },
+        {
+          "metric": "IN_USE_ADDRESSES",
+          "limit": 8,
+          "usage": 1
+        },
+        {
+          "metric": "E2_CPUS",
+          "limit": 24,
+          "usage": 0
+        }
+      ]
+    },
+    "project": "sre-platform-staging-507220",
+    "project_number": "465837787797",
+    "project_mapping_independently_read": true,
+    "region": "us-central1",
+    "cluster": "secure-delivery-platform",
+    "cluster_status": "RUNNING",
+    "node_metadata": "GKE_METADATA",
+    "workload_pool": "sre-platform-staging-507220.svc.id.goog",
+    "sample_service_dev_stage_prod": "Ready/Available; health readback ok",
+    "existing_permissions": {
+      "read_only": true,
+      "checks": {
+        "builder_writer_logging_builder_grants": true,
+        "signer_evidence_occurrence_logging_grants": true,
+        "build_evidence_custom_role_exact": true,
+        "signer_repository_scoped_reader": true,
+        "signer_key_binding": true,
+        "key_version_enabled": true,
+        "signer_candidate_bucket_reader": true,
+        "candidate_bucket_protected": true,
+        "producer_account_enabled": true,
+        "signer_account_enabled": true
+      },
+      "all_checked_passed": true,
+      "effective_authorization_not_claimed": true,
+      "no_grants_changed": true
+    }
+  },
+  "terraform": {
+    "fmt_check": "passed",
+    "validate": "passed",
+    "normal_full_plan": true,
+    "refresh": true,
+    "locking": true,
+    "targeted": false,
+    "backend": {
+      "matches_existing_configuration": true,
+      "prefix": "secure-delivery-platform/foundation",
+      "type": "gcs"
+    },
+    "workspace": "default",
+    "private_input_source": "verified existing state/live binding; process-scoped; value not published",
+    "private_input_restored": true,
+    "summary": {
+      "create": 2,
+      "delete": 0,
+      "read": 0,
+      "replace": 0,
+      "update": 0
+    },
+    "imports": [],
+    "changes": [
+      {
+        "actions": [
+          "create"
+        ],
+        "address": "google_container_node_pool.complete_shop"
+      },
+      {
+        "actions": [
+          "create"
+        ],
+        "address": "google_logging_project_exclusion.complete_shop_stdout"
+      }
+    ],
+    "refresh_only_drift": [
+      {
+        "address": "google_artifact_registry_repository.release_images",
+        "changed_paths": [
+          ".update_time"
+        ]
+      },
+      {
+        "address": "google_clouddeploy_delivery_pipeline.catalog_dev",
+        "changed_paths": [
+          ".annotations",
+          ".labels"
+        ]
+      },
+      {
+        "address": "google_container_cluster.platform",
+        "changed_paths": [
+          ".node_config[0].workload_metadata_config",
+          ".node_pool[0].node_config[0].workload_metadata_config"
+        ]
+      },
+      {
+        "address": "google_project_iam_member.attestation_build_evidence_reader",
+        "changed_paths": [
+          ".etag"
+        ]
+      },
+      {
+        "address": "google_project_iam_member.attestation_log_writer",
+        "changed_paths": [
+          ".etag"
+        ]
+      },
+      {
+        "address": "google_project_iam_member.attestation_occurrences",
+        "changed_paths": [
+          ".etag"
+        ]
+      },
+      {
+        "address": "google_project_iam_member.build_artifact_registry_writer",
+        "changed_paths": [
+          ".etag"
+        ]
+      },
+      {
+        "address": "google_project_iam_member.build_cloud_build_builder",
+        "changed_paths": [
+          ".etag"
+        ]
+      },
+      {
+        "address": "google_project_iam_member.build_log_writer",
+        "changed_paths": [
+          ".etag"
+        ]
+      },
+      {
+        "address": "google_project_iam_member.deploy_clouddeploy_job_runner",
+        "changed_paths": [
+          ".etag"
+        ]
+      },
+      {
+        "address": "google_project_iam_member.deploy_gke_developer",
+        "changed_paths": [
+          ".etag"
+        ]
+      },
+      {
+        "address": "google_project_iam_member.deploy_log_writer",
+        "changed_paths": [
+          ".etag"
+        ]
+      },
+      {
+        "address": "google_project_iam_member.node_log_writer",
+        "changed_paths": [
+          ".etag"
+        ]
+      },
+      {
+        "address": "google_project_iam_member.node_monitoring_metric_writer",
+        "changed_paths": [
+          ".etag"
+        ]
+      },
+      {
+        "address": "google_project_iam_member.reviewer_log_viewer",
+        "changed_paths": [
+          ".etag"
+        ]
+      },
+      {
+        "address": "google_project_iam_member.reviewer_monitoring_viewer",
+        "changed_paths": [
+          ".etag"
+        ]
+      }
+    ],
+    "unexpected_actions": [],
+    "output_changes": [],
+    "deployment_operator_actions": [
+      "no-op"
+    ],
+    "existing_state_unchanged": true,
+    "saved_binary_plan": ".local-validation/issue100-20261101/complete-shop.tfplan",
+    "saved_json_plan": ".local-validation/issue100-20261101/complete-shop.plan.json",
+    "binary_plan_sha256": "sha256:68a4fc19bd5e27c1445c2044d71beb51bbd2270b0f140e8853fc4207fab0c222",
+    "terraform_proposal_sha256": "sha256:96c3cdadcf258605d0d946268b14314482842026ce0c018f645c25fdcee29e84",
+    "apply_performed": false
+  },
+  "local_validation": {
+    "python_regressions": {
+      "command": "python -m unittest discover -s scripts/tests",
+      "tests": 211,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "new_focused_tests": 23,
+      "pinned_aml_all_ten_plans_and_materialization": "passed",
+      "native_collector_agent_and_singleton_metrics_configuration": "passed",
+      "loopback_http_journey_fixture": "passed; synthetic fake storefront, not live acceptance"
+    },
+    "full_render_inventory": {
+      "resource_count": 39,
+      "exact_inventory_and_generated_labels": "passed offline fixtures",
+      "cloud_deploy_render": "not executed",
+      "skaffold_cli_offline_render": "timed out after 40 seconds during client configuration on this Windows host; no output artifact accepted"
+    },
+    "git_diff_check": "passed",
+    "local_links": {
+      "status": "passed",
+      "local_targets_checked": 26
+    },
+    "hypothetical_approved_dependency_fakes": "offline tests only; real Redis policy remains blocked"
+  },
+  "live_operations": {
+    "application_builds": 0,
+    "redis_mirror_or_signing": 0,
+    "signing_builds": 0,
+    "cloud_deploy_releases": 0,
+    "rollouts": 0,
+    "infrastructure_apply": 0,
+    "iam_changes": 0,
+    "runtime_journey": "not executed",
+    "real_complete_telemetry": "not collected",
+    "negative_admission": "not executed"
+  },
+  "validation_limits": [
+    "Redis publisher/producing-source/build lineage unresolved: no full verification, signing, prepare or READY is permitted. Owner proof and a reviewed independent adoption/profile revision are required.",
+    "Current single-node capacity is insufficient. Additional node/logging exclusion proposal is planned but not applied. Proposed-node bin packing is an estimate; fresh actual allocation, daemonsets, pressures, image disk use and quota/capacity checks are mandatory.",
+    "Nine new application builds and full candidate/independent verification/separate signing/occurrence readback remain unexecuted. Existing catalog and Collector proofs were read-only reverified.",
+    "Actual Cloud Deploy rendered artifacts, generation/hash/retention protections, one all-member dev rollout, exact running digests/readiness and complete shopping journey remain pending reviewed-main authorization.",
+    "All-service cross-language traces/metrics/native linked logs, sink/exclusion no-duplicate proof, Redis native signals, negative admission and exact test-data cleanup still require real acceptance. Offline API fixtures are not live proof.",
+    "Collector queues/cursors are not durable; throughput, log rotation, restart loss, node failures and long-running behavior are not proven. Redis is ephemeral and singleton; no HA/durability promise.",
+    "Local offline Skaffold CLI render timed out during Windows client configuration. Exact generated inventory and both native Collector configs passed local validation; server render remains untested.",
+    "No rollout beyond dev, ingress, production sizing, broad load testing, disaster recovery or completion/closure of #100 is claimed."
+  ],
+  "implementation_hashes": {
+    "cloudbuild/online-shop/complete.py": "sha256:8f6d21e9e39bdf2034aef8e4027e417463b24ad4f34fcaff8f6043c7233cc21e",
+    "cloudbuild/online-shop/complete-v1.json": "sha256:4766ad8f2c1d3c771fb9c02a6c81a76f152fdf723de7c0013fb910a5f4143126",
+    "cloudbuild/online-shop/complete-candidate-v1.schema.json": "sha256:fee55de88f7b2e4b76b8b669ccb349865ae4312a2b7813d494bb4771b2024006",
+    "cloudbuild/online-shop/redis-policy-v1.json": "sha256:c3e35a722662e7695df196e3141b77cb27a31def336a7c01a505c0e3f2519dea",
+    "deploy/online-shop/complete.py": "sha256:5cbe36f1bb403a308a73198961d35f3fdbe03706ece4aea78cd588430b69365a",
+    "deploy/online-shop/complete-acceptance.py": "sha256:f3adf10c84882e3070b26d6e7573e7e806508a13311fc9947aad43d8fc73c0b3",
+    "deploy/online-shop/complete-runtime-v1.json": "sha256:97f3d3b3adf1b6334c727274d6bf4f1d969afdd0f01300796bb9bfc132d632c2",
+    "deploy/online-shop/complete-skaffold.yaml": "sha256:088ae75361550b1911cd655b286c2da07f35f6dbc74c380beb7cbc34efcb7d3a",
+    "deploy/online-shop/complete-README.md": "sha256:e3c329f391ae623f06e556a22621f3ecc350c593bfd0d43cb64fc56e8a46ecab",
+    "scripts/tests/test_complete_shop.py": "sha256:a2bc7c66b46bf6d84dc5d6388909a6bc8b2acde74987b11e90cc6bc6c561f6bb",
+    "terraform/foundation/complete-shop.tf": "sha256:96c3cdadcf258605d0d946268b14314482842026ce0c018f645c25fdcee29e84"
+  }
+}
