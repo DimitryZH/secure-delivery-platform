@@ -9,10 +9,11 @@ separate signing acceptance on `61b56a31bcc13e88011cb54823f72d5a1e2ea8b9`.
 Independent inspection verified the exact Collector occurrence and signature.
 The initial dev attempt stopped at **BLOCKED** preflight. A new reviewed-main
 release subsequently passed READY, one dev rollout, runtime/RPC and real telemetry
-acceptance. The bounded negative case was unexpectedly admitted and immediately
-cleaned up: changing the URI of the already-attested digest is not a valid negative
-fixture. Admission-denial acceptance remains pending. See both attempts below and
-[validation.json](validation.json). Eligibility is not authorization.
+acceptance. The first negative fixture reused an attested digest and was immediately
+cleaned up after admission. A separately authorized distinct historical catalog
+fixture then received an explicit Binary Authorization API denial for missing
+required attestation on 2026-11-01. See the separate attempts below and
+[validation.json](validation.json). Acceptance evidence awaits review; #93 stays open.
 
 ## Release and deployment boundaries
 
@@ -334,11 +335,13 @@ Local clients avoid extra in-cluster test images. Keep all raw files under ignor
     Inspect complete occurrence pages and matching signed payload digests/keys,
     including proofs at other repository locations. If no reviewed fixture meets
     those prerequisites, stop and leave negative acceptance pending.
-    Copy the otherwise-valid rendered Collector Pod template into a uniquely named
-    temporary dev Pod, changing only its name and image to that reviewed fixture.
-    Preserve valid config, resources, WI, mounts and placement. No extra test image
-    is introduced. Budget the 150m/256Mi Pod and stop immediately if admission
-    unexpectedly succeeds (it could otherwise duplicate log collection).
+    For the reviewed historical catalog fixture below, copy the **current catalog
+    Deployment Pod template**, not the Collector template, into a uniquely named
+    temporary dev Pod. Change only its name and image; preserve annotations, labels,
+    service account, security, resources, probes, environment and placement. Budget
+    its 100m/64Mi requests. No unreviewed test image is introduced. If unexpectedly
+    admitted, immediately delete only that exact created UID and stop; a ready clone
+    could otherwise match the catalog Service selector.
     Capture the API denial/event/audit that explicitly names Binary Authorization
     and the missing required attestation for that digest. ImagePullBackOff, malformed
     spec, webhook errors or generic rollout timeout are **not** acceptable evidence.
@@ -437,3 +440,52 @@ memory and 88 Pod slots free by requests; active metadata/logging/metrics agents
 were ready. Only the exact temporary Pod and owned port-forward were cleaned up.
 No rebuild, mirror, signing, Terraform, manual IAM or GKE configuration change was
 performed. Raw evidence remains private. This evidence awaits review; #93 stays open.
+
+## Distinct-digest negative admission on 2026-11-01
+
+The separately authorized test executed from merged main
+`031c2bd3da7d667bb6232b7cc3fbc68d15597c03`. Existing workloads retained deployment
+configuration `9934c9d2766ec46b52dd1aaed51cea63b5ee17a9`; no new release or rollout
+was created. The exact approved negative fixture was:
+
+```text
+us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-productcatalogservice@sha256:f2519a4464d4fb6a2667bbdc26ef1fc83c084d658c295ea5c536876707d1f58f
+```
+
+Read-only verification confirmed historical build
+`faa7c48b-58dd-4d33-9e92-e9cab810f3ca` SUCCESS, its exact request/steps/producer,
+Git source and resolved provenance at
+`61f07a0e4a1302fdb164ca4b8da9f1f12b5648ee`, pinned AML
+`89fd1cde8285761cc2a35dfb22d145adb2eed980`, and the published fixture digest.
+Actual manifest/config bytes matched their SHA-256 and config descriptor size.
+Config digest was `sha256:da7c9916ab5e82ee53ecefe8e08d92b607701bf9ac9b1428bda49ca78b596a99`;
+platform was linux/amd64 and the source revision label matched AML. Registry bytes
+and Artifact Registry metadata were available. This historical image was used only
+as a negative fixture; it did not replace or become the accepted application release.
+
+The required attestor still referenced the expected verification note. The
+[note-level occurrence API](https://docs.cloud.google.com/artifact-analysis/docs/reference/rest/v1/projects.notes.occurrences/list)
+enumerated all occurrences across consumer projects without filtering by image URI.
+Both the initial and immediate pre-POST scans completed one page/four occurrences.
+Every signed payload digest and resource URI was inspected; there were zero fixture
+digest matches and zero valid required-attestor attestations for it at any URI.
+Current enforcement, capacity and catalog/Collector/sample health also passed.
+
+Exactly one POST attempted dev Pod `catalog-negative-f2519a-20261101` using the
+current catalog template with only name/image changed. The API returned **HTTP 400,
+`VIOLATES_POLICY`**, explicitly naming Binary Authorization, the required attestor,
+the fixture digest and **"No attestations found that were valid"**. This was an
+attestation-policy denial, not an image pull, invalid spec or generic webhook error.
+The Pod was never created; final exact-name GET returned **404** and no deletion
+was necessary. Immediate event/audit queries returned no rows; the retained API
+denial is the acceptance evidence. No submission retry or fixture substitution ran.
+
+Final `acceptance.py` runtime readback passed for the existing catalog/Collector.
+Their UIDs, templates, running images and restarts were unchanged across the test.
+Sample-service dev/stage/prod remained Ready/Available and HTTP 200 with unchanged
+UIDs/templates/images. Node capacity remained 819m CPU / 4476Mi memory / 88 Pod slots
+free by requests, with no unassigned Pods or pressure. Admission policy was unchanged.
+No build, signing, rollout, IAM, Terraform, GKE configuration or accepted release
+change was performed. Raw evidence stays private. This completes the bounded
+negative-denial check; issue #93 remains open until review, with prior telemetry,
+rotation/restart and production-readiness limits unchanged.
