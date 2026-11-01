@@ -1,11 +1,9 @@
 {
-  "base_revision": "9934c9d2766ec46b52dd1aaed51cea63b5ee17a9",
+  "base_revision": "031c2bd3da7d667bb6232b7cc3fbc68d15597c03",
   "blockers_before_live": [
-    "Review these bounded live results. Issue #93 remains open because an explicit negative Binary Authorization denial has not been demonstrated.",
-    "The upstream Collector manifest is already attested by digest through the trusted mirror. Empty exact-URI occurrence lookup is insufficient for a negative fixture.",
-    "Select/review a distinct pullable linux/amd64 test digest with no valid required-attestor proof at any repository URI before separately authorizing another bounded negative test.",
-    "Do not delete existing attestations, change IAM/policy, substitute an index/member or introduce an arbitrary image to force a rejection. No second negative attempt was performed.",
-    "Log rotation/cursor restart, sustained load and lossless/durable telemetry remain outside this bounded acceptance evidence."
+    "No further live operation is needed for this bounded negative-denial check. Review it together with the earlier dev runtime/RPC/telemetry acceptance before closing #93.",
+    "The approved fixture and all occurrence/policy/health observations are time-bound evidence, not general authorization for arbitrary unsigned images or future deployments.",
+    "Telemetry rotation/restart resilience, durable/lossless export and sustained-load/production behavior remain outside the bounded recorded acceptance."
   ],
   "collector_blob_transport_fix": {
     "allowed_transition": {
@@ -971,10 +969,22 @@
     "Fresh single-node capacity, constraints, sample preservation and metadata readiness must pass immediately before any workload rollout.",
     "Collector WIF export, Linux host-log permissions/rotation and functional catalog/admission/native-linked telemetry remain live acceptance prerequisites."
   ],
+  "historical_pr98_limits": [
+    "Acceptance is bounded to dev, the recorded immutable deployment configuration, unchanged application #87 identity and trusted Collector digest.",
+    "READY and one successful rollout/runtime/RPC/real telemetry acceptance are recorded separately from the unsuccessful negative fixture. No full admission-denial acceptance or issue completion is claimed.",
+    "A required digest attestation can authorize identical bytes across registry/repository URIs; the same upstream Collector manifest cannot be used as an unsigned negative fixture.",
+    "The admitted temporary Pod was immediately deleted by its exact created UID. Final GET returned 404. No second negative attempt or mutation after cleanup was performed.",
+    "The five-minute telemetry window returned 30 server plus 30 application spans, 29 completed native-linked logs and one qualified nonzero server request metric series. No lossless, rotation, restart or sustained-load claim.",
+    "Two startup parser errors came from non-JSON catalog stderr. No exporter-failure record was observed in retained bounded diagnostics; this is not a lifetime drop/error-counter guarantee.",
+    "Root host-log visibility and internal unauthenticated OTLP remain dev trust boundaries; no production or multi-tenant hardening claim.",
+    "Sample-service UID/template/image/readiness and HTTP health were unchanged in all three environments at the final recorded observation; no continuous zero-outage or future capacity claim.",
+    "Raw responses, archives, candidate, credentials, state and private values remain private. No execution code, application rebuild/signing, Collector mirror/signing, Terraform, manual IAM, GKE configuration, AML or roadmap changes.",
+    "Review these results and separately review/authorize a distinct negative fixture before another live test. No merge or issue closure was performed."
+  ],
   "implementation_sha256": {
     "cloudbuild/online-shop/collector-tools.json": "sha256:ed1a4d335e939efd848d334d9acf0105b436f65887dd852252fbf59fb8007a95",
     "cloudbuild/online-shop/collector.py": "sha256:21ee5e5c5cb84380c8f4f14ac60cb42a851cff128ae4f11815ef21248c1e01e9",
-    "deploy/online-shop/README.md": "sha256:80c4512dc14360afbbf65889808b81c4c976e0e44c6f7216e58d8a3a4d1362b3",
+    "deploy/online-shop/README.md": "sha256:50a5cd6ce2efad5fa5e4500dc433aa26d3484a45ca5005fd63e8d4a51afba733",
     "deploy/online-shop/acceptance.py": "sha256:2f91344795941b54f1b5fe7773a5149becb75d3fa31d418e132f498df5a4acac",
     "deploy/online-shop/collector-adoption.md": "sha256:615e4ca1fc69d40b7d45a9d11cf18faa355509a080c69f813fcc6b1d4212b25a",
     "deploy/online-shop/collector.json": "sha256:9dcdb191e1ef17cd1fcc958793e2258de1f1c606635045cde43906a04db934ba",
@@ -1040,21 +1050,156 @@
   "initial_implementation_base_revision": "555bfb54fc6de0d49eb992928df96943a8ad73e3",
   "issue": 93,
   "limits": [
-    "Acceptance is bounded to dev, the recorded immutable deployment configuration, unchanged application #87 identity and trusted Collector digest.",
-    "READY and one successful rollout/runtime/RPC/real telemetry acceptance are recorded separately from the unsuccessful negative fixture. No full admission-denial acceptance or issue completion is claimed.",
-    "A required digest attestation can authorize identical bytes across registry/repository URIs; the same upstream Collector manifest cannot be used as an unsigned negative fixture.",
-    "The admitted temporary Pod was immediately deleted by its exact created UID. Final GET returned 404. No second negative attempt or mutation after cleanup was performed.",
-    "The five-minute telemetry window returned 30 server plus 30 application spans, 29 completed native-linked logs and one qualified nonzero server request metric series. No lossless, rotation, restart or sustained-load claim.",
-    "Two startup parser errors came from non-JSON catalog stderr. No exporter-failure record was observed in retained bounded diagnostics; this is not a lifetime drop/error-counter guarantee.",
-    "Root host-log visibility and internal unauthenticated OTLP remain dev trust boundaries; no production or multi-tenant hardening claim.",
-    "Sample-service UID/template/image/readiness and HTTP health were unchanged in all three environments at the final recorded observation; no continuous zero-outage or future capacity claim.",
-    "Raw responses, archives, candidate, credentials, state and private values remain private. No execution code, application rebuild/signing, Collector mirror/signing, Terraform, manual IAM, GKE configuration, AML or roadmap changes.",
-    "Review these results and separately review/authorize a distinct negative fixture before another live test. No merge or issue closure was performed."
+    "The 2026-11-01 check is limited to the exact authorized historical catalog digest, current catalog template, dev namespace, recorded main and enforcement state.",
+    "One Pod POST received explicit Binary Authorization HTTP 400 VIOLATES_POLICY for missing required attestation; the Pod did not exist afterward. No live retry or fixture replacement.",
+    "The full required-note occurrence listing across consumer projects inspected signed payload digests and URIs twice. Absence is a timestamped prerequisite, not a promise of future unsigned status.",
+    "Actual historical build/source and registry manifest/config/platform/metadata were verified. The denied image was not executed; all layer bytes were not downloaded/rehash-verified by this negative test.",
+    "Existing application #87 and trusted Collector runtime remained unchanged. Earlier runtime/RPC/telemetry proof remains separately dated; it was not recreated by this negative-only run.",
+    "Earlier same-digest upstream admission remains historical evidence; no missing-attestation denial was retroactively claimed for it.",
+    "Prior telemetry limits remain: 29 correlated completed logs for 30 normal RPCs, startup non-JSON stderr parse errors, no lossless/rotation/restart/durable export or sustained-load guarantee.",
+    "Node/sample health and capacity are final snapshots, not continuous zero-outage or future-capacity guarantees. Root host-log visibility and internal unauthenticated OTLP remain dev trust boundaries.",
+    "No accepted release, image, attestation, IAM, policy, Terraform, GKE, AML, roadmap or execution-code change. Raw data, credentials, state and private values remain private.",
+    "Acceptance evidence awaits review. No merge or issue closure was performed; #93 remains open."
   ],
   "live_pending": {
-    "negative_binary_authorization_explicit_denial": "pending distinct reviewed digest fixture; current same-digest case admitted and exactly cleaned up",
-    "review_of_runtime_telemetry_evidence": "pending",
-    "rotation_restart_resilience_and_long_duration_export": "not demonstrated by this bounded test"
+    "review_of_bounded_acceptance_evidence": "pending; negative API denial now demonstrated with the distinct authorized fixture",
+    "rotation_restart_resilience_and_long_duration_export": "not demonstrated by these bounded tests"
+  },
+  "negative_admission_acceptance": {
+    "api_denial": {
+      "binary_authorization_explicit": true,
+      "fixture_digest_named": true,
+      "http_status": 400,
+      "missing_attestation_reason": "No attestations found that were valid",
+      "not_image_pull_or_generic_webhook_error": true,
+      "observed_at": "2026-11-01T14:31:26.748520Z",
+      "outcome": "passed",
+      "raw_response": "Retained privately; no raw response published.",
+      "reason": "VIOLATES_POLICY",
+      "required_attestor_named": true
+    },
+    "application_collector_or_execution_code_changes": false,
+    "attestation_prerequisites": {
+      "api": "projects.notes.occurrences.list",
+      "fixture_digest_matches": 0,
+      "immediate_pre_post": {
+        "digest_matches": 0,
+        "listing_complete": true,
+        "observed_at": "2026-11-01T14:31:25.002385Z",
+        "occurrences": 4,
+        "pages": 1,
+        "payload_and_uri_checked": true,
+        "scope": "required note occurrences across consumer projects, without URI filtering",
+        "valid_matching_attestations": 0
+      },
+      "initial": {
+        "digest_matches": 0,
+        "listing_complete": true,
+        "observed_at": "2026-11-01T14:30:46.402065Z",
+        "occurrences": 4,
+        "pages": 1,
+        "payload_and_uri_checked": true,
+        "scope": "required note occurrences across consumer projects, without URI filtering",
+        "valid_matching_attestations": 0
+      },
+      "not_extrapolated_from_empty_exact_uri_lookup": true,
+      "scope": "All consumer projects referencing the required note, without resource URI filtering",
+      "signed_payload_digests_and_resource_uris_inspected": true,
+      "valid_matching_attestations": 0
+    },
+    "cleanup": {
+      "delete_performed": false,
+      "delete_required": false,
+      "exact_name_final_get_http_status": 404,
+      "other_resources_deleted": false,
+      "retry_or_fixture_substitution": false,
+      "temporary_pod_created": false
+    },
+    "date": "2026-11-01",
+    "execution_configuration_revision": "031c2bd3da7d667bb6232b7cc3fbc68d15597c03",
+    "existing_workload_deployment_revision": "9934c9d2766ec46b52dd1aaed51cea63b5ee17a9",
+    "final_readback": {
+      "admission_policy_unchanged": true,
+      "capacity": {
+        "capacity_ready": true,
+        "limit": "Fresh WI node labels, affinities, quotas and rollout conflicts must also pass target preflight; this does not scale a cluster.",
+        "nodes": [
+          {
+            "eligible": true,
+            "free_cpu_m": 819.0,
+            "free_memory_mi": 4476.5323486328125,
+            "headroom": true,
+            "pod_slots": 88
+          }
+        ],
+        "reserve_cpu_m": 600,
+        "reserve_memory_mi": 768,
+        "unassigned_pods": 0
+      },
+      "catalog_collector_runtime": "passed",
+      "catalog_collector_uids_templates_images_restarts_unchanged": true,
+      "denial_evidence_source": "Actual Kubernetes API response; no event/audit-row success claim.",
+      "immediate_scoped_audit_rows": 0,
+      "immediate_scoped_event_rows": 0,
+      "observed_at": "2026-11-01T14:31:37.481898Z",
+      "sample_http_healthz": {
+        "dev": 200,
+        "prod": 200,
+        "stage": 200
+      },
+      "sample_ready_available": {
+        "dev": true,
+        "prod": true,
+        "stage": true
+      },
+      "sample_uids_templates_images_and_health_unchanged": true
+    },
+    "fixture": "us-central1-docker.pkg.dev/<PROJECT_ID>/secure-delivery/online-shop-productcatalogservice@sha256:f2519a4464d4fb6a2667bbdc26ef1fc83c084d658c295ea5c536876707d1f58f",
+    "fixture_digest": "sha256:f2519a4464d4fb6a2667bbdc26ef1fc83c084d658c295ea5c536876707d1f58f",
+    "historical_build": {
+      "aml_source": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
+      "configuration_source": "61f07a0e4a1302fdb164ca4b8da9f1f12b5648ee",
+      "id": "faa7c48b-58dd-4d33-9e92-e9cab810f3ca",
+      "not_promoted_to_accepted_release": true,
+      "not_rebuilt_or_signed": true,
+      "request_steps_producer_git_source_resolved_provenance_and_output_match": true,
+      "status": "SUCCESS"
+    },
+    "issue93_status": "open pending review",
+    "new_build_signing_release_rollout_iam_or_infrastructure_operations": false,
+    "pod_template": {
+      "changed_only": [
+        "metadata.name",
+        "spec.containers[0].image"
+      ],
+      "collector_template_used": false,
+      "exact_request_canonical_sha256": "263f9fa661f146a3dde5c12fb4e99b93b5c45a70b13381a30d9badc1d046aad4",
+      "name": "catalog-negative-f2519a-20261101",
+      "namespace": "dev",
+      "preserved": "catalog annotations, labels, KSA, security, resources, environment, probes and placement",
+      "requests": {
+        "cpu": "100m",
+        "memory": "64Mi"
+      },
+      "source": "current dev productcatalogservice Deployment Pod template"
+    },
+    "prerequisites_observed_at": "2026-11-01T14:30:48.284553Z",
+    "raw_evidence": "Private ignored responses, manifests/config, snapshots and diagnostics only.",
+    "registry_readback": {
+      "actual_manifest_config_hashes_and_descriptor_size": "passed",
+      "actual_manifest_sha256": "sha256:f2519a4464d4fb6a2667bbdc26ef1fc83c084d658c295ea5c536876707d1f58f",
+      "all_layer_bytes_rehashed": false,
+      "aml_revision_label_matches": true,
+      "config_bytes": 2281,
+      "config_sha256": "sha256:da7c9916ab5e82ee53ecefe8e08d92b607701bf9ac9b1428bda49ca78b596a99",
+      "limit": "Actual manifest/config and registry metadata checked; this negative case does not execute or pull the denied image.",
+      "manifest_bytes": 1152,
+      "platform": "linux/amd64",
+      "registry_image_metadata_and_bytes_available": true
+    },
+    "required_attestor": "projects/<PROJECT_ID>/attestors/secure-delivery-verification",
+    "required_note": "projects/<PROJECT_ID>/notes/secure-delivery-verification",
+    "submissions": 1
   },
   "offline_validated": {
     "boundary_cases": [
@@ -1267,6 +1412,6 @@
     "trace_api_enabled": true,
     "workload_identity_enabled": false
   },
-  "stage": "Reviewed-main dev release/preflight/rollout/runtime/RPC/telemetry passed; negative fixture admitted and exactly cleaned up; explicit denial acceptance pending review.",
-  "validation_date": "2026-10-31"
+  "stage": "Bounded distinct-digest catalog negative admission denied by Binary Authorization; no Pod created, healthy workloads preserved; acceptance review pending.",
+  "validation_date": "2026-11-01"
 }
