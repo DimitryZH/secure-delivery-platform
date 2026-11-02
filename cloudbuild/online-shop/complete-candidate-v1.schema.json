@@ -24,7 +24,7 @@
       "const": "complete-shop-v1"
     },
     "profile_sha256": {
-      "const": "sha256:4766ad8f2c1d3c771fb9c02a6c81a76f152fdf723de7c0013fb910a5f4143126"
+      "const": "sha256:3fc00dee52b0829f98c36c9d1fd2d7c6a34a3f3c405648138eb07d555460b6dc"
     },
     "configuration_revision": {
       "type": "string",
@@ -280,25 +280,44 @@
             "id": "redis-cart",
             "role": "dependency",
             "repository": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/redis-cart",
-            "digest": "sha256:81be8a1f52db5f99fe3de0bbbd2efce827f51ce409155a95e9bdbac8c2721ba6",
-            "config_digest": "sha256:aa189b5a1954929c393585e6dc5717a75b18f75a931df8bdcc00a3d3bd546be6",
+            "digest": "sha256:1cf73a2f04808e55a8bd2f5706c2aa0ebb0f71938f93deb7af79f48311cd5cb9",
+            "config_digest": "sha256:98c6ca8f397f86e469be752c3e7ed5eb8b17f2479840cb69a2e413037038e9f4",
             "platform": "linux/amd64",
+            "version": "7.4.12",
             "source": {
-              "kind": "selection_contract_not_publisher_provenance",
-              "repository": "https://github.com/DimitryZH/application-modernization-lab",
-              "revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
-              "workload_path": "workloads/online-shop",
+              "kind": "docker_official_image",
+              "repository": "docker.io/library/redis",
+              "index_digest": "sha256:8da19c7399dca900c6822a1cf30f9d2285585e2c4b457ff4095b0f4500054d3f",
+              "producing_source": {
+                "repository": "https://github.com/redis/docker-library-redis",
+                "revision": "786872f8c248c1f0990f93244cbcb3949329016d",
+                "directory": "alpine",
+                "filesSha256": {
+                  "alpine/Dockerfile": "sha256:4e97a743bef79aaf917f7ca3334f4284a86fda09b8406b69f0f85adcb55ae5b2",
+                  "alpine/docker-entrypoint.sh": "sha256:f8122ddc0eb2ae6ca7762725999f08b2ee7a6975da54e9061feee88f6d4ab2bb"
+                }
+              },
+              "selection_contract": {
+                "repository": "https://github.com/DimitryZH/application-modernization-lab",
+                "revision": "23b5b28de59e73fbfe2d4eff027f33bd82ae5e26",
+                "workload_path": "workloads/online-shop"
+              },
               "contracts_sha256": {
-                "images.lock.json": "sha256:94f4074cd6d0bfaaa91268719b3b0fefc12793735a5d172f1bf4008ae7829ac9",
-                "redis.runtime.json": "sha256:37290e790f046ad89acc8bc2af5c2df6bad51dc64895b7896fad39d67c1c621b"
+                "images.lock.json": "sha256:6e5ccb029dc0aaa2c9fa8322139b406b814865a7e31b06df0103b0b8d8539f0c",
+                "redis.runtime.json": "sha256:12324ccfae81d46eaead0f17f7fa2453e9b293fd647382252b60bcd2a0e41682",
+                "redis.source-v2.json": "sha256:050c315a444a936eacc31da9b5409810f3be8bfd1a986fcd0faae16d0653c37a",
+                "kubernetes/online-shop.yaml": "sha256:2f02fc2f04463274453e7cb20ae27d49506b7971ea00750e0099e99566d418ed",
+                "validation/otel/compose.yaml": "sha256:89410b7df52760fb05913345e715521542b926996f66e32fe9e3ef50a743a749"
               }
             },
             "build": {
-              "kind": "external_unresolved",
-              "producing_source": null,
-              "producing_build": null
+              "kind": "index_bound_buildkit_provenance",
+              "builder_id": "https://github.com/docker-library",
+              "build_type": "https://mobyproject.org/buildkit@v1",
+              "id": "yfknsyfxvj00lki3zrdos7mff",
+              "statement_digest": "sha256:b5e4a0ae9c7c176abe5548d7a7aacbcf409425daef5f10b0bb7af4255b5f0705"
             },
-            "admission_decision": "blocked_unresolved_publisher_lineage"
+            "admission_decision": "requires_verified_official_canonical_registry_chain"
           }
         }
       ],

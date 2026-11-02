@@ -37,7 +37,7 @@ def collector_config(record):
     for row in record["components"]:
         identity = row["id"]
         attributes = [{"key":k,"value":v,"action":"upsert"} for k,v in {
-            "service.name":identity,"service.namespace":"online-shop","service.version":c.r.REVISION if row["role"] == "application" else "external-unresolved",
+            "service.name":identity,"service.namespace":"online-shop","service.version":c.r.REVISION if row["role"] == "application" else c.redis_policy()["redis_version"],
             "deployment.environment.name":"dev","release_set_id":record["release_set_id"],"component_digest":row["digest"]}.items()]
         attributes += [a for a in c.r.read(HERE / "collector.json")["processors"]["resource/catalog"]["attributes"]
                        if a["key"].startswith(("cloud.","k8s."))]

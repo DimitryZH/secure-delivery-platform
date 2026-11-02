@@ -39,6 +39,11 @@ class CompleteTests(unittest.TestCase):
             digest=accepted['manifest_digest'] if identity=='productcatalogservice' else 'sha256:'+format(i+1,'x')*64
             rows.append(c.app_record(identity,accepted['configuration_revision'] if identity=='productcatalogservice' else REV,self.refs[identity],build,digest,'sha256:'+'f'*64))
         self.record=c.candidate(REV,rows)
+        # No registry/Git/network calls from full-shop API fixtures. The official
+        # source/content verifier has separate positive/negative and real-byte tests.
+        for release in (c,w.c,a.c):
+            gate=patch.object(release.redis,'verify_chain',side_effect=ValueError('redis_publication_chain_pending'))
+            gate.start();self.addCleanup(gate.stop)
 
     def build(self,identity):
         row=next(x for x in self.record['components'] if x['id']==identity)
@@ -72,16 +77,16 @@ class CompleteTests(unittest.TestCase):
             record=copy.deepcopy(self.record);mutation(record);record['release_set_id']=c.r.fingerprint({k:v for k,v in record.items() if k!='release_set_id'})
             with self.assertRaises(ValueError):c.validate_candidate(record,REV,self.refs)
 
-    def test_no_cloud_calls_or_signing_for_blocked_redis_even_content_equal(self):
+    def test_no_application_calls_or_signing_for_unverified_redis_chain(self):
         cloud=Mock();helper=Mock()
-        with self.assertRaisesRegex(ValueError,'redis_provenance'):c.verify(self.record,REV,self.plans,self.refs,cloud)
+        with self.assertRaisesRegex(ValueError,'redis_publication'):c.verify(self.record,REV,self.plans,self.refs,cloud)
         cloud.assert_not_called();cloud.build.assert_not_called();cloud.request.assert_not_called()
         with patch.object(c.support,'signer_identity'),patch.object(c.r,'attestation_helper',return_value=helper):
             with self.assertRaises(ValueError):c.attest(self.record,REV,self.plans,self.refs,cloud)
         helper.sign_and_create.assert_not_called()
-        self.assertIsNone(c.redis_policy()['producing_build'])
-        self.assertEqual(c.redis_policy()['publisher_provenance'],'unresolved')
-        self.assertFalse(c.redis_policy()['mirror_or_sign_authorized'])
+        self.assertEqual(c.redis_policy()['version'],2)
+        self.assertEqual(c.redis_policy()['upstream_repository'],'docker.io/library/redis')
+        self.assertEqual(c.redis_policy()['admission_decision'],'requires_verified_official_canonical_registry_chain')
 
     def test_component_specific_builds_args_results_and_mutations(self):
         for identity in c.APPS:
@@ -103,9 +108,9 @@ class CompleteTests(unittest.TestCase):
         cloud=Mock(token='offline-only');cloud.build.side_effect=lambda p,bid:self.build(next(x['id'] for x in self.record['components'][:-1] if x['build']['id']==bid))
         cloud.image.return_value='sha256:'+'f'*64
         catalog={'components':[{'config_digest':'sha256:'+'f'*64}]}
-        # This is a hypothetical approved dependency fake, never a production
-        # override: actual Redis policy above blocks all full trust/signing.
-        with patch.object(c,'redis_admission'),patch.object(c,'catalog_candidate',return_value=catalog),patch.object(c,'inspect_redis'):
+        # This is a verified dependency-chain fake, never a production
+        # override: actual unpublished/unverified mirrors cannot pass the production chain.
+        with patch.object(c,'redis_admission'),patch.object(c,'catalog_candidate',return_value=catalog),patch.object(c.redis,'verify_chain',return_value={'status':'redis_chain_verified'}):
             self.assertEqual(c.verify(self.record,REV,self.plans,self.refs,cloud)['status'],'passed')
             changed=copy.deepcopy(self.record);changed['components'][0]['digest']='sha256:'+'0'*64
             changed['release_set_id']=c.r.fingerprint({k:v for k,v in changed.items() if k!='release_set_id'})
@@ -208,7 +213,7 @@ class CompleteTests(unittest.TestCase):
 
     def test_no_prepare_bundle_for_unresolved_dependency(self):
         with tempfile.TemporaryDirectory() as tmp,patch.object(w.c,'reviewed'):
-            with self.assertRaisesRegex(ValueError,'redis_provenance'):
+            with self.assertRaisesRegex(ValueError,'redis_publication'):
                 w.prepare(self.record,REV,self.refs,self.plans,RESOURCE,Path(tmp)/'bundle',Mock())
             self.assertFalse((Path(tmp)/'bundle').exists())
 
@@ -216,8 +221,8 @@ class CompleteTests(unittest.TestCase):
         class MustNotRead:
             def __getitem__(self,key):raise AssertionError('evidence read before guard')
         for candidate in (self.record,):
-            with self.assertRaisesRegex(ValueError,'redis_provenance'):a.runtime(MustNotRead(),candidate,REV,self.plans,self.refs,Mock())
-            with self.assertRaisesRegex(ValueError,'redis_provenance'):a.signals(MustNotRead(),candidate,'not-a-time',self.plans,self.refs,Mock())
+            with self.assertRaisesRegex(ValueError,'redis_publication'):a.runtime(MustNotRead(),candidate,REV,self.plans,self.refs,Mock())
+            with self.assertRaisesRegex(ValueError,'redis_publication'):a.signals(MustNotRead(),candidate,'not-a-time',self.plans,self.refs,Mock())
         altered=copy.deepcopy(self.record);altered['components'][0]['digest']='sha256:'+'0'*64
         with self.assertRaisesRegex(ValueError,'identity'):a.runtime(MustNotRead(),altered,REV,self.plans,self.refs,Mock())
 
@@ -323,14 +328,14 @@ class CompleteTests(unittest.TestCase):
 
     def test_redis_actual_content_hash_size_and_platform_negatives(self):
         def run(arch='amd64',bad_size=False,bad_hash=False):
-            cfg=c.r.canonical({'os':'linux','architecture':arch});layer=b'compressed fixture'
+            cfg=c.r.canonical({'os':'linux','architecture':arch,'config':{'WorkingDir':'/data','Cmd':['redis-server'],'Entrypoint':['docker-entrypoint.sh'],'Env':['REDIS_VERSION='+c.redis_policy()['redis_version']]}});layer=b'compressed fixture'
             config={'digest':'sha256:'+c.r.sha(cfg),'size':len(cfg)}
             desc={'digest':'sha256:'+c.r.sha(layer),'size':len(layer)+(1 if bad_size else 0)}
             raw=c.r.canonical({'schemaVersion':2,'config':config,'layers':[desc]})
             policy={**c.redis_policy(),'manifest_digest':'sha256:'+c.r.sha(raw),'config_digest':config['digest']}
-            with patch.object(c,'redis_policy',return_value=policy),patch.object(c.support,'tool',return_value='offline-crane'),\
-                 patch.object(c.support,'run',side_effect=[raw,cfg,b'corrupt' if bad_hash else layer]):return c.inspect_redis()
-        self.assertEqual(run()['status'],'content_verified_untrusted')
+            read=Mock();read.get.side_effect=[raw,cfg,b'corrupt' if bad_hash else layer]
+            return c.redis.content(read,policy)
+        self.assertEqual(run()['layers_verified'],1)
         for kwargs in ({'arch':'arm64'},{'bad_size':True},{'bad_hash':True}):
             with self.subTest(kwargs=kwargs),self.assertRaises(ValueError):run(**kwargs)
 
@@ -349,7 +354,9 @@ class CompleteTests(unittest.TestCase):
         snapshot['artifacts']={key:{**binding,'uri':'gs://'+c.r.policy()['project']+'-clouddeploy/'+key+'#12',
             'retention_expires_at':(now+timedelta(hours=2)).isoformat().replace("+00:00","Z"),'available':True,'live_generation':True,
             'actual_sha256':'a'*64,'expected_sha256':'a'*64} for key in ('source','rendered','resolved_skaffold')}
+        snapshot['release']['redis_provenance_approved']=False
         self.assertEqual(w.evaluate(snapshot,self.record,REV,self.refs,RESOURCE,now)['decision'],'BLOCKED')
+        snapshot['release']['redis_provenance_approved']=True
         with patch.object(w.c,'redis_admission'):
             self.assertEqual(w.evaluate(snapshot,self.record,REV,self.refs,RESOURCE,now)['decision'],'READY')
             for mutate in (lambda s:s['artifacts']['source'].update(actual_sha256='b'*64),
@@ -390,7 +397,7 @@ class CompleteTests(unittest.TestCase):
     def test_signals_positive_full_component_and_missing_or_wrong_attribution(self):
         now=datetime.now(timezone.utc);stamp=now.isoformat().replace("+00:00","Z");trace='a'*32;spans=[];logs=[];metrics=[]
         for i,row in enumerate(self.record['components']):
-            identity=row['id'];version=c.r.REVISION if identity in c.APPS else 'external-unresolved'
+            identity=row['id'];version=c.r.REVISION if identity in c.APPS else c.redis_policy()['redis_version']
             labels={'service.name':identity,'service.version':version,'deployment.environment.name':'dev','release_set_id':self.record['release_set_id'],'component_digest':row['digest']}
             metric_labels={k.replace('.','_'):v for k,v in labels.items()}
             metrics.append({'metric':{'type':'workload.googleapis.com/'+('redis.commands' if identity=='redis-cart' else 'online_shop.transport.requests'),'labels':{**metric_labels,'kind':'server'}},

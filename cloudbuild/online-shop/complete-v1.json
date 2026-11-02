@@ -51,5 +51,14 @@
   "supporting_images": [
     "collector"
   ],
-  "version": 1
+  "version": 1,
+  "dependency_selection": {
+    "policy": "cloudbuild/online-shop/redis-policy-v2.json",
+    "sha256": "sha256:8ad0587ef4fdd1298be088440f25a229edf15f5ce87caabf2de79335bdaf1925",
+    "source": {
+      "repository": "https://github.com/DimitryZH/application-modernization-lab",
+      "revision": "23b5b28de59e73fbfe2d4eff027f33bd82ae5e26",
+      "workload_path": "workloads/online-shop"
+    }
+  }
 }
