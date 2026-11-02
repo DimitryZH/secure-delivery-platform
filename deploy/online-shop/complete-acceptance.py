@@ -17,6 +17,8 @@ HERE=Path(__file__).resolve().parent
 spec=importlib.util.spec_from_file_location("shop_workflow",HERE/"complete.py")
 w=importlib.util.module_from_spec(spec);spec.loader.exec_module(w)
 c=w.c;require=c.require
+CLEANUP_TARGET="projects/sre-platform-staging-507220/locations/us-central1-a/clusters/secure-delivery-platform/namespaces/dev/services/redis-cart"
+CLEANUP_ENDPOINT="127.0.0.1:16379"
 
 def guard(record, value, refs, cloud):
     proof=c.verify(record,record["configuration_revision"],value,refs,cloud)
@@ -144,6 +146,11 @@ def journey(base, output):
         return raw.decode("utf-8")
     since=datetime.now(timezone.utc).isoformat().replace("+00:00","Z")
     completed=False
+    def save_session():
+        (output/"session.private.json").write_text(json.dumps({"version":1,"kind":"issue100-shopping-journey",
+            "session":session,"completed":completed,"trace_id":trace,"since":since,
+            "cleanup_target":CLEANUP_TARGET,"cleanup_endpoint":CLEANUP_ENDPOINT}),encoding="utf-8")
+    save_session()  # Preserve ownership/scope before the first request, including failed journeys.
     try:
         home=request("/");products=re.findall(r'/product/([A-Za-z0-9_-]+)',home);require(products,"browse_products_missing")
         product=products[0];require(product in request("/product/"+product),"product_details_missing")
@@ -166,11 +173,11 @@ def journey(base, output):
         # value, so a separately recorded exact-key DEL is still required.
         try:request("/cart/empty",{})
         finally:
-            (output/"session.private.json").write_text(json.dumps({"session":session,"completed":completed,"trace_id":trace,"since":since}),encoding="utf-8")
+            save_session()
     return {**result,"requests":count}
 
 def cleanup_redis(session, endpoint):
-    require(re.fullmatch(r"issue100-[0-9a-f]{32}",session or "") and endpoint=="127.0.0.1:16379","scoped_synthetic_redis_key_required")
+    require(re.fullmatch(r"issue100-[0-9a-f]{32}",session or "") and endpoint==CLEANUP_ENDPOINT,"scoped_synthetic_redis_key_required")
     def command(name):
         parts=[name.encode(),session.encode()]
         wire=b"*2\r\n"+b"".join(b"$"+str(len(x)).encode()+b"\r\n"+x+b"\r\n" for x in parts)
@@ -182,12 +189,27 @@ def cleanup_redis(session, endpoint):
     require(command("EXISTS")==b":0\r\n","synthetic_cart_key_still_present")
     return {"cleanup":"passed","exact_synthetic_key_removed":True,"other_keys_modified":False}
 
+def cleanup_from_record(path, session, endpoint, target):
+    # Local ownership/scope proof is deliberately independent of release trust.
+    # An expired/unavailable cloud proof must not prevent removal of test data.
+    record=c.r.read(path)
+    require(type(record) is dict and type(record.get("version")) is int and record["version"]==1
+        and record.get("kind")=="issue100-shopping-journey" and record.get("session")==session,
+        "cleanup_session_not_owned_by_journey")
+    require(target==record.get("cleanup_target")==CLEANUP_TARGET
+        and endpoint==record.get("cleanup_endpoint")==CLEANUP_ENDPOINT,"cleanup_target_scope_mismatch")
+    return cleanup_redis(session,endpoint)
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action",choices=("capacity","runtime","signals","journey","cleanup"))
-    for name in ("candidate","configuration-revision","deployment-revision","snapshot","since","frontend","output-dir","session","redis"):parser.add_argument("--"+name)
+    for name in ("candidate","configuration-revision","deployment-revision","snapshot","since","frontend","output-dir","session","session-record","redis","redis-target"):parser.add_argument("--"+name)
     args=parser.parse_args()
     try:
+        if args.action=="cleanup":
+            result=cleanup_from_record(args.session_record,args.session,args.redis,args.redis_target)
+            print(json.dumps(result,sort_keys=True));return 0
         c.reviewed(args.configuration_revision)
         record=c.r.read(args.candidate)
         with c.r.fetched(c.r.AML,c.r.REVISION) as source:value=c.plans(source);refs=c.references(source,value)
@@ -198,7 +220,7 @@ def main():
         elif args.action=="signals":result=signals(c.r.read(args.snapshot),record,args.since,value,refs,cloud)
         else:
             guard(record,value,refs,cloud)
-            result=cleanup_redis(args.session,args.redis) if args.action=="cleanup" else journey(args.frontend,args.output_dir)
+            result=journey(args.frontend,args.output_dir)
         print(json.dumps(result,sort_keys=True));return 3 if result.get("capacity_ready") is False else 0
     except (OSError,ValueError,KeyError,TypeError,AttributeError,subprocess.SubprocessError):
         print(json.dumps({"status":"failed","reason":"complete_acceptance_evidence_missing_or_inconsistent"}));return 3

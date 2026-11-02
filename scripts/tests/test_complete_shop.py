@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import threading
 import unittest
@@ -240,6 +241,85 @@ class CompleteTests(unittest.TestCase):
             self.assertEqual(a.cleanup_redis('issue100-'+'a'*32,'127.0.0.1:16379')['cleanup'],'passed')
             wire=b''.join(call.args[0] for call in connection.return_value.__enter__.return_value.sendall.call_args_list)
             self.assertNotIn(b'FLUSH',wire);self.assertIn(b'DEL',wire)
+
+    def cleanup_receipt(self, path):
+        record={'version':1,'kind':'issue100-shopping-journey','session':'issue100-'+'a'*32,
+            'completed':False,'cleanup_target':a.CLEANUP_TARGET,'cleanup_endpoint':a.CLEANUP_ENDPOINT}
+        path.write_text(json.dumps(record),encoding='utf-8')
+        return record
+
+    def cleanup_cli(self, path, record, **overrides):
+        values={'session-record':str(path),'session':record['session'],'redis':a.CLEANUP_ENDPOINT,'redis-target':a.CLEANUP_TARGET,**overrides}
+        argv=['complete-acceptance.py','cleanup']
+        for key,value in values.items():
+            if value is not None:argv += ['--'+key,value]
+        output=io.StringIO()
+        with patch.object(sys,'argv',argv),patch('sys.stdout',output):code=a.main()
+        return code,json.loads(output.getvalue())
+
+    def test_cleanup_cli_survives_verification_outage_without_release_or_credentials(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/'session.private.json';record=self.cleanup_receipt(path)
+            with patch.object(a.c,'verify',side_effect=OSError('temporary verification outage')) as verification,\
+                 patch.object(a.c,'reviewed',side_effect=OSError('main unavailable')) as reviewed,\
+                 patch.object(a.c.r,'fetched',side_effect=OSError('AML unavailable')) as fetched,\
+                 patch.object(a.c,'validate_candidate',side_effect=ValueError('release blocked')) as candidate,\
+                 patch.object(a.c.r,'Cloud',side_effect=OSError('credentials unavailable')) as cloud,\
+                 patch.object(a.socket,'create_connection') as connection:
+                # Reproduce verification failure after journey; cleanup must still
+                # reach the bounded Redis commands without retrying the trust chain.
+                with self.assertRaises(OSError):a.guard(self.record,self.plans,self.refs,Mock())
+                verification.reset_mock()
+                connection.return_value.__enter__.return_value.makefile.return_value.readline.side_effect=[b':1\r\n',b':0\r\n']
+                code,result=self.cleanup_cli(path,record)
+                self.assertEqual(code,0);self.assertEqual(result['cleanup'],'passed')
+                for unused in (verification,reviewed,fetched,candidate,cloud):unused.assert_not_called()
+                for call in connection.call_args_list:self.assertEqual(call.args,(('127.0.0.1',16379),))
+                key=record['session'].encode()
+                expected=[b'*2\r\n$'+str(len(command)).encode()+b'\r\n'+command+b'\r\n$'+str(len(key)).encode()+b'\r\n'+key+b'\r\n' for command in (b'DEL',b'EXISTS')]
+                actual=[call.args[0] for call in connection.return_value.__enter__.return_value.sendall.call_args_list]
+                self.assertEqual(actual,expected)
+
+    def test_cleanup_cli_rejects_foreign_session_target_or_missing_ownership_before_connection(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/'session.private.json';record=self.cleanup_receipt(path)
+            for overrides in ({'session':'foreign-session'},{'session':'issue100-'+'b'*32},
+                {'session':record['session']+'\r\nFLUSHALL'},{'redis':'redis-cart:6379'},
+                {'redis':'127.0.0.1:6379'},{'redis-target':a.CLEANUP_TARGET.replace('/dev/','/prod/')},
+                {'redis-target':a.CLEANUP_TARGET.replace('sre-platform-staging-507220','other-project')},
+                {'redis-target':a.CLEANUP_TARGET.replace('/redis-cart','/other-redis')},
+                {'redis-target':None},{'session-record':str(Path(tmp)/'missing.json')}):
+                with self.subTest(overrides=overrides),patch.object(a.socket,'create_connection') as connection:
+                    self.assertEqual(self.cleanup_cli(path,record,**overrides)[0],3);connection.assert_not_called()
+            for mutate in (lambda r:r.update(version=True),lambda r:r.update(kind='foreign-run'),
+                           lambda r:r.update(cleanup_target=a.CLEANUP_TARGET.replace('/dev/','/stage/')),
+                           lambda r:r.update(cleanup_endpoint='127.0.0.1:6379')):
+                altered=copy.deepcopy(record);mutate(altered);path.write_text(json.dumps(altered),encoding='utf-8')
+                with patch.object(a.socket,'create_connection') as connection:
+                    self.assertEqual(self.cleanup_cli(path,record)[0],3);connection.assert_not_called()
+
+    def test_cleanup_cli_requires_exists_zero_and_handles_already_absent_key(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/'session.private.json';record=self.cleanup_receipt(path)
+            for replies,code in (([b':0\r\n',b':0\r\n'],0),([b':1\r\n',b':1\r\n'],3),([b'+OK\r\n'],3)):
+                with self.subTest(replies=replies),patch.object(a.socket,'create_connection') as connection:
+                    connection.return_value.__enter__.return_value.makefile.return_value.readline.side_effect=replies
+                    self.assertEqual(self.cleanup_cli(path,record)[0],code)
+                    self.assertEqual(connection.return_value.__enter__.return_value.sendall.call_count,len(replies))
+
+    def test_failed_journey_preserves_local_session_scope_before_http(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out=Path(tmp)/'failed-journey'
+            def fail(*args,**kwargs):
+                record=json.loads((out/'session.private.json').read_text(encoding='utf-8'))
+                self.assertEqual(record['cleanup_target'],a.CLEANUP_TARGET);self.assertFalse(record['completed'])
+                raise OSError('frontend unavailable')
+            with patch.object(a.urllib.request,'build_opener') as opener:
+                opener.return_value.open.side_effect=fail
+                with self.assertRaises(OSError):a.journey('http://127.0.0.1:8080',out)
+            record=json.loads((out/'session.private.json').read_text(encoding='utf-8'))
+            self.assertEqual(record['version'],1);self.assertEqual(record['kind'],'issue100-shopping-journey')
+            self.assertRegex(record['session'],r'^issue100-[a-f0-9]{32}$');self.assertEqual(record['cleanup_endpoint'],a.CLEANUP_ENDPOINT)
 
     def test_redis_actual_content_hash_size_and_platform_negatives(self):
         def run(arch='amd64',bad_size=False,bad_hash=False):

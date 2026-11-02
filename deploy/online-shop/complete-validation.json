@@ -316,11 +316,11 @@
   "local_validation": {
     "python_regressions": {
       "command": "python -m unittest discover -s scripts/tests",
-      "tests": 211,
+      "tests": 215,
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "new_focused_tests": 23,
+      "new_focused_tests": 27,
       "pinned_aml_all_ten_plans_and_materialization": "passed",
       "native_collector_agent_and_singleton_metrics_configuration": "passed",
       "loopback_http_journey_fixture": "passed; synthetic fake storefront, not live acceptance"
@@ -336,7 +336,25 @@
       "status": "passed",
       "local_targets_checked": 26
     },
-    "hypothetical_approved_dependency_fakes": "offline tests only; real Redis policy remains blocked"
+    "hypothetical_approved_dependency_fakes": "offline tests only; real Redis policy remains blocked",
+    "cleanup_review": {
+      "previous_head": "5aad13edaee40d6580a89906ed0cd415a435e9be",
+      "previous_full_regression_tests": 211,
+      "new_cli_and_session_record_regressions": 4,
+      "status": "passed offline",
+      "verification_outage_after_journey": "reproduced with API fake; CLI cleanup still sends exact single-key DEL and EXISTS",
+      "cleanup_remote_review_aml_candidate_credentials_and_release_verification_calls": 0,
+      "ownership_and_scope": "private versioned journey record; exact issue100 session; fixed project/cluster/dev Redis Service and loopback endpoint; checked before connection",
+      "port_forward_scope": "operator must independently verify explicit GKE context/dev redis-cart:6379 forwarding to 127.0.0.1:16379; the record does not authenticate an arbitrary listener",
+      "negative_cli_cases": "foreign session (including another valid issue100 ID), injected key, foreign project/namespace/Service, wrong or missing endpoint/target, missing or mismatched ownership record rejected before Redis connection",
+      "readback": "EXISTS must return zero; already absent key accepted; nonzero or malformed reply fails",
+      "failed_journey_record": "saved before first HTTP request and retained after failure",
+      "runtime_signals_and_journey_cloud_guards": "unchanged",
+      "redis_provenance_policy": "unchanged; admission remains blocked",
+      "live_cloud_or_redis_operations": 0,
+      "prior_live_prerequisites_and_terraform_plan": "historical observations retained; not rerun for this cleanup-only fix",
+      "private_test_log": ".local-validation/issue100-cleanup-review/all-tests.private.log"
+    }
   },
   "live_operations": {
     "application_builds": 0,
@@ -366,11 +384,11 @@
     "cloudbuild/online-shop/complete-candidate-v1.schema.json": "sha256:fee55de88f7b2e4b76b8b669ccb349865ae4312a2b7813d494bb4771b2024006",
     "cloudbuild/online-shop/redis-policy-v1.json": "sha256:c3e35a722662e7695df196e3141b77cb27a31def336a7c01a505c0e3f2519dea",
     "deploy/online-shop/complete.py": "sha256:5cbe36f1bb403a308a73198961d35f3fdbe03706ece4aea78cd588430b69365a",
-    "deploy/online-shop/complete-acceptance.py": "sha256:f3adf10c84882e3070b26d6e7573e7e806508a13311fc9947aad43d8fc73c0b3",
+    "deploy/online-shop/complete-acceptance.py": "sha256:297a62096fc2cc3990c46878c4042bced208ca59d6b1b647b71271b3027754ac",
     "deploy/online-shop/complete-runtime-v1.json": "sha256:97f3d3b3adf1b6334c727274d6bf4f1d969afdd0f01300796bb9bfc132d632c2",
     "deploy/online-shop/complete-skaffold.yaml": "sha256:088ae75361550b1911cd655b286c2da07f35f6dbc74c380beb7cbc34efcb7d3a",
-    "deploy/online-shop/complete-README.md": "sha256:e3c329f391ae623f06e556a22621f3ecc350c593bfd0d43cb64fc56e8a46ecab",
-    "scripts/tests/test_complete_shop.py": "sha256:a2bc7c66b46bf6d84dc5d6388909a6bc8b2acde74987b11e90cc6bc6c561f6bb",
+    "deploy/online-shop/complete-README.md": "sha256:cadc1eb9c4c24987a4eccbbcab87d3bc9f70d3b077838a0e1d525598f6ca4a5a",
+    "scripts/tests/test_complete_shop.py": "sha256:3c93c2b3bf1b5ba7e9ff1bd80a90317ed6918abd6da0a3cd2eb49b6cecb1a527",
     "terraform/foundation/complete-shop.tf": "sha256:96c3cdadcf258605d0d946268b14314482842026ce0c018f645c25fdcee29e84"
   }
 }
