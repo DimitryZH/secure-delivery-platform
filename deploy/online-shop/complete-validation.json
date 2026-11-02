@@ -1,13 +1,13 @@
 {
   "version": 1,
   "issue": 100,
-  "phase": "live_dev_acceptance_partial",
+  "phase": "telemetry_fixes_review",
   "observed_date": "2026-11-02",
   "base_configuration_revision": "00e925e724808ac80f1313fb85da1c6b3ec19f3f",
   "aml_revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
   "profile": "complete-shop-v1",
   "candidate_version": 2,
-  "implementation_status": "merged; trusted full release deployed in dev; telemetry acceptance blocked",
+  "implementation_status": "deployment telemetry fixes proposed for review; existing trusted candidate/images retained; no new live acceptance",
   "membership": {
     "application_services": [
       "adservice",
@@ -102,47 +102,47 @@
   },
   "local_validation": {
     "python_regressions": {
-      "command": "python -m unittest discover -s scripts/tests",
-      "tests": 224,
+      "command": "python -B -m unittest discover -s scripts/tests",
+      "tests": 229,
       "failures": 0,
       "errors": 0,
-      "skipped": 0,
-      "new_focused_tests": 36,
+      "skipped": 1,
+      "focused_complete_tests": 32,
       "pinned_aml_all_ten_plans_and_materialization": "passed",
       "native_collector_agent_and_singleton_metrics_configuration": "passed",
+      "native_otlp_datapoint_conversion": "passed; 192 sum points, 6 gauges, 6 histograms",
       "loopback_http_journey_fixture": "passed; synthetic fake storefront, not live acceptance",
-      "redis_source_tests": 9,
-      "real_selected_redis_byte_fixtures": "passed; all seven layers plus source/index/provenance/config"
+      "optional_skipped_fixture": "actual public Redis registry/source byte capture; earlier byte verification retained in immutable prior validation"
     },
     "full_render_inventory": {
       "resource_count": 39,
       "exact_inventory_and_generated_labels": "passed offline fixtures",
-      "cloud_deploy_render": "not executed",
-      "skaffold_cli_offline_render": "timed out after 40 seconds during client configuration on this Windows host; no output artifact accepted"
+      "cloud_deploy_render": "pending for proposed deployment revision; original live render SUCCEEDED in dev_acceptance_20261102",
+      "skaffold_cli_offline_render": "not rerun for fixes; historical isolated local render passed before original live rollout"
     },
     "git_diff_check": "passed",
     "local_links": {
       "status": "passed",
-      "local_targets_checked": 32
+      "local_targets_checked": 12,
+      "scope": "focused complete-README.md"
     },
-    "hypothetical_approved_dependency_fakes": "Verified-chain fixtures are offline only; actual publication/admission still needs both live mirrors and signatures."
+    "hypothetical_approved_dependency_fakes": "Cloud/signature fixtures in regressions are offline only. Actual existing trusted candidate and images are preserved; no fresh live acceptance is claimed by these fixes."
   },
   "live_operations": {
     "application_builds": 0,
     "signing_builds": 0,
+    "cloud_deploy_releases": 0,
+    "rollouts": 0,
     "infrastructure_apply": 0,
     "iam_changes": 0,
-    "cloud_deploy_releases": 1,
-    "dev_rollouts": 1,
-    "http_journey_requests": 14,
-    "negative_pod_submissions": 1,
-    "negative_pods_admitted": 0,
-    "redis_del": 1,
-    "redis_exists": 1
+    "runtime_journey": "not repeated",
+    "real_complete_telemetry": "historical evidence replay only; no new cloud queries",
+    "negative_admission": "not repeated",
+    "metric_descriptor_deletions": 0
   },
   "validation_limits": [
-    "Full signals acceptance failed: currencyservice/paymentservice DOUBLE counters are rejected by existing shared INT64 Google Cloud metric descriptors. Eight application components have request metrics; Redis native metrics are present.",
-    "All ten components have native trace-linked logs, but cartservice/emailservice/recommendationservice emit operation.completed while the reviewed signals validator requires request.completed. Completion-event contract remains unresolved; no validator or pipeline was changed live.",
+    "Historical currency/payment DOUBLE/INT64 export failures are preserved in dev_acceptance_20261102. Proposed normalization passed native local OTLP tests; fresh Cloud Monitoring acceptance requires the merged deployment configuration and a new authorized rollout/journey.",
+    "Historical operation.completed/request.completed acceptance mismatch is preserved. Proposed component-specific server completion checks passed regressions and historical native-linked log replay; no new live signals acceptance is claimed.",
     "Collector reports permanent metric export errors/drops from descriptor type conflicts; no loss-free telemetry claim is made. Initial Redis startup scrape/descriptor contention errors were also observed before native Redis metrics appeared.",
     "Only one bounded 14-request shopping journey was executed; no load test, sustained throughput, restart/outage/recovery or log rotation validation was performed.",
     "Overlap capacity passes with 350m CPU left after all reservations; request-based scheduling does not prove runtime performance or HA. Collector queues/cursors are ephemeral and Redis remains singleton/ephemeral.",
@@ -155,12 +155,12 @@
     "cloudbuild/online-shop/complete-v1.json": "sha256:3fc00dee52b0829f98c36c9d1fd2d7c6a34a3f3c405648138eb07d555460b6dc",
     "cloudbuild/online-shop/complete-candidate-v1.schema.json": "sha256:36b4ab8c1b19d19bbd4139a8e923fb204c1e2d952954fe57775600a34e52678a",
     "cloudbuild/online-shop/redis-policy-v1.json": "sha256:c3e35a722662e7695df196e3141b77cb27a31def336a7c01a505c0e3f2519dea",
-    "deploy/online-shop/complete.py": "sha256:c9c3a912d23f4d9e6ba35675a7f4fd0f93ea57354b8a94c1aeaa50bd1f3d97f3",
-    "deploy/online-shop/complete-acceptance.py": "sha256:0330975c04ab4b87f70b3780a8f091b6ba06f4d5dd3882d2407db9462ad78bd3",
+    "deploy/online-shop/complete.py": "sha256:40350f8968703963baf70868e4bfe02aca5c933929b3b5eebf402a607bc6b3ff",
+    "deploy/online-shop/complete-acceptance.py": "sha256:385dc1d575ed64a87252f16d7d3eed7acc261c4d5e57dd41c8d30524110a4b6f",
     "deploy/online-shop/complete-runtime-v1.json": "sha256:97f3d3b3adf1b6334c727274d6bf4f1d969afdd0f01300796bb9bfc132d632c2",
     "deploy/online-shop/complete-skaffold.yaml": "sha256:088ae75361550b1911cd655b286c2da07f35f6dbc74c380beb7cbc34efcb7d3a",
-    "deploy/online-shop/complete-README.md": "sha256:ce0443821ec5f9c7cffd57bc4c19c76fffa881703b942cc3f3e238f4a6d46d33",
-    "scripts/tests/test_complete_shop.py": "sha256:eff8cdc9a58ee4d488d5605a877dcbdf1ea00bccc19ea4173f57e47ebd65aaa7",
+    "deploy/online-shop/complete-README.md": "sha256:0e42b8bb2e2428e9018e0e8e36f319020227cf45d5331ff8d0ae1268df442823",
+    "scripts/tests/test_complete_shop.py": "sha256:593525b187372a59470a613502559a156d32bd34214c705f09ae69d27d25ac49",
     "terraform/foundation/complete-shop.tf": "sha256:96c3cdadcf258605d0d946268b14314482842026ce0c018f645c25fdcee29e84",
     "cloudbuild/online-shop/redis.py": "sha256:d1687b1551e3b5a8fbdb603b30d98b303e2d69e4aacdb0ced0438688c21011d0",
     "cloudbuild/online-shop/redis-policy-v2.json": "sha256:8ad0587ef4fdd1298be088440f25a229edf15f5ce87caabf2de79335bdaf1925",
@@ -208,6 +208,11 @@
         "path": "deploy/online-shop/complete-validation.json"
       },
       "note": "The versioned file at this immutable revision preserves the complete implementation-review observations and historical limits."
+    },
+    "validation_before_telemetry_fixes": {
+      "configuration_revision": "a51f9e78ae286c0f557f881c1d14238a4ec16b4e",
+      "path": "deploy/online-shop/complete-validation.json",
+      "note": "Preserves previous local validation and live-operation counters; unsuccessful dev_acceptance_20261102 is also retained unchanged in this file."
     }
   },
   "redis_transition": {
@@ -890,5 +895,174 @@
     },
     "acceptance_status": "partial; full telemetry acceptance blocked; issue remains open for review",
     "private_evidence_directory": ".local-validation/issue100-dev-00e925e-20261102-0e0721a5"
-  }
+  },
+  "telemetry_fixes_review": {
+    "base_pr_head": "a51f9e78ae286c0f557f881c1d14238a4ec16b4e",
+    "existing_candidate_producing_revision": "00e925e724808ac80f1313fb85da1c6b3ec19f3f",
+    "deployment_revision": "new immutable merged-main SHA required after review",
+    "normalization": {
+      "components": [
+        "currencyservice",
+        "paymentservice"
+      ],
+      "counter_names": [
+        "online_shop.transport.requests",
+        "online_shop.transport.errors",
+        "online_shop.business.operations"
+      ],
+      "target_type": "INT64",
+      "eligible": "monotonic SUM, exact nonnegative integral DOUBLE in int64 range",
+      "preserved": [
+        "numeric values",
+        "existing INT64",
+        "attributes",
+        "exemplars",
+        "flags",
+        "timestamps",
+        "delta/cumulative temporality"
+      ],
+      "unmodified": [
+        "duration histograms",
+        "gauges",
+        "other metric names",
+        "other component pipelines",
+        "nonintegral/negative/out-of-range values"
+      ],
+      "descriptor_deletions": 0
+    },
+    "completion_events": {
+      "request.completed_components": [
+        "adservice",
+        "checkoutservice",
+        "currencyservice",
+        "frontend",
+        "paymentservice",
+        "productcatalogservice",
+        "shippingservice"
+      ],
+      "operation.completed_components": [
+        "cartservice",
+        "emailservice",
+        "recommendationservice"
+      ],
+      "requirements": "application category, exact component RPC operation, native trace/span correlation; own RPC_SERVER span or exact cart interceptor child with same-component RPC_SERVER parent",
+      "dependency_internal_events": "cannot satisfy component coverage",
+      "all_ten_required": true
+    },
+    "revision_review": {
+      "deployment": "all 23 executing trust files match reviewed canonical-main deployment SHA",
+      "producing": "canonical-main ancestor; 21 shared files identical",
+      "only_producing_comparison_exceptions": [
+        "deploy/online-shop/complete.py",
+        "deploy/online-shop/complete-acceptance.py"
+      ],
+      "candidate_identity_and_component_evidence": "remain bound to original producing SHA",
+      "prepare_preflight_acceptance_distinct_sha_cli_regressions": "passed; offline review/API fixtures",
+      "unmerged_or_incompatible_shared_trust": "rejected before cloud evidence/credentials"
+    },
+    "native_collector": {
+      "version": "0.164.0",
+      "upstream_archive": "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v0.164.0/otelcol-contrib_0.164.0_windows_amd64.tar.gz",
+      "archive_sha256": "1fb8163f9036126a1bdc59eab2d7aef4e6cda36f6c1e618f2359663cae8b0f4a",
+      "executable_sha256": "ff1e80bb935ccdd49fbcaf88f3229d9b83fbc8b7d79725608aee4a9b8aa2cc85",
+      "existing_binary_matches_pinned_archive": true
+    },
+    "native_otlp_round_trip": {
+      "status": "passed",
+      "transport": "local loopback OTLP/HTTP JSON to actual pinned Collector; native file exporter output",
+      "sum_datapoints": 192,
+      "normalized_datapoints": 24,
+      "unchanged_gauges": 6,
+      "unchanged_duration_histograms": 6,
+      "temporality": [
+        "delta",
+        "cumulative"
+      ],
+      "checks": [
+        "positive/error/zero counters",
+        "existing INT64 zero/large integers",
+        "fraction/negative/overflow preserved",
+        "metric description/unit",
+        "resource/scope/datapoint attributes",
+        "exemplars/flags/start/end timestamps",
+        "histogram buckets/bounds/count/sum/min/max"
+      ],
+      "cloud_exporter_calls": 0
+    },
+    "existing_release_offline_validation": {
+      "candidate_transport_sha256": "sha256:d7bdbc5d4e2f5cda5801281de2ecf08cbb599a6ea08d92c7dd1309c878fd21cc",
+      "release_set_id": "sha256:d3ddfc09ec0f0195d38fadfba8a2c31ce290b41bf4211ac4631a5b20039d3891",
+      "existing_candidate_local_validation": "passed",
+      "artifact_references_unchanged": true,
+      "shared_producing_trust_files_identical": 21,
+      "deployment_only_file_exceptions": [
+        "deploy/online-shop/complete.py",
+        "deploy/online-shop/complete-acceptance.py"
+      ],
+      "historical_log_classifier_replay": {
+        "matched_components": [
+          "adservice",
+          "cartservice",
+          "checkoutservice",
+          "currencyservice",
+          "emailservice",
+          "frontend",
+          "paymentservice",
+          "productcatalogservice",
+          "recommendationservice",
+          "shippingservice"
+        ],
+        "matched_entries": {
+          "cartservice": 14,
+          "frontend": 98,
+          "currencyservice": 48,
+          "adservice": 4,
+          "productcatalogservice": 10,
+          "recommendationservice": 7,
+          "shippingservice": 7,
+          "checkoutservice": 10,
+          "paymentservice": 1,
+          "emailservice": 1
+        },
+        "ignored_dependency_internal_entries": {
+          "cartservice": 16,
+          "currencyservice": 39,
+          "adservice": 4,
+          "frontend": 13,
+          "productcatalogservice": 10,
+          "recommendationservice": 14,
+          "shippingservice": 7,
+          "checkoutservice": 2,
+          "paymentservice": 1,
+          "emailservice": 1
+        }
+      },
+      "live_cloud_calls": 0,
+      "historical_telemetry_acceptance": "still failed; this offline classifier replay is not a new live signals acceptance"
+    },
+    "focused_tests": {
+      "count": 32,
+      "failures": 0,
+      "skips": 0
+    },
+    "full_regressions": {
+      "count": 229,
+      "failures": 0,
+      "skips": 1,
+      "skip_reason": "optional actual public registry/source byte fixture; pinned local AML/native Collector tests passed"
+    },
+    "historical_failed_acceptance_preserved": true,
+    "new_live_operations": {
+      "rollouts": 0,
+      "journeys": 0,
+      "builds": 0,
+      "signing": 0,
+      "infrastructure_apply": 0,
+      "iam_changes": 0,
+      "descriptor_deletions": 0
+    },
+    "new_live_signals_acceptance": "pending review/merge and separately authorized rollout/journey",
+    "private_evidence_directory": ".local-validation/issue100-telemetry-fixes-20261102-577f5b21"
+  },
+  "live_operations_scope": "telemetry fixes only; original live deployment is retained in dev_acceptance_20261102"
 }

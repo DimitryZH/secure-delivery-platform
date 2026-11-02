@@ -1,5 +1,6 @@
 """Full shop contract regressions; cloud/registry/signing fakes stay offline."""
 import copy
+from contextlib import contextmanager
 from datetime import datetime,timedelta,timezone
 import importlib.util
 import io
@@ -8,10 +9,13 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import socket
 import sys
 import tempfile
 import threading
+import time
 import unittest
+import urllib.request
 from unittest.mock import Mock,patch
 
 ROOT=Path(__file__).resolve().parents[2]
@@ -44,6 +48,86 @@ class CompleteTests(unittest.TestCase):
         for release in (c,w.c,a.c):
             gate=patch.object(release.redis,'verify_chain',side_effect=ValueError('redis_publication_chain_pending'))
             gate.start();self.addCleanup(gate.stop)
+
+    def signal_fixture(self):
+        stamp=datetime.now(timezone.utc).isoformat().replace('+00:00','Z');trace='a'*32
+        spans=[];logs=[];metrics=[]
+        operations={'cartservice':'/hipstershop.CartService/GetCart',
+                    'emailservice':'hipstershop.EmailService/SendOrderConfirmation',
+                    'recommendationservice':'hipstershop.RecommendationService/ListRecommendations'}
+        for i,row in enumerate(self.record['components']):
+            identity=row['id'];version=c.r.REVISION if identity in c.APPS else c.redis_policy()['redis_version']
+            labels={'service.name':identity,'service.version':version,'deployment.environment.name':'dev',
+                    'release_set_id':self.record['release_set_id'],'component_digest':row['digest']}
+            metrics.append({'metric':{'type':'workload.googleapis.com/'+('redis.commands' if identity=='redis-cart' else 'online_shop.transport.requests'),
+                'labels':{**{k.replace('.','_'):v for k,v in labels.items()},'kind':'server'}},
+                'points':[{'interval':{'endTime':stamp},'value':{'int64Value':'1'}}]})
+            if identity=='redis-cart':continue
+            span={'spanId':str(i+1),'parentSpanId':str(i) if i else '', 'labels':labels,'startTime':stamp}
+            body={'event':'request.completed','trace_id':trace,'span_id':format(i+1,'016x')}
+            if identity in operations:
+                body.update(event='operation.completed',category='application',operation=operations[identity])
+                span.update(kind='RPC_SERVER',name=operations[identity])
+                if identity=='cartservice':
+                    parent={**span,'spanId':str(1000+i),'name':operations[identity].removeprefix('/')}
+                    spans.append(parent);span.update(kind='SPAN_KIND_UNSPECIFIED',name='cart.GetCart',parentSpanId=parent['spanId'])
+            spans.append(span)
+            logs.append({'labels':labels,'spanId':body['span_id'],'trace':'projects/'+c.r.policy()['project']+'/traces/'+trace,
+                'timestamp':stamp,'logName':'projects/'+c.r.policy()['project']+'/logs/online-shop%2Fcatalog',
+                'resource':{'type':'k8s_container','labels':{'namespace_name':'dev'}},'jsonPayload':body})
+        return stamp,{'trace':{'traceId':trace,'spans':spans},'logs':{'entries':logs},'metrics':{'timeSeries':metrics},
+                      'original_stdout_duplicate_entries':0,'sink_review_no_duplicates':True}
+
+    def runtime_fixture(self,revision):
+        docs=w.render(self.record,revision,self.refs);pods=[]
+        for d in docs:
+            d['metadata']['generation']=1
+            if d['kind'] not in ('Deployment','DaemonSet'):continue
+            pod=copy.deepcopy(d['spec']['template']);pod['metadata'].update(name=d['metadata']['name']+'-fixture',namespace='dev')
+            pod['spec']['nodeName']='node';container=pod['spec']['containers'][0]
+            pod['status']={'phase':'Running','conditions':[{'type':'Ready','status':'True'}],
+                'containerStatuses':[{'name':container['name'],'imageID':container['image'],'ready':True}]};pods.append(pod)
+            if d['kind']=='Deployment':d['status']={'observedGeneration':1,'replicas':1,'updatedReplicas':1,'readyReplicas':1,'availableReplicas':1}
+            else:d['status']={'observedGeneration':1,'desiredNumberScheduled':1,'updatedNumberScheduled':1,'numberReady':1,'numberAvailable':1}
+        return {'pods':{'items':pods},'deployments':{'items':[d for d in docs if d['kind']=='Deployment']},
+                'daemonsets':{'items':[d for d in docs if d['kind']=='DaemonSet']}}
+
+    def preflight_fixture(self,revision):
+        now=datetime.now(timezone.utc);stamp=now.isoformat().replace('+00:00','Z')
+        snapshot={'request':{'release_set_id':self.record['release_set_id'],'deployment_revision':revision,'target':'dev','action':'deploy','clouddeploy_release':RESOURCE}}
+        sections={'release':['independently_verified','all_eleven_signatures_verified','redis_provenance_approved','collector_independently_verified'],
+            'admission':['cluster_enforced','exact_attestor_required','no_bypass'],
+            'target':['snapshot_matches_current','capacity_bin_packing_passed','metadata_and_wif_ready','all_stdout_exclusions_ready','no_duplicate_sinks','no_rollout_conflict','sample_baseline_preserved'],
+            'caller':['rollout_create','deployment_act_as'],'review':['continue']}
+        binding={'observed_at':stamp,'evidence_ref':'private-readback','release_set_id':self.record['release_set_id'],'deployment_revision':revision}
+        for section,flags in sections.items():snapshot[section]={**binding,**{key:True for key in flags}}
+        snapshot['clouddeploy']={**binding,**CONTEXT,'release_snapshot_matches_current':True}
+        snapshot['rendered_documents']=w.rendered(self.record,revision,self.refs,CONTEXT)
+        snapshot['release_annotations']={'rendered_inventory_sha256':c.r.sha(c.r.canonical(snapshot['rendered_documents'])),'source_sha256':'a'*64}
+        snapshot['artifacts']={key:{**binding,'uri':'gs://'+c.r.policy()['project']+'-clouddeploy/'+key+'#12',
+            'retention_expires_at':(now+timedelta(hours=2)).isoformat().replace('+00:00','Z'),'available':True,'live_generation':True,
+            'actual_sha256':'a'*64,'expected_sha256':'a'*64} for key in ('source','rendered','resolved_skaffold')}
+        return now,snapshot
+
+    @contextmanager
+    def producer_sources(self,release,bad_file=None,unmerged=False):
+        calls=[]
+        class Source:
+            def git(inner,*args):
+                calls.append(args)
+                if args[0]=='merge-base' and unmerged:raise subprocess.CalledProcessError(1,args)
+                return b''
+            def blob(inner,name):
+                if name in w.DEPLOYMENT_CODE:raise AssertionError('producer must not require old deployment executables')
+                raw=(ROOT/name).read_bytes().replace(b'\r\n',b'\n')
+                return raw+b'changed' if name==bad_file else raw
+        @contextmanager
+        def fetched(repository,revision):
+            if repository==release.r.SDP:
+                self.assertEqual(revision,REV);yield Source()
+            else:
+                self.assertEqual((repository,revision),(release.r.AML,release.r.REVISION));yield Mock()
+        with patch.object(release.r,'fetched',side_effect=fetched):yield calls
 
     def build(self,identity):
         row=next(x for x in self.record['components'] if x['id']==identity)
@@ -340,20 +424,7 @@ class CompleteTests(unittest.TestCase):
             with self.subTest(kwargs=kwargs),self.assertRaises(ValueError):run(**kwargs)
 
     def test_full_preflight_positive_fixture_and_security_failures(self):
-        now=datetime.now(timezone.utc);stamp=now.isoformat().replace("+00:00","Z")
-        snapshot={'request':{'release_set_id':self.record['release_set_id'],'deployment_revision':REV,'target':'dev','action':'deploy','clouddeploy_release':RESOURCE}}
-        sections={'release':['independently_verified','all_eleven_signatures_verified','redis_provenance_approved','collector_independently_verified'],
-            'admission':['cluster_enforced','exact_attestor_required','no_bypass'],
-            'target':['snapshot_matches_current','capacity_bin_packing_passed','metadata_and_wif_ready','all_stdout_exclusions_ready','no_duplicate_sinks','no_rollout_conflict','sample_baseline_preserved'],
-            'caller':['rollout_create','deployment_act_as'],'review':['continue']}
-        binding={'observed_at':stamp,'evidence_ref':'private-readback','release_set_id':self.record['release_set_id'],'deployment_revision':REV}
-        for section,flags in sections.items():snapshot[section]={**binding,**{key:True for key in flags}}
-        snapshot['clouddeploy']={**binding,**CONTEXT,'release_snapshot_matches_current':True}
-        snapshot['rendered_documents']=w.rendered(self.record,REV,self.refs,CONTEXT)
-        snapshot['release_annotations']={'rendered_inventory_sha256':c.r.sha(c.r.canonical(snapshot['rendered_documents'])),'source_sha256':'a'*64}
-        snapshot['artifacts']={key:{**binding,'uri':'gs://'+c.r.policy()['project']+'-clouddeploy/'+key+'#12',
-            'retention_expires_at':(now+timedelta(hours=2)).isoformat().replace("+00:00","Z"),'available':True,'live_generation':True,
-            'actual_sha256':'a'*64,'expected_sha256':'a'*64} for key in ('source','rendered','resolved_skaffold')}
+        now,snapshot=self.preflight_fixture(REV);stamp=now.isoformat().replace('+00:00','Z')
         snapshot['release']['redis_provenance_approved']=False
         self.assertEqual(w.evaluate(snapshot,self.record,REV,self.refs,RESOURCE,now)['decision'],'BLOCKED')
         snapshot['release']['redis_provenance_approved']=True
@@ -366,6 +437,76 @@ class CompleteTests(unittest.TestCase):
                 lambda s:s['release_annotations'].update(rendered_inventory_sha256='b'*64)):
                 altered=copy.deepcopy(snapshot);mutate(altered)
                 self.assertEqual(w.evaluate(altered,self.record,REV,self.refs,RESOURCE,now)['decision'],'BLOCKED')
+
+    def test_reused_producer_requires_main_ancestry_and_all_shared_trust_bytes(self):
+        deployment='e'*40
+        with patch.object(w.c,'reviewed') as current,self.producer_sources(w.c) as calls:
+            w.reviewed(self.record,deployment);current.assert_called_once_with(deployment)
+            self.assertIn(('merge-base','--is-ancestor',REV,'FETCH_HEAD'),calls)
+        with patch.object(w.c,'reviewed'),self.producer_sources(w.c,unmerged=True):
+            with self.assertRaises(subprocess.CalledProcessError):w.reviewed(self.record,deployment)
+        for name in set(w.c.TRUST_FILES)-set(w.DEPLOYMENT_CODE):
+            with self.subTest(file=name),patch.object(w.c,'reviewed'),self.producer_sources(w.c,bad_file=name):
+                with self.assertRaisesRegex(ValueError,'incompatible_producing_trust_files'):w.reviewed(self.record,deployment)
+        with patch.object(w.c,'reviewed',side_effect=ValueError('unreviewed_complete_files')),patch.object(w.c.r,'fetched') as source:
+            with self.assertRaisesRegex(ValueError,'unreviewed'):w.reviewed(self.record,deployment)
+            source.assert_not_called()
+        with patch.object(w.c,'reviewed') as current,patch.object(w.c.r,'fetched') as source:
+            w.reviewed(self.record,REV);current.assert_called_once_with(REV);source.assert_not_called()
+
+    def test_prepare_and_preflight_cli_reuse_original_candidate_with_new_deployment(self):
+        deployment='e'*40;original=c.r.canonical(self.record)
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);candidate=root/'candidate.json';candidate.write_bytes(original)
+            _,snapshot=self.preflight_fixture(deployment);snapshot_path=root/'snapshot.json';snapshot_path.write_text(json.dumps(snapshot))
+            for action in ('prepare','preflight'):
+                args=['complete.py',action,'--candidate',str(candidate),'--deployment-revision',deployment,
+                      '--clouddeploy-release',RESOURCE,'--output-dir',str(root/'bundle'),'--snapshot',str(snapshot_path)]
+                with self.subTest(action=action),patch.object(sys,'argv',args),patch('sys.stdout',new_callable=io.StringIO) as stdout,\
+                     patch.object(w.c,'reviewed') as reviewed,self.producer_sources(w.c),\
+                     patch.object(w.c,'plans',return_value=self.plans),patch.object(w.c,'references',return_value=self.refs),\
+                     patch.object(w.c,'verify',return_value={'status':'passed'}) as verify,\
+                     patch.object(w.c,'attest',return_value={'status':'trusted'}) as attest,\
+                     patch.object(w.legacy,'verify_support'),patch.object(w.c.r,'Cloud'),patch.object(w.c,'redis_admission'):
+                    self.assertEqual(w.main(),0,stdout.getvalue())
+                    self.assertTrue(all(x.args==(deployment,) for x in reviewed.call_args_list))
+                    self.assertEqual(verify.call_args.args[1],REV)
+                    if action=='prepare':self.assertTrue(attest.call_args.kwargs['inspect'])
+                    else:self.assertEqual(json.loads(stdout.getvalue())['decision'],'READY')
+                with patch.object(sys,'argv',args),patch('sys.stdout',new_callable=io.StringIO),\
+                     patch.object(w.c,'reviewed',side_effect=ValueError('unreviewed deployment')),patch.object(w.c.r,'Cloud') as cloud:
+                    self.assertEqual(w.main(),3);cloud.assert_not_called()
+            self.assertEqual(candidate.read_bytes(),original)
+            bundle=json.loads((root/'bundle/rendered/dev/shop.json').read_text())['items']
+            for d in bundle:
+                if d['kind']=='Deployment':self.assertEqual(d['spec']['template']['metadata']['annotations']['release.secure-delivery.dev/deployment-configuration'],deployment)
+
+    def test_acceptance_cli_reviews_deployment_and_verifies_original_producer(self):
+        deployment='e'*40;stamp,signals=self.signal_fixture()
+        outcomes=[{'id':r['id'],'artifact':r['repository']+'@'+r['digest']} for r in self.record['components']]
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);candidate=root/'candidate.json';candidate.write_text(json.dumps(self.record));snapshot=root/'snapshot.json'
+            for action in ('runtime','signals','journey','capacity'):
+                snapshot.write_text(json.dumps(signals if action=='signals' else self.runtime_fixture(deployment)))
+                args=['acceptance',action,'--candidate',str(candidate),'--configuration-revision',REV,'--deployment-revision',deployment,
+                      '--snapshot',str(snapshot),'--since',stamp,'--frontend','http://127.0.0.1:8080','--output-dir',str(root/'journey')]
+                with self.subTest(action=action),patch.object(sys,'argv',args),patch('sys.stdout',new_callable=io.StringIO) as stdout,\
+                     patch.object(a.c,'reviewed') as reviewed,self.producer_sources(a.c),\
+                     patch.object(a.c,'plans',return_value=self.plans),patch.object(a.c,'references',return_value=self.refs),\
+                     patch.object(a.c,'verify',return_value={'status':'passed','components':outcomes}) as verify,\
+                     patch.object(a.c,'existing_occurrences',return_value={r['artifact']:['existing'] for r in outcomes}),\
+                     patch.object(a.w.legacy,'verify_support'),patch.object(a.c.r,'Cloud'),\
+                     patch.object(a,'journey',return_value={'journey':'passed'}),patch.object(a.w,'capacity',return_value={'capacity_ready':True}):
+                    self.assertEqual(a.main(),0,stdout.getvalue());reviewed.assert_called_once_with(deployment)
+                    if action!='capacity':self.assertEqual(verify.call_args.args[1],REV)
+                with patch.object(sys,'argv',args),patch('sys.stdout',new_callable=io.StringIO),\
+                     patch.object(a.c,'reviewed',side_effect=ValueError('unreviewed deployment')),patch.object(a.c.r,'Cloud') as cloud:
+                    self.assertEqual(a.main(),3);cloud.assert_not_called()
+                wrong=args.copy();wrong[wrong.index('--configuration-revision')+1]=deployment
+                with patch.object(sys,'argv',wrong),patch('sys.stdout',new_callable=io.StringIO),\
+                     patch.object(a.w,'reviewed'),patch.object(a.c.r,'fetched'),\
+                     patch.object(a.c,'plans',return_value=self.plans),patch.object(a.c,'references',return_value=self.refs),patch.object(a.c.r,'Cloud') as cloud:
+                    self.assertEqual(a.main(),3);cloud.assert_not_called()
 
     def test_runtime_positive_and_coherent_tamper_guard(self):
         docs=w.render(self.record,REV,self.refs);pods=[]
@@ -395,26 +536,45 @@ class CompleteTests(unittest.TestCase):
             with self.assertRaises(ValueError):a.signals({},altered,'not-a-time',self.plans,self.refs,Mock())
 
     def test_signals_positive_full_component_and_missing_or_wrong_attribution(self):
-        now=datetime.now(timezone.utc);stamp=now.isoformat().replace("+00:00","Z");trace='a'*32;spans=[];logs=[];metrics=[]
-        for i,row in enumerate(self.record['components']):
-            identity=row['id'];version=c.r.REVISION if identity in c.APPS else c.redis_policy()['redis_version']
-            labels={'service.name':identity,'service.version':version,'deployment.environment.name':'dev','release_set_id':self.record['release_set_id'],'component_digest':row['digest']}
-            metric_labels={k.replace('.','_'):v for k,v in labels.items()}
-            metrics.append({'metric':{'type':'workload.googleapis.com/'+('redis.commands' if identity=='redis-cart' else 'online_shop.transport.requests'),'labels':{**metric_labels,'kind':'server'}},
-                'points':[{'interval':{'endTime':stamp},'value':{'int64Value':'1'}}]})
-            if identity=='redis-cart':continue
-            spans.append({'spanId':str(i+1),'parentSpanId':str(i) if i else '', 'labels':labels,'startTime':stamp})
-            sid=format(i+1,'016x')
-            logs.append({'labels':labels,'spanId':sid,'trace':'projects/'+c.r.policy()['project']+'/traces/'+trace,'timestamp':stamp,
-                'logName':'projects/'+c.r.policy()['project']+'/logs/online-shop%2Fcatalog','resource':{'type':'k8s_container','labels':{'namespace_name':'dev'}},
-                'jsonPayload':{'event':'request.completed','trace_id':trace,'span_id':sid}})
-        snapshot={'trace':{'traceId':trace,'spans':spans},'logs':{'entries':logs},'metrics':{'timeSeries':metrics},'original_stdout_duplicate_entries':0,'sink_review_no_duplicates':True}
+        stamp,snapshot=self.signal_fixture()
         with patch.object(a,'guard'):
             self.assertEqual(a.signals(snapshot,self.record,stamp,self.plans,self.refs,Mock())['signals'],'passed')
             for mutate in (lambda s:s['trace']['spans'].pop(),lambda s:s['logs']['entries'][0]['labels'].update(component_digest='sha256:'+'0'*64),
                            lambda s:s.update(original_stdout_duplicate_entries=1),lambda s:s['metrics']['timeSeries'].pop()):
                 altered=copy.deepcopy(snapshot);mutate(altered)
                 with self.assertRaises(ValueError):a.signals(altered,self.record,stamp,self.plans,self.refs,Mock())
+
+    def test_operation_completion_requires_component_server_not_dependency_or_internal(self):
+        stamp,snapshot=self.signal_fixture()
+        with patch.object(a,'guard'):
+            for identity in a.RPC_COMPLETIONS:
+                index=next(i for i,x in enumerate(snapshot['logs']['entries']) if x['labels']['service.name']==identity)
+                for mutate in (
+                    lambda e:e['jsonPayload'].update(category='dependency'),
+                    lambda e:e['jsonPayload'].update(category='internal'),
+                    lambda e:e['jsonPayload'].update(operation=identity+'.business'),
+                    lambda e:e['jsonPayload'].update(operation='hipstershop.ProductCatalogService/ListProducts'),
+                    lambda e:e['jsonPayload'].update(event='request.completed'),
+                    lambda e:e.update(spanId='0'*16),
+                    lambda e:e.update(trace='projects/wrong/traces/'+'a'*32),
+                    lambda e:e['jsonPayload'].update(trace_id='b'*32),
+                    lambda e:e['jsonPayload'].update(span_id='0'*16),
+                    lambda e:e['labels'].update(component_digest='sha256:'+'0'*64)):
+                    altered=copy.deepcopy(snapshot);mutate(altered['logs']['entries'][index])
+                    with self.subTest(identity=identity,mutation=mutate),self.assertRaises(ValueError):
+                        a.signals(altered,self.record,stamp,self.plans,self.refs,Mock())
+                # Same operation/category is not enough without the native SERVER
+                # span (or cart's exact interceptor child and SERVER parent).
+                altered=copy.deepcopy(snapshot);entry=altered['logs']['entries'][index]
+                span=next(x for x in altered['trace']['spans'] if format(int(x['spanId']),'016x')==entry['spanId'])
+                if identity=='cartservice':span=next(x for x in altered['trace']['spans'] if x['spanId']==span['parentSpanId'])
+                span['kind']='RPC_CLIENT'
+                with self.assertRaises(ValueError):a.signals(altered,self.record,stamp,self.plans,self.refs,Mock())
+            # Unrelated internal/dependency events are ignored, not accepted as
+            # completion and not allowed to replace any required component.
+            extra=copy.deepcopy(snapshot['logs']['entries'][2]);extra['jsonPayload'].update(event='operation.completed',category='dependency',operation='cache.read')
+            snapshot['logs']['entries'].append(extra)
+            self.assertEqual(a.signals(snapshot,self.record,stamp,self.plans,self.refs,Mock())['signals'],'passed')
 
     def test_bounded_local_shopping_journey_and_external_redirect_denied(self):
         class Handler(http.server.BaseHTTPRequestHandler):
@@ -455,6 +615,105 @@ class CompleteTests(unittest.TestCase):
                 c.materialize(source,identity,c.r.fingerprint(value[identity]),Path(tmp)/identity)
                 self.assertTrue((Path(tmp)/identity/'Dockerfile').is_file())
             with self.assertRaises(ValueError):c.materialize(source,'cartservice','sha256:'+'0'*64,Path(tmp)/'bad')
+
+    @unittest.skipUnless(os.environ.get('SDP_COLLECTOR_EXECUTABLE'),'native Collector optional validation')
+    def test_native_otlp_counter_conversion_preserves_data_and_leaves_histograms(self):
+        executable=os.environ['SDP_COLLECTOR_EXECUTABLE']
+        version=subprocess.run([executable,'--version'],capture_output=True,check=True)
+        self.assertIn(c.legacy.policy()['collector']['version'],(version.stdout+version.stderr).decode())
+        config=w.collector_config(self.record)
+        self.assertEqual([k for k,v in config['service']['pipelines'].items() if 'transform/integer_counters' in v['processors']],
+                         ['metrics/currencyservice','metrics/paymentservice'])
+        resources=[];expected={}
+        counter_names=('online_shop.transport.requests','online_shop.transport.errors','online_shop.business.operations')
+        for identity in ('currencyservice','paymentservice','adservice'):
+            scopes=[]
+            for temporality in (1,2):
+                metrics=[]
+                for name in (*counter_names,'unrelated.counter'):
+                    points=[]
+                    cases={'positive':('asDouble',7.0),'zero':('asDouble',0.0),'fraction':('asDouble',1.25),
+                           'negative':('asDouble',-1.0),'overflow':('asDouble',float(2**63)),
+                           'already_int':('asInt','23'),'int_zero':('asInt','0'),'large_int':('asInt',str(2**63-1))}
+                    for case,(kind,value) in cases.items():
+                        point={'attributes':[{'key':'case','value':{'stringValue':case}},{'key':'outcome','value':{'stringValue':'error' if name.endswith('errors') else 'ok'}}],
+                            'startTimeUnixNano':'1000000000','timeUnixNano':'2000000000','flags':1,kind:value,
+                            'exemplars':[{'filteredAttributes':[{'key':'sample','value':{'stringValue':'retained'}}],
+                                'timeUnixNano':'1500000000','asDouble':1.0}]}
+                        points.append(point);want=copy.deepcopy(point)
+                        if identity!='adservice' and name in counter_names and case in ('positive','zero'):
+                            want.pop('asDouble');want['asInt']=str(int(value))
+                        expected[(identity,str(temporality),name,case)]=want
+                    metrics.append({'name':name,'description':'Preserve this description','unit':'{request}',
+                        'sum':{'aggregationTemporality':temporality,'isMonotonic':True,'dataPoints':points}})
+                # Neither a gauge with a counter name nor duration histograms
+                # may change representation, buckets, sum, bounds or temporality.
+                metrics += [{'name':'online_shop.transport.errors','gauge':{'dataPoints':[{
+                    'attributes':[{'key':'case','value':{'stringValue':'gauge'}}],'asDouble':2.5,'timeUnixNano':'2000000000'}]}},
+                    {'name':'online_shop.transport.duration','unit':'s','histogram':{'aggregationTemporality':temporality,'dataPoints':[{
+                        'startTimeUnixNano':'1000000000','timeUnixNano':'2000000000','count':'2','sum':1.25,
+                        'bucketCounts':['1','1'],'explicitBounds':[0.5],'min':0.25,'max':1.0}]}}]
+                scopes.append({'scope':{'name':str(temporality),'version':'test','attributes':[{'key':'scope','value':{'stringValue':'preserved'}}]},'metrics':metrics})
+            resources.append({'resource':{'attributes':[{'key':k,'value':{'stringValue':v}} for k,v in {
+                'service.name':identity,'service.version':c.r.REVISION,'deployment.environment.name':'dev','custom.resource':'preserved'}.items()]},'scopeMetrics':scopes})
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);port_socket=socket.socket();port_socket.bind(('127.0.0.1',0));port=port_socket.getsockname()[1];port_socket.close()
+            output=root/'output.jsonl'
+            native={'receivers':{'otlp':{'protocols':{'http':{'endpoint':'127.0.0.1:'+str(port)}}}},
+                'processors':{k:v for k,v in config['processors'].items() if k.startswith(('filter/','resource/','transform/'))},
+                'exporters':{'file':{'path':str(output)}},'service':{'telemetry':{'metrics':{'level':'none','readers':[]}},'pipelines':{}}}
+            for identity in ('currencyservice','paymentservice','adservice'):
+                pipeline=copy.deepcopy(config['service']['pipelines']['metrics/'+identity])
+                pipeline['processors']=[x for x in pipeline['processors'] if x not in ('memory_limiter','batch')];pipeline['exporters']=['file']
+                native['service']['pipelines']['metrics/'+identity]=pipeline
+            path=root/'config.json';path.write_text(json.dumps(native),encoding='utf-8')
+            with (root/'collector.log').open('wb') as log:
+                child=subprocess.Popen([executable,'--config='+str(path)],stdout=log,stderr=log)
+                try:
+                    deadline=time.monotonic()+15
+                    while True:
+                        self.assertIsNone(child.poll(),(root/'collector.log').read_text(errors='replace'))
+                        try:
+                            with socket.create_connection(('127.0.0.1',port),timeout=0.2):break
+                        except OSError:
+                            self.assertLess(time.monotonic(),deadline);time.sleep(0.1)
+                    request=urllib.request.Request('http://127.0.0.1:'+str(port)+'/v1/metrics',data=json.dumps({'resourceMetrics':resources}).encode(),headers={'Content-Type':'application/json'})
+                    with urllib.request.urlopen(request,timeout=10) as response:self.assertEqual(response.status,200)
+                    observed={};histograms={};gauges={}
+                    while time.monotonic()<deadline:
+                        observed.clear();histograms.clear();gauges.clear()
+                        for line in output.read_text().splitlines() if output.exists() else []:
+                            for rm in json.loads(line)['resourceMetrics']:
+                                attrs={x['key']:x['value']['stringValue'] for x in rm['resource']['attributes']}
+                                identity=attrs['service.name'];self.assertEqual(attrs['custom.resource'],'preserved')
+                                for sm in rm['scopeMetrics']:
+                                    scope=sm['scope'];self.assertEqual(scope['attributes'],[{'key':'scope','value':{'stringValue':'preserved'}}])
+                                    for metric in sm['metrics']:
+                                        key=(identity,scope['name'],metric['name'])
+                                        if 'histogram' in metric:histograms[key]=metric['histogram'];continue
+                                        if 'gauge' in metric:gauges[key]=metric['gauge'];continue
+                                        data=metric['sum'];self.assertEqual(data['aggregationTemporality'],int(scope['name']));self.assertTrue(data['isMonotonic'])
+                                        self.assertEqual((metric['description'],metric['unit']),('Preserve this description','{request}'))
+                                        for point in data['dataPoints']:
+                                            # OTLP's asDouble is IEEE754 even when its
+                                            # JSON spelling is an integer literal.
+                                            if 'asDouble' in point:point['asDouble']=float(point['asDouble'])
+                                            case=next(x['value']['stringValue'] for x in point['attributes'] if x['key']=='case');observed[(*key,case)]=point
+                        if len(observed)==len(expected):break
+                        time.sleep(0.1)
+                    self.assertEqual(set(observed),set(expected))
+                    for key in expected:self.assertEqual(observed[key],expected[key],str(key))
+                    for rm in resources:
+                        identity=rm['resource']['attributes'][0]['value']['stringValue']
+                        for sm in rm['scopeMetrics']:
+                            for metric in sm['metrics']:
+                                key=(identity,sm['scope']['name'],metric['name'])
+                                if 'histogram' in metric:self.assertEqual(histograms[key],metric['histogram'])
+                                if 'gauge' in metric:self.assertEqual(gauges[key],metric['gauge'])
+                finally:
+                    child.terminate()
+                    try:child.wait(timeout=10)
+                    except subprocess.TimeoutExpired:child.kill();child.wait(timeout=5)
 
     @unittest.skipUnless(os.environ.get('SDP_COLLECTOR_EXECUTABLE'),'native Collector optional validation')
     def test_real_collector_full_configuration_validates(self):
