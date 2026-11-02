@@ -1,13 +1,13 @@
 {
   "version": 1,
   "issue": 100,
-  "phase": "implementation_review_only",
+  "phase": "live_dev_acceptance_partial",
   "observed_date": "2026-11-02",
-  "base_configuration_revision": "8d4548c7359ec4dc2698f647319e7d5c812577ff",
+  "base_configuration_revision": "00e925e724808ac80f1313fb85da1c6b3ec19f3f",
   "aml_revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
   "profile": "complete-shop-v1",
   "candidate_version": 2,
-  "implementation_status": "unmerged; no complete release accepted",
+  "implementation_status": "merged; trusted full release deployed in dev; telemetry acceptance blocked",
   "membership": {
     "application_services": [
       "adservice",
@@ -44,283 +44,61 @@
     "catalog_manifest_digest": "sha256:03b4d18587152a9c28a6aba743edbfffc6762234189c885a1b2e535ce4a81ee2"
   },
   "read_only_prerequisites": {
-    "accepted_artifacts": {
-      "accepted_catalog": {
-        "verification": "passed"
-      },
-      "trusted_collector": {
-        "verification": "passed"
-      }
-    },
+    "observed_at": "2026-11-02T19:08:57.935513Z",
+    "status": "passed before one authorized dev rollout",
+    "project": "sre-platform-staging-507220",
+    "project_number": "465837787797",
+    "region": "us-central1",
     "capacity": {
-      "snapshot_observed_at": "2026-11-01T15:09:44.573672+00:00",
-      "candidate_images": "synthetic offline placeholders; only resource requests used",
-      "actual_single_node": {
-        "capacity_ready": false,
-        "unscheduled_budget_items": 24,
-        "unassigned_pods": 0,
-        "node_count": 1,
-        "application_overlap_replicas": 2,
-        "redis_overlap_replicas": 1,
-        "collector_per_node": 1,
-        "remaining_bins": [
-          {
-            "cpu_m": 69.0,
-            "memory_mi": 3336.5323486328125,
-            "slots": 87
-          }
-        ]
-      },
-      "proposed_two_node_estimate": {
-        "capacity_ready": true,
-        "unscheduled_budget_items": 0,
-        "unassigned_pods": 0,
-        "node_count": 2,
-        "application_overlap_replicas": 2,
-        "redis_overlap_replicas": 1,
-        "collector_per_node": 1,
-        "remaining_bins": [
-          {
-            "cpu_m": 69.0,
-            "memory_mi": 3336.5323486328125,
-            "slots": 87
-          },
-          {
-            "cpu_m": 230.0,
-            "memory_mi": 7044.0,
-            "slots": 87
-          }
-        ]
-      },
-      "estimate_not_live_capacity": true,
-      "proposed_node_allocatable_assumptions": {
-        "cpu_m": 3800,
-        "memory_mi": 11000,
-        "system_cpu_m": 600,
-        "system_memory_mi": 1024
-      },
-      "live_before_rollout_required": true
-    },
-    "regional_quotas": {
-      "region": "us-central1",
-      "quotas": [
+      "capacity_ready": true,
+      "unscheduled_budget_items": 0,
+      "unassigned_pods": 0,
+      "node_count": 2,
+      "application_overlap_replicas": 2,
+      "redis_overlap_replicas": 1,
+      "collector_per_node": 1,
+      "remaining_bins": [
         {
-          "metric": "CPUS",
-          "limit": 200,
-          "usage": 2
+          "cpu_m": 21.0,
+          "memory_mi": 8922.800537109375,
+          "slots": 79
         },
         {
-          "metric": "DISKS_TOTAL_GB",
-          "limit": 3277,
-          "usage": 0
-        },
-        {
-          "metric": "IN_USE_ADDRESSES",
-          "limit": 8,
-          "usage": 1
-        },
-        {
-          "metric": "E2_CPUS",
-          "limit": 24,
-          "usage": 0
+          "cpu_m": 329.0,
+          "memory_mi": 3865.5323486328125,
+          "slots": 86
         }
       ]
     },
-    "project": "sre-platform-staging-507220",
-    "project_number": "465837787797",
-    "project_mapping_independently_read": true,
-    "region": "us-central1",
-    "cluster": "secure-delivery-platform",
-    "cluster_status": "RUNNING",
-    "node_metadata": "GKE_METADATA",
-    "workload_pool": "sre-platform-staging-507220.svc.id.goog",
-    "sample_service_dev_stage_prod": "Ready/Available; health readback ok",
-    "existing_permissions": {
-      "read_only": true,
-      "checks": {
-        "builder_writer_logging_builder_grants": true,
-        "signer_evidence_occurrence_logging_grants": true,
-        "build_evidence_custom_role_exact": true,
-        "signer_repository_scoped_reader": true,
-        "signer_key_binding": true,
-        "key_version_enabled": true,
-        "signer_candidate_bucket_reader": true,
-        "candidate_bucket_protected": true,
-        "producer_account_enabled": true,
-        "signer_account_enabled": true
-      },
-      "all_checked_passed": true,
-      "effective_authorization_not_claimed": true,
-      "no_grants_changed": true
-    },
-    "scope": "Account/capacity/quota/artifact readbacks below are historical initial-profile observations; not refreshed during this dependency-only change.",
-    "redis_source": {
-      "build_invocation": "yfknsyfxvj00lki3zrdos7mff",
-      "config_digest": "sha256:98c6ca8f397f86e469be752c3e7ed5eb8b17f2479840cb69a2e413037038e9f4",
-      "index_digest": "sha256:8da19c7399dca900c6822a1cf30f9d2285585e2c4b457ff4095b0f4500054d3f",
-      "layers_verified": 7,
-      "manifest_digest": "sha256:1cf73a2f04808e55a8bd2f5706c2aa0ebb0f71938f93deb7af79f48311cd5cb9",
-      "platform": "linux/amd64",
-      "publisher_signature_verified": false,
-      "source_association": "verified",
-      "status": "official_source_content_verified",
-      "trust_basis": "Docker Official Images metadata and digest-pinned Docker Hub library/redis publication; index-bound unsigned BuildKit provenance, not a verified publisher signature"
-    },
-    "dependency_main_check": {
-      "status": "blocked_as_expected",
-      "reason": "dependency_contract_commit_not_on_canonical_main",
-      "mirror_or_signing_calls": 0
-    }
+    "sample_all_ready_http200": true,
+    "required_policy_permissions_and_logging_review": "passed"
   },
   "terraform": {
-    "fmt_check": "passed",
-    "validate": "passed",
-    "normal_full_plan": true,
-    "refresh": true,
-    "locking": true,
-    "targeted": false,
-    "backend": {
-      "matches_existing_configuration": true,
-      "prefix": "secure-delivery-platform/foundation",
-      "type": "gcs"
+    "configuration_revision": "00e925e724808ac80f1313fb85da1c6b3ec19f3f",
+    "apply_summary": {
+      "add": 2,
+      "change": 0,
+      "import": 0,
+      "remove": 0,
+      "operation": "apply"
     },
-    "workspace": "default",
-    "private_input_source": "verified existing state/live binding; process-scoped; value not published",
-    "private_input_restored": true,
-    "summary": {
-      "create": 2,
-      "delete": 0,
-      "read": 0,
-      "replace": 0,
-      "update": 0
+    "saved_plan_sha256": "8d30f7bf5e05e7e21fc2a8257f43fd93186020b68d051adf48cf68be63f89bd2",
+    "readback_checks": {
+      "new_pool_running": true,
+      "two_nodes_ready": true,
+      "operations_complete": true,
+      "per_node_collector_coverage": true,
+      "collector_config_consistent": true,
+      "scoped_exclusion_matches_plan": true,
+      "catalog_ready": true,
+      "samples_ready": true,
+      "full_rollout_capacity": true,
+      "catalog_exclusion_unchanged": true,
+      "managed_daemonsets_ready_available": true,
+      "existing_critical_pod_uids_preserved": true
     },
-    "imports": [],
-    "changes": [
-      {
-        "actions": [
-          "create"
-        ],
-        "address": "google_container_node_pool.complete_shop"
-      },
-      {
-        "actions": [
-          "create"
-        ],
-        "address": "google_logging_project_exclusion.complete_shop_stdout"
-      }
-    ],
-    "refresh_only_drift": [
-      {
-        "address": "google_artifact_registry_repository.release_images",
-        "changed_paths": [
-          ".update_time"
-        ]
-      },
-      {
-        "address": "google_clouddeploy_delivery_pipeline.catalog_dev",
-        "changed_paths": [
-          ".annotations",
-          ".labels"
-        ]
-      },
-      {
-        "address": "google_container_cluster.platform",
-        "changed_paths": [
-          ".node_config[0].workload_metadata_config",
-          ".node_pool[0].node_config[0].workload_metadata_config"
-        ]
-      },
-      {
-        "address": "google_project_iam_member.attestation_build_evidence_reader",
-        "changed_paths": [
-          ".etag"
-        ]
-      },
-      {
-        "address": "google_project_iam_member.attestation_log_writer",
-        "changed_paths": [
-          ".etag"
-        ]
-      },
-      {
-        "address": "google_project_iam_member.attestation_occurrences",
-        "changed_paths": [
-          ".etag"
-        ]
-      },
-      {
-        "address": "google_project_iam_member.build_artifact_registry_writer",
-        "changed_paths": [
-          ".etag"
-        ]
-      },
-      {
-        "address": "google_project_iam_member.build_cloud_build_builder",
-        "changed_paths": [
-          ".etag"
-        ]
-      },
-      {
-        "address": "google_project_iam_member.build_log_writer",
-        "changed_paths": [
-          ".etag"
-        ]
-      },
-      {
-        "address": "google_project_iam_member.deploy_clouddeploy_job_runner",
-        "changed_paths": [
-          ".etag"
-        ]
-      },
-      {
-        "address": "google_project_iam_member.deploy_gke_developer",
-        "changed_paths": [
-          ".etag"
-        ]
-      },
-      {
-        "address": "google_project_iam_member.deploy_log_writer",
-        "changed_paths": [
-          ".etag"
-        ]
-      },
-      {
-        "address": "google_project_iam_member.node_log_writer",
-        "changed_paths": [
-          ".etag"
-        ]
-      },
-      {
-        "address": "google_project_iam_member.node_monitoring_metric_writer",
-        "changed_paths": [
-          ".etag"
-        ]
-      },
-      {
-        "address": "google_project_iam_member.reviewer_log_viewer",
-        "changed_paths": [
-          ".etag"
-        ]
-      },
-      {
-        "address": "google_project_iam_member.reviewer_monitoring_viewer",
-        "changed_paths": [
-          ".etag"
-        ]
-      }
-    ],
-    "unexpected_actions": [],
-    "output_changes": [],
-    "deployment_operator_actions": [
-      "no-op"
-    ],
-    "existing_state_unchanged": true,
-    "saved_binary_plan": ".local-validation/issue100-20261101/complete-shop.tfplan",
-    "saved_json_plan": ".local-validation/issue100-20261101/complete-shop.plan.json",
-    "binary_plan_sha256": "sha256:68a4fc19bd5e27c1445c2044d71beb51bbd2270b0f140e8853fc4207fab0c222",
-    "terraform_proposal_sha256": "sha256:96c3cdadcf258605d0d946268b14314482842026ce0c018f645c25fdcee29e84",
-    "apply_performed": false,
-    "scope": "Historical full plan for the unchanged proposal; not refreshed for this Redis-only change. Refresh/review before any apply."
+    "applied_before_this_attempt": true,
+    "new_apply_this_attempt": false
   },
   "local_validation": {
     "python_regressions": {
@@ -351,26 +129,26 @@
   },
   "live_operations": {
     "application_builds": 0,
-    "redis_mirror_or_signing": 0,
     "signing_builds": 0,
-    "cloud_deploy_releases": 0,
-    "rollouts": 0,
     "infrastructure_apply": 0,
     "iam_changes": 0,
-    "runtime_journey": "not executed",
-    "real_complete_telemetry": "not collected",
-    "negative_admission": "not executed"
+    "cloud_deploy_releases": 1,
+    "dev_rollouts": 1,
+    "http_journey_requests": 14,
+    "negative_pod_submissions": 1,
+    "negative_pods_admitted": 0,
+    "redis_del": 1,
+    "redis_exists": 1
   },
   "validation_limits": [
-    "Official source association/content verified with index-bound unsigned registry provenance; no verified publisher signature or reproducible-build claim. Production chain remains blocked until the pinned AML contract is merged and both canonical/approved-registry copies independently verify; required attestation is still pending.",
-    "No fresh real Redis/cart runtime, restart/outage/recovery or telemetry acceptance: local Linux Docker engine unavailable. Static/source/reference tests do not replace those checks.",
-    "Current single-node capacity is insufficient. Additional node/logging exclusion proposal is planned but not applied. Proposed-node bin packing is an estimate; fresh actual allocation, daemonsets, pressures, image disk use and quota/capacity checks are mandatory.",
-    "Nine new application builds and full candidate/independent verification/separate signing/occurrence readback remain unexecuted. Existing catalog and Collector proofs were read-only reverified.",
-    "Actual Cloud Deploy rendered artifacts, generation/hash/retention protections, one all-member dev rollout, exact running digests/readiness and complete shopping journey remain pending reviewed-main authorization.",
-    "All-service cross-language traces/metrics/native linked logs, sink/exclusion no-duplicate proof, Redis native signals, negative admission and exact test-data cleanup still require real acceptance. Offline API fixtures are not live proof.",
-    "Collector queues/cursors are not durable; throughput, log rotation, restart loss, node failures and long-running behavior are not proven. Redis is ephemeral and singleton; no HA/durability promise.",
-    "Local offline Skaffold CLI render timed out during Windows client configuration. Exact generated inventory and both native Collector configs passed local validation; server render remains untested.",
-    "No rollout beyond dev, ingress, production sizing, broad load testing, disaster recovery or completion/closure of #100 is claimed."
+    "Full signals acceptance failed: currencyservice/paymentservice DOUBLE counters are rejected by existing shared INT64 Google Cloud metric descriptors. Eight application components have request metrics; Redis native metrics are present.",
+    "All ten components have native trace-linked logs, but cartservice/emailservice/recommendationservice emit operation.completed while the reviewed signals validator requires request.completed. Completion-event contract remains unresolved; no validator or pipeline was changed live.",
+    "Collector reports permanent metric export errors/drops from descriptor type conflicts; no loss-free telemetry claim is made. Initial Redis startup scrape/descriptor contention errors were also observed before native Redis metrics appeared.",
+    "Only one bounded 14-request shopping journey was executed; no load test, sustained throughput, restart/outage/recovery or log rotation validation was performed.",
+    "Overlap capacity passes with 350m CPU left after all reservations; request-based scheduling does not prove runtime performance or HA. Collector queues/cursors are ephemeral and Redis remains singleton/ephemeral.",
+    "Redis admission is based on the reviewed Docker Official Images source/content chain and verified required attestation; upstream index-bound provenance is unsigned and no verified upstream publisher signature or reproducible-build claim is made.",
+    "Source/rendered/resolved artifact generations were protected at preflight; recorded retention is time-bound and must be freshly checked before any future rollout.",
+    "Dev only. No stage/prod shop rollout, ingress, infrastructure/IAM change, new application build/signing, production sizing, disaster recovery or issue closure occurred in this deployment attempt."
   ],
   "implementation_hashes": {
     "cloudbuild/online-shop/complete.py": "sha256:ca6359832ecd8ac6ff791c1fcaba6c7f490cf24c3e8d63dbb18c514cb04329e6",
@@ -381,7 +159,7 @@
     "deploy/online-shop/complete-acceptance.py": "sha256:0330975c04ab4b87f70b3780a8f091b6ba06f4d5dd3882d2407db9462ad78bd3",
     "deploy/online-shop/complete-runtime-v1.json": "sha256:97f3d3b3adf1b6334c727274d6bf4f1d969afdd0f01300796bb9bfc132d632c2",
     "deploy/online-shop/complete-skaffold.yaml": "sha256:088ae75361550b1911cd655b286c2da07f35f6dbc74c380beb7cbc34efcb7d3a",
-    "deploy/online-shop/complete-README.md": "sha256:870d4f52ab2fce22150baa440c81fc61e516f180c12dd7e40dc07dd0ede46230",
+    "deploy/online-shop/complete-README.md": "sha256:ce0443821ec5f9c7cffd57bc4c19c76fffa881703b942cc3f3e238f4a6d46d33",
     "scripts/tests/test_complete_shop.py": "sha256:eff8cdc9a58ee4d488d5605a877dcbdf1ea00bccc19ea4173f57e47ebd65aaa7",
     "terraform/foundation/complete-shop.tf": "sha256:96c3cdadcf258605d0d946268b14314482842026ce0c018f645c25fdcee29e84",
     "cloudbuild/online-shop/redis.py": "sha256:d1687b1551e3b5a8fbdb603b30d98b303e2d69e4aacdb0ced0438688c21011d0",
@@ -421,6 +199,15 @@
       "live_cloud_or_redis_operations": 0,
       "prior_live_prerequisites_and_terraform_plan": "historical observations retained; not rerun for this cleanup-only fix",
       "private_test_log": ".local-validation/issue100-cleanup-review/all-tests.private.log"
+    },
+    "implementation_review_snapshot_20261102": {
+      "phase": "implementation_review_only",
+      "implementation_status": "unmerged; no complete release accepted",
+      "full_prior_observations": {
+        "configuration_revision": "00e925e724808ac80f1313fb85da1c6b3ec19f3f",
+        "path": "deploy/online-shop/complete-validation.json"
+      },
+      "note": "The versioned file at this immutable revision preserves the complete implementation-review observations and historical limits."
     }
   },
   "redis_transition": {
@@ -453,9 +240,9 @@
     "application_aml_revision_unchanged": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
     "publisher_signature_verified": false,
     "source_association": "verified against immutable official metadata and index-bound unsigned provenance",
-    "canonical_publication": "not performed; expected reference only",
-    "approved_registry_publication": "not performed; expected reference only",
-    "signing": "not performed",
+    "canonical_publication": "verified existing canonical mirror; exact platform digest preserved",
+    "approved_registry_publication": "verified existing Artifact Registry mirror; exact platform digest preserved",
+    "signing": "existing complete-set required occurrence and signature independently reverified",
     "compatibility_static": {
       "layers_hash_size_verified": 7,
       "image_runtime_files": {
@@ -503,8 +290,605 @@
       "build_planner_tests": 21,
       "failures": 0
     },
-    "real_redis_cart_runtime": "pending; local Linux Docker engine unavailable",
+    "real_redis_cart_runtime": "passed bounded shopping journey through checkout and exact-key cleanup",
     "existing_images_and_tags": "untouched; previous immutable reference retained; policy v1 frozen",
-    "next_stage": "merge coordinated review branches, then separately authorize canonical/registry digest-preserving copies, independent verification and complete-set signing"
+    "next_stage": "review telemetry blockers; no unreviewed live configuration changes"
+  },
+  "dev_acceptance_20261102": {
+    "configuration_revision": "00e925e724808ac80f1313fb85da1c6b3ec19f3f",
+    "release_set_id": "sha256:d3ddfc09ec0f0195d38fadfba8a2c31ce290b41bf4211ac4631a5b20039d3891",
+    "application_aml_revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
+    "dependency_aml_revision": "23b5b28de59e73fbfe2d4eff027f33bd82ae5e26",
+    "trusted_candidate": {
+      "uri": "gs://sre-platform-staging-507220-attestation-source/complete-shop-v1/00e925e724808ac80f1313fb85da1c6b3ec19f3f/d3ddfc09ec0f0195d38fadfba8a2c31ce290b41bf4211ac4631a5b20039d3891/candidate.json#1793633780298303",
+      "generation": "1793633780298303",
+      "sha256": "sha256:d7bdbc5d4e2f5cda5801281de2ecf08cbb599a6ea08d92c7dd1309c878fd21cc",
+      "size": 17777,
+      "release_set_id": "sha256:d3ddfc09ec0f0195d38fadfba8a2c31ce290b41bf4211ac4631a5b20039d3891",
+      "create_only": true,
+      "reused_existing_object": false,
+      "readback_verified": true
+    },
+    "trusted_components": [
+      {
+        "id": "adservice",
+        "role": "application",
+        "artifact": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-adservice@sha256:09fd5e79bfdcc78b022835bc1645d4ad01f672bd63b4ccd5ab05f202b8ca273a",
+        "manifest_digest": "sha256:09fd5e79bfdcc78b022835bc1645d4ad01f672bd63b4ccd5ab05f202b8ca273a",
+        "config_digest": "sha256:d19ce9b61751772350b38c2d0456a353a0d1b61d36c2d371382aaa0aeaa6f47c",
+        "platform": "linux/amd64",
+        "source_revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
+        "build": {
+          "id": "69e11421-a130-4aab-88ec-bc2eb83d05f3",
+          "name": "projects/sre-platform-staging-507220/locations/us-central1/builds/69e11421-a130-4aab-88ec-bc2eb83d05f3"
+        },
+        "occurrence": "projects/sre-platform-staging-507220/occurrences/0fe2f6a6-5ba9-4e60-a663-f81a96c2fa00",
+        "signature_verified": true
+      },
+      {
+        "id": "cartservice",
+        "role": "application",
+        "artifact": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-cartservice@sha256:53ddcef4d0b8abe7bfa8a4a2c9094c40cbdbd4f229021a5053574513c8e28fc4",
+        "manifest_digest": "sha256:53ddcef4d0b8abe7bfa8a4a2c9094c40cbdbd4f229021a5053574513c8e28fc4",
+        "config_digest": "sha256:79f79496186ae78b1d959d74d1896aecef97c460cc177f5cad68f82804176a3d",
+        "platform": "linux/amd64",
+        "source_revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
+        "build": {
+          "id": "f915a01e-0bae-446c-a257-e6c527a15f1e",
+          "name": "projects/sre-platform-staging-507220/locations/us-central1/builds/f915a01e-0bae-446c-a257-e6c527a15f1e"
+        },
+        "occurrence": "projects/sre-platform-staging-507220/occurrences/ef41f2bc-89ef-4f1d-9cd5-67a15e5f0840",
+        "signature_verified": true
+      },
+      {
+        "id": "checkoutservice",
+        "role": "application",
+        "artifact": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-checkoutservice@sha256:c97ff706a96012c4cadf46ee782b630d0a95c3da09e2e3fcce48fcb05a612f18",
+        "manifest_digest": "sha256:c97ff706a96012c4cadf46ee782b630d0a95c3da09e2e3fcce48fcb05a612f18",
+        "config_digest": "sha256:3ed50e89ab19721b7e3598fadf26b837ef137a9122dbce0b1f7313d254413247",
+        "platform": "linux/amd64",
+        "source_revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
+        "build": {
+          "id": "c97b5ee4-97c7-482f-9f59-3e5d031a1344",
+          "name": "projects/sre-platform-staging-507220/locations/us-central1/builds/c97b5ee4-97c7-482f-9f59-3e5d031a1344"
+        },
+        "occurrence": "projects/sre-platform-staging-507220/occurrences/85eb0449-bc33-4128-90dc-23042668a424",
+        "signature_verified": true
+      },
+      {
+        "id": "currencyservice",
+        "role": "application",
+        "artifact": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-currencyservice@sha256:6a9e6a935ffa29748824bb2277de478850031108cb00565a0a497c497a10fd68",
+        "manifest_digest": "sha256:6a9e6a935ffa29748824bb2277de478850031108cb00565a0a497c497a10fd68",
+        "config_digest": "sha256:5a6ee1c89fd2b564f68679df43187e7e049a0e28219a31c200cd719cdb679b67",
+        "platform": "linux/amd64",
+        "source_revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
+        "build": {
+          "id": "6fc579e9-d3da-4810-ba18-d00a6160aec0",
+          "name": "projects/sre-platform-staging-507220/locations/us-central1/builds/6fc579e9-d3da-4810-ba18-d00a6160aec0"
+        },
+        "occurrence": "projects/sre-platform-staging-507220/occurrences/99a6a17b-50b8-44cb-932b-fc8a72a4524c",
+        "signature_verified": true
+      },
+      {
+        "id": "emailservice",
+        "role": "application",
+        "artifact": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-emailservice@sha256:53d5db0aff174f5b96d78fc6d81306d1eab0c9182fa920e38730ef693f80990b",
+        "manifest_digest": "sha256:53d5db0aff174f5b96d78fc6d81306d1eab0c9182fa920e38730ef693f80990b",
+        "config_digest": "sha256:b92a7398521e0b689b5b9ad05d819dd367f669355fe72322af8ba3d8b23995c3",
+        "platform": "linux/amd64",
+        "source_revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
+        "build": {
+          "id": "ec5f5a2a-5e16-4f17-a7d6-f29a7c332583",
+          "name": "projects/sre-platform-staging-507220/locations/us-central1/builds/ec5f5a2a-5e16-4f17-a7d6-f29a7c332583"
+        },
+        "occurrence": "projects/sre-platform-staging-507220/occurrences/a1a58263-26a8-4451-9f68-adaccd4ea30a",
+        "signature_verified": true
+      },
+      {
+        "id": "frontend",
+        "role": "application",
+        "artifact": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-frontend@sha256:986a6633a2624a6b1d7b98dac075388c06ed83626ce6aef4834dad66513c9a83",
+        "manifest_digest": "sha256:986a6633a2624a6b1d7b98dac075388c06ed83626ce6aef4834dad66513c9a83",
+        "config_digest": "sha256:5e6de79fa26880d143e81e549aefe4667abfe0e33d4fe3f0c05344623b89fb82",
+        "platform": "linux/amd64",
+        "source_revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
+        "build": {
+          "id": "798101ee-ad78-415c-8a95-4a14bc8cd3c1",
+          "name": "projects/sre-platform-staging-507220/locations/us-central1/builds/798101ee-ad78-415c-8a95-4a14bc8cd3c1"
+        },
+        "occurrence": "projects/sre-platform-staging-507220/occurrences/640ac0dd-ff19-41a3-ac84-391dd780bee4",
+        "signature_verified": true
+      },
+      {
+        "id": "paymentservice",
+        "role": "application",
+        "artifact": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-paymentservice@sha256:33773c413859ecfce09daa23884aec85647265ba9c9f0f870ec8b3cf5126e6c9",
+        "manifest_digest": "sha256:33773c413859ecfce09daa23884aec85647265ba9c9f0f870ec8b3cf5126e6c9",
+        "config_digest": "sha256:4679381c493f56df9b7c997d1e7f3280ef4b59c0c1b4c54e4ed410b8572507db",
+        "platform": "linux/amd64",
+        "source_revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
+        "build": {
+          "id": "eb70b378-4731-48f5-9fa1-93964caf5e43",
+          "name": "projects/sre-platform-staging-507220/locations/us-central1/builds/eb70b378-4731-48f5-9fa1-93964caf5e43"
+        },
+        "occurrence": "projects/sre-platform-staging-507220/occurrences/65f6e696-d791-4d28-ba03-6ee49cb88947",
+        "signature_verified": true
+      },
+      {
+        "id": "productcatalogservice",
+        "role": "application",
+        "artifact": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-productcatalogservice@sha256:03b4d18587152a9c28a6aba743edbfffc6762234189c885a1b2e535ce4a81ee2",
+        "manifest_digest": "sha256:03b4d18587152a9c28a6aba743edbfffc6762234189c885a1b2e535ce4a81ee2",
+        "config_digest": "sha256:021a0a6a92ebdadd6bce0c23b8e2dbe7ff65e2cb2f2e1c0919350caa9c9a8d35",
+        "platform": "linux/amd64",
+        "source_revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
+        "build": {
+          "id": "b4c1e382-e23a-465c-b6b4-e7093af95391",
+          "name": "projects/sre-platform-staging-507220/locations/us-central1/builds/b4c1e382-e23a-465c-b6b4-e7093af95391"
+        },
+        "occurrence": "projects/sre-platform-staging-507220/occurrences/c274dea4-483a-43d6-b241-ed4d593e617e",
+        "signature_verified": true
+      },
+      {
+        "id": "recommendationservice",
+        "role": "application",
+        "artifact": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-recommendationservice@sha256:70a9c039ad399dd44d8ae382d4b962394beeddaf3f5bad5e17ee0f6f20905235",
+        "manifest_digest": "sha256:70a9c039ad399dd44d8ae382d4b962394beeddaf3f5bad5e17ee0f6f20905235",
+        "config_digest": "sha256:3d6d9727176bce013340911bf817ebfb299113c8e6b15845576603ec3eb1a2aa",
+        "platform": "linux/amd64",
+        "source_revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
+        "build": {
+          "id": "79a4edb9-1338-4458-8c5b-73924eaf522b",
+          "name": "projects/sre-platform-staging-507220/locations/us-central1/builds/79a4edb9-1338-4458-8c5b-73924eaf522b"
+        },
+        "occurrence": "projects/sre-platform-staging-507220/occurrences/f9839e9c-4b6e-4091-b63d-f74e92005a97",
+        "signature_verified": true
+      },
+      {
+        "id": "shippingservice",
+        "role": "application",
+        "artifact": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-shippingservice@sha256:abc451eb998b19341aa4ea693082a1a0ce8ecf7f7ccc6318e3a100048f6686f9",
+        "manifest_digest": "sha256:abc451eb998b19341aa4ea693082a1a0ce8ecf7f7ccc6318e3a100048f6686f9",
+        "config_digest": "sha256:fd578bb8c1a1b17eaa8d2928ae249efe2cf50f6f0b296e4b71fa7de38b9241a1",
+        "platform": "linux/amd64",
+        "source_revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
+        "build": {
+          "id": "4520fd5c-5773-4b5d-b774-5161784dde91",
+          "name": "projects/sre-platform-staging-507220/locations/us-central1/builds/4520fd5c-5773-4b5d-b774-5161784dde91"
+        },
+        "occurrence": "projects/sre-platform-staging-507220/occurrences/3d62b9fb-cd38-4a13-9cd9-bc0e1519998a",
+        "signature_verified": true
+      },
+      {
+        "id": "redis-cart",
+        "role": "dependency",
+        "artifact": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/redis-cart@sha256:1cf73a2f04808e55a8bd2f5706c2aa0ebb0f71938f93deb7af79f48311cd5cb9",
+        "manifest_digest": "sha256:1cf73a2f04808e55a8bd2f5706c2aa0ebb0f71938f93deb7af79f48311cd5cb9",
+        "config_digest": "sha256:98c6ca8f397f86e469be752c3e7ed5eb8b17f2479840cb69a2e413037038e9f4",
+        "platform": "linux/amd64",
+        "source_revision": null,
+        "build": {
+          "build_type": "https://mobyproject.org/buildkit@v1",
+          "builder_id": "https://github.com/docker-library",
+          "id": "yfknsyfxvj00lki3zrdos7mff",
+          "kind": "index_bound_buildkit_provenance",
+          "statement_digest": "sha256:b5e4a0ae9c7c176abe5548d7a7aacbcf409425daef5f10b0bb7af4255b5f0705"
+        },
+        "occurrence": "projects/sre-platform-staging-507220/occurrences/66aebec0-a3df-48f0-9125-93aa837e59d3",
+        "signature_verified": true
+      }
+    ],
+    "collector_occurrence": "projects/sre-platform-staging-507220/occurrences/2b1c6135-42d3-453a-9942-f473dea60444",
+    "artifacts_reused": true,
+    "clouddeploy": {
+      "release": "projects/sre-platform-staging-507220/locations/us-central1/deliveryPipelines/catalog-dev/releases/shop-100-00e925e-20261102-0e0721a5",
+      "rollout": "projects/sre-platform-staging-507220/locations/us-central1/deliveryPipelines/catalog-dev/releases/shop-100-00e925e-20261102-0e0721a5/rollouts/dev-full-001",
+      "initial_rollout_disabled": true,
+      "render_state": "SUCCEEDED",
+      "render_build": "a868baf3-b559-4b4a-8456-0556f6be19ec",
+      "rollout_state": "SUCCEEDED",
+      "deploy_build": "e2333393-06f8-4c43-8dd5-fe6f56a7326f",
+      "rollout_submissions": 1,
+      "inventory_documents": 39,
+      "inventory_commitment": "13faca3bba0d383080e0c712cfe6a7419b7211bbec2450fa9e25c509c04e5b32",
+      "source": {
+        "uri": "gs://sre-platform-staging-507220-clouddeploy/source/1793646351.000057-a5fb8befc68048d88234d881bb7c9f57.gz",
+        "generation": "1793646350618998",
+        "sha256": "947dc1179e93674dcccb653f4cbf1c62a1f544934e959fb9b24332e972176192",
+        "bytes": 9544,
+        "retention_expires_at": "2026-11-03T19:05:50.626Z",
+        "observed_at": "2026-11-02T19:06:25.375968Z"
+      },
+      "rendered": {
+        "uri": "gs://sre-platform-staging-507220-clouddeploy/rendered/dev/catalog-dev-6bb9801802d94227b56a2b48669c126e/shop-100-00e925e-20261102-0e0721a5/dev/stable/manifest.yaml",
+        "generation": "1793646366734431",
+        "sha256": "ce0a896b59331a18a1513d4f682836b4d60bfe8760ae85f711925e18a16c7698",
+        "bytes": 146129,
+        "retention_expires_at": "2026-11-03T19:06:06.741Z",
+        "observed_at": "2026-11-02T19:06:26.095173Z"
+      },
+      "resolved_skaffold": {
+        "uri": "gs://sre-platform-staging-507220-clouddeploy/rendered/dev/catalog-dev-6bb9801802d94227b56a2b48669c126e/shop-100-00e925e-20261102-0e0721a5/dev/stable/skaffold.yaml",
+        "generation": "1793646366731644",
+        "sha256": "d332a3b6fe8c027f163571636a3a0e94ed6b05724b1c5588c66682cbfd01e171",
+        "bytes": 250,
+        "retention_expires_at": "2026-11-03T19:06:06.740Z",
+        "observed_at": "2026-11-02T19:06:26.440696Z"
+      }
+    },
+    "preflight": {
+      "decision": "READY",
+      "check_count": 31,
+      "failed_checks": [],
+      "all_checks_passed": true
+    },
+    "runtime": {
+      "members": {
+        "adservice": 1,
+        "cartservice": 1,
+        "checkoutservice": 1,
+        "collector": 2,
+        "currencyservice": 1,
+        "emailservice": 1,
+        "frontend": 1,
+        "paymentservice": 1,
+        "productcatalogservice": 1,
+        "recommendationservice": 1,
+        "redis-cart": 1,
+        "redis-metrics-collector": 1,
+        "shippingservice": 1
+      },
+      "runtime": "passed"
+    },
+    "final_runtime": {
+      "members": {
+        "adservice": 1,
+        "cartservice": 1,
+        "checkoutservice": 1,
+        "collector": 2,
+        "currencyservice": 1,
+        "emailservice": 1,
+        "frontend": 1,
+        "paymentservice": 1,
+        "productcatalogservice": 1,
+        "recommendationservice": 1,
+        "redis-cart": 1,
+        "redis-metrics-collector": 1,
+        "shippingservice": 1
+      },
+      "runtime": "passed"
+    },
+    "shopping_journey": {
+      "journey": "passed",
+      "browse_details_currency_cart_checkout_confirmation": true,
+      "requests": 14,
+      "since": "2026-11-02T19:14:28.539120Z",
+      "trace_id": "9afebe167c094e3895f6160f3aae2758"
+    },
+    "telemetry": {
+      "acceptance": "failed",
+      "cli_exit_code": 3,
+      "observations": {
+        "trace_id": "9afebe167c094e3895f6160f3aae2758",
+        "trace_spans": 326,
+        "trace_components": [
+          "adservice",
+          "cartservice",
+          "checkoutservice",
+          "currencyservice",
+          "emailservice",
+          "frontend",
+          "paymentservice",
+          "productcatalogservice",
+          "recommendationservice",
+          "shippingservice"
+        ],
+        "cross_service_edges": [
+          [
+            "checkoutservice",
+            "cartservice"
+          ],
+          [
+            "checkoutservice",
+            "currencyservice"
+          ],
+          [
+            "checkoutservice",
+            "emailservice"
+          ],
+          [
+            "checkoutservice",
+            "paymentservice"
+          ],
+          [
+            "checkoutservice",
+            "productcatalogservice"
+          ],
+          [
+            "checkoutservice",
+            "shippingservice"
+          ],
+          [
+            "frontend",
+            "adservice"
+          ],
+          [
+            "frontend",
+            "cartservice"
+          ],
+          [
+            "frontend",
+            "checkoutservice"
+          ],
+          [
+            "frontend",
+            "currencyservice"
+          ],
+          [
+            "frontend",
+            "productcatalogservice"
+          ],
+          [
+            "frontend",
+            "recommendationservice"
+          ],
+          [
+            "frontend",
+            "shippingservice"
+          ]
+        ],
+        "native_linked_logs": 444,
+        "native_linked_log_components": [
+          "adservice",
+          "cartservice",
+          "checkoutservice",
+          "currencyservice",
+          "emailservice",
+          "frontend",
+          "paymentservice",
+          "productcatalogservice",
+          "recommendationservice",
+          "shippingservice"
+        ],
+        "request_completed_components": [
+          "adservice",
+          "checkoutservice",
+          "currencyservice",
+          "frontend",
+          "paymentservice",
+          "productcatalogservice",
+          "shippingservice"
+        ],
+        "metric_types": [
+          "workload.googleapis.com/online_shop.transport.requests",
+          "workload.googleapis.com/redis.clients.blocked",
+          "workload.googleapis.com/redis.clients.connected",
+          "workload.googleapis.com/redis.clients.max_input_buffer",
+          "workload.googleapis.com/redis.clients.max_output_buffer",
+          "workload.googleapis.com/redis.commands",
+          "workload.googleapis.com/redis.commands.processed",
+          "workload.googleapis.com/redis.connections.received",
+          "workload.googleapis.com/redis.connections.rejected",
+          "workload.googleapis.com/redis.memory.fragmentation_ratio",
+          "workload.googleapis.com/redis.memory.lua",
+          "workload.googleapis.com/redis.memory.peak",
+          "workload.googleapis.com/redis.memory.rss",
+          "workload.googleapis.com/redis.memory.used"
+        ],
+        "application_metric_components": [
+          "adservice",
+          "cartservice",
+          "checkoutservice",
+          "emailservice",
+          "frontend",
+          "productcatalogservice",
+          "recommendationservice",
+          "shippingservice"
+        ],
+        "redis_metric_series": 13,
+        "original_stdout_duplicate_entries": 0,
+        "sink_review_no_duplicates": true,
+        "signals_cli": {
+          "status": "failed",
+          "reason": "complete_acceptance_evidence_missing_or_inconsistent"
+        }
+      },
+      "counter_type_conflict": {
+        "cause": "Shared Google Cloud metric descriptors require INT64; live DOUBLE datapoints are rejected.",
+        "affected_components": [
+          "currencyservice",
+          "paymentservice"
+        ],
+        "affected_metric_types": [
+          "workload.googleapis.com/online_shop.business.operations",
+          "workload.googleapis.com/online_shop.transport.requests"
+        ],
+        "observed_error_records": 35,
+        "descriptors": [
+          {
+            "type": "workload.googleapis.com/online_shop.business.operations",
+            "metricKind": "CUMULATIVE",
+            "valueType": "INT64",
+            "unit": "{operation}"
+          },
+          {
+            "type": "workload.googleapis.com/online_shop.transport.requests",
+            "metricKind": "CUMULATIVE",
+            "valueType": "INT64",
+            "unit": "{request}"
+          }
+        ],
+        "live_fix_performed": false
+      },
+      "log_event_contract": {
+        "cartservice": [
+          {
+            "event": "storage.diagnostic",
+            "category": "application",
+            "count": 14
+          },
+          {
+            "event": "operation.completed",
+            "category": "dependency",
+            "count": 16
+          },
+          {
+            "event": "operation.completed",
+            "category": "application",
+            "count": 14
+          }
+        ],
+        "emailservice": [
+          {
+            "event": "confirmation.accepted",
+            "category": "application",
+            "count": 1
+          },
+          {
+            "event": "operation.completed",
+            "category": "application",
+            "count": 2
+          }
+        ],
+        "recommendationservice": [
+          {
+            "event": "operation.completed",
+            "category": "dependency",
+            "count": 7
+          },
+          {
+            "event": "operation.completed",
+            "category": "application",
+            "count": 14
+          }
+        ]
+      },
+      "native_linked_logs_all_ten_components": true,
+      "completion_event_contract_accepted": false,
+      "live_fix_performed": false,
+      "additional_traffic": 0
+    },
+    "negative_admission": {
+      "fixture": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-productcatalogservice@sha256:f2519a4464d4fb6a2667bbdc26ef1fc83c084d658c295ea5c536876707d1f58f",
+      "build": "faa7c48b-58dd-4d33-9e92-e9cab810f3ca",
+      "manifest_digest": "sha256:f2519a4464d4fb6a2667bbdc26ef1fc83c084d658c295ea5c536876707d1f58f",
+      "config_digest": "sha256:da7c9916ab5e82ee53ecefe8e08d92b607701bf9ac9b1428bda49ca78b596a99",
+      "platform": "linux/amd64",
+      "occurrence_scan": {
+        "observed_at": "2026-11-02T19:21:44.097785Z",
+        "scope": "required note occurrences across consumer projects, without URI filtering",
+        "pages": 1,
+        "occurrences": 14,
+        "digest_matches": 0,
+        "valid_matching_attestations": 0,
+        "listing_complete": true,
+        "payload_and_uri_checked": true
+      },
+      "result": {
+        "outcome": "denied",
+        "http_status": 400,
+        "explicit_binary_authorization": true,
+        "required_attestation_missing": true,
+        "fixture_digest_in_denial": true,
+        "submissions": 1,
+        "temporary_pod_created": false,
+        "observed_at": "2026-11-02T19:21:52.379205Z"
+      },
+      "cleanup": {
+        "pod_absent_http_status": 404,
+        "other_resources_deleted": false
+      }
+    },
+    "cleanup": {
+      "synthetic_key": {
+        "cleanup": "passed",
+        "exact_synthetic_key_removed": true,
+        "other_keys_modified": false
+      },
+      "session_value_published": false,
+      "port_forwards": {
+        "frontend-port-forward": {
+          "owned_process_stopped": true,
+          "loopback_port_closed": true
+        },
+        "redis-port-forward": {
+          "owned_process_stopped": true,
+          "loopback_port_closed": true
+        }
+      },
+      "windows_launcher_child_cleanup": "Verified parent PID, exact arguments, creation time and localhost listeners; stopped only two owned kubectl children."
+    },
+    "final_health": {
+      "samples": [
+        {
+          "namespace": "dev",
+          "ready_available": true,
+          "http_healthz": 200,
+          "uids_and_template_unchanged": true
+        },
+        {
+          "namespace": "stage",
+          "ready_available": true,
+          "http_healthz": 200,
+          "uids_and_template_unchanged": true
+        },
+        {
+          "namespace": "prod",
+          "ready_available": true,
+          "http_healthz": 200,
+          "uids_and_template_unchanged": true
+        }
+      ],
+      "nodes": [
+        {
+          "ready": true,
+          "pressure": [],
+          "pool": "shop-dev-capacity"
+        },
+        {
+          "ready": true,
+          "pressure": [],
+          "pool": "default-pool"
+        }
+      ],
+      "capacity": {
+        "capacity_ready": true,
+        "unscheduled_budget_items": 0,
+        "unassigned_pods": 0,
+        "node_count": 2,
+        "application_overlap_replicas": 2,
+        "redis_overlap_replicas": 1,
+        "collector_per_node": 1,
+        "remaining_bins": [
+          {
+            "cpu_m": 21.0,
+            "memory_mi": 8922.800537109375,
+            "slots": 79
+          },
+          {
+            "cpu_m": 329.0,
+            "memory_mi": 3865.5323486328125,
+            "slots": 86
+          }
+        ]
+      }
+    },
+    "execution_code_changed": false,
+    "live_operations_this_attempt": {
+      "application_builds": 0,
+      "signing_builds": 0,
+      "infrastructure_apply": 0,
+      "iam_changes": 0,
+      "cloud_deploy_releases": 1,
+      "dev_rollouts": 1,
+      "http_journey_requests": 14,
+      "negative_pod_submissions": 1,
+      "negative_pods_admitted": 0,
+      "redis_del": 1,
+      "redis_exists": 1
+    },
+    "acceptance_status": "partial; full telemetry acceptance blocked; issue remains open for review",
+    "private_evidence_directory": ".local-validation/issue100-dev-00e925e-20261102-0e0721a5"
   }
 }
