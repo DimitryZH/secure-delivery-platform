@@ -25,14 +25,15 @@ def module(name, path):
 r = module("catalog_release", HERE / "release.py")
 support = module("collector_support", HERE / "collector.py")
 legacy = module("catalog_deployment", ROOT / "deploy/online-shop/workflow.py")
+redis = module("redis_dependency", HERE / "redis.py")
 require = r.require
 SCRIPT = "cloudbuild/online-shop/complete.py"
-PROFILE_SHA = "4766ad8f2c1d3c771fb9c02a6c81a76f152fdf723de7c0013fb910a5f4143126"
-REDIS_POLICY_SHA = "c3e35a722662e7695df196e3141b77cb27a31def336a7c01a505c0e3f2519dea"
+PROFILE_SHA = "3fc00dee52b0829f98c36c9d1fd2d7c6a34a3f3c405648138eb07d555460b6dc"
+REDIS_POLICY_SHA = redis.POLICY_SHA
 APPS = tuple(sorted("frontend productcatalogservice cartservice currencyservice recommendationservice adservice checkoutservice shippingservice paymentservice emailservice".split()))
 MEMBERS = (*APPS, "redis-cart")
 TRUST_FILES = tuple(dict.fromkeys((*legacy.TRUST_FILES, SCRIPT, "cloudbuild/online-shop/complete-v1.json",
-    "cloudbuild/online-shop/redis-policy-v1.json", "deploy/online-shop/complete.py",
+    "cloudbuild/online-shop/redis-policy-v2.json", "cloudbuild/online-shop/redis.py", "deploy/online-shop/complete.py",
     "deploy/online-shop/complete-runtime-v1.json", "deploy/online-shop/complete-skaffold.yaml",
     "deploy/online-shop/complete-acceptance.py", "cloudbuild/online-shop/complete-candidate-v1.schema.json")))
 
@@ -42,19 +43,16 @@ def profile():
     return r.decode(raw)
 
 def redis_policy():
-    raw = (HERE / "redis-policy-v1.json").read_bytes().replace(b"\r\n", b"\n")
-    require(r.sha(raw) == REDIS_POLICY_SHA, "unreviewed_redis_policy")
-    return r.decode(raw)
+    return redis.policy()
+
 
 def redis_admission():
-    # The pinned AML mirror has no established producing source/build lineage.
-    # No caller assertion, content equality, existing occurrence or publisher tag
-    # can turn it into an approved dependency. Resolution needs a reviewed policy
-    # revision AND an independently verifiable adoption path, not a CLI override.
+    # Local policy eligibility is not proof of a published/admitted dependency.
+    # verify() and the separate signer require fresh official + both-mirror proof.
     q = redis_policy()
-    require(q["admission_decision"] == "approved_verified_provenance"
-            and q["mirror_or_sign_authorized"] is True, "redis_provenance_unresolved_admission_blocked")
-    raise ValueError("redis_approved_adoption_requires_reviewed_profile_revision")
+    require(q["publisher_provenance"] == "docker_official_images_registry_source_association"
+            and q["admission_decision"] == "requires_verified_official_canonical_registry_chain", "redis_source_policy_not_approved")
+
 
 def reviewed(revision):
     require(re.fullmatch(r.SHA, revision or ""), "configuration_revision_required")
@@ -162,10 +160,12 @@ def app_record(identity, revision, ref, build_id, digest, config_digest):
 def dependency_record():
     q = redis_policy()
     return {"id": "redis-cart", "role": "dependency", "repository": r.policy()["registry"] + q["intended_mirror_suffix"],
-        "digest": q["manifest_digest"], "config_digest": q["config_digest"], "platform": q["platform"],
-        "source": {"kind": "selection_contract_not_publisher_provenance", **q["selection_source"], "contracts_sha256": q["selection_contracts_sha256"]},
-        "build": {"kind": "external_unresolved", "producing_source": None, "producing_build": None},
+        "digest": q["manifest_digest"], "config_digest": q["config_digest"], "platform": q["platform"], "version": q["redis_version"],
+        "source": {"kind": "docker_official_image", "repository": q["upstream_repository"], "index_digest": q["index_digest"],
+            "producing_source": q["producing_source"], "selection_contract": q["selection_source"], "contracts_sha256": q["selection_contracts_sha256"]},
+        "build": {"kind": "index_bound_buildkit_provenance", **q["producing_build"]},
         "admission_decision": q["admission_decision"]}
+
 
 def candidate(revision, applications):
     require(re.fullmatch(r.SHA, revision or ""), "invalid_configuration_revision")
@@ -219,7 +219,9 @@ def observe_candidate(revision, build_ids, value, refs, cloud):
 
 def verify(record, revision, value, refs, cloud):
     validate_candidate(record, revision, refs)  # All supplied structure checked before cloud calls.
-    redis_admission()  # Known lineage blocker is not turned into evidence success.
+    redis_admission()
+    dependency_proof = redis.verify_chain(redis_policy(), cloud)
+    require(dependency_proof.get("status") == "redis_chain_verified", "redis_chain_not_verified")
     catalog = catalog_candidate(cloud)
     outcomes = []
     for row in record["components"][:-1]:
@@ -230,39 +232,21 @@ def verify(record, revision, value, refs, cloud):
             digest = check_build(cloud.build(r.policy(), row["build"]["id"]), identity, revision, value[identity], row["build"]["id"])
             require(digest == row["digest"] and cloud.image(row["repository"], digest) == row["config_digest"], "component_build_registry_binding")
         outcomes.append({"id": identity, "artifact": row["repository"] + "@" + row["digest"], "status": "passed"})
-    # A reviewed Redis adoption implementation must replace the current lineage
-    # blocker before this point becomes reachable with the real pinned policy.
-    inspect_redis(record["components"][-1]["repository"])
-    outcomes.append({"id": "redis-cart", "artifact": record["components"][-1]["repository"] + "@" + redis_policy()["manifest_digest"], "status": "passed"})
+    outcomes.append({"id": "redis-cart", "artifact": record["components"][-1]["repository"] + "@" + redis_policy()["manifest_digest"],
+                     "status": "passed", "source_proof": dependency_proof})
     return {"version": 2, "release_set_id": record["release_set_id"], "status": "passed", "components": outcomes, "verified_at": datetime.now(timezone.utc).isoformat()}
 
 def inspect_redis(repository=None):
     q = redis_policy()
-    repository = repository or q["selection_repository"]
-    require(repository in (q["selection_repository"], r.policy()["registry"] + q["intended_mirror_suffix"]), "unapproved_redis_repository")
-    with tempfile.TemporaryDirectory(prefix="sdp-redis-read-") as directory:
-        env = support.clean_env(); env["DOCKER_CONFIG"] = directory
-        executable = support.tool("crane")
-        if repository.startswith(r.policy()["registry"] + "/"):
-            cloud = r.Cloud()
-            support.run([executable, "auth", "login", repository.split("/")[0], "-u", "oauth2accesstoken", "--password-stdin"], env=env, input=(cloud.token + "\n").encode())
-        raw = support.run([executable, "manifest", repository + "@" + q["manifest_digest"]], env=env)
-        require("sha256:" + r.sha(raw) == q["manifest_digest"], "redis_manifest_hash")
-        manifest = r.decode(raw)
-        require(type(manifest.get("schemaVersion")) is int and manifest["schemaVersion"] == 2 and "manifests" not in manifest, "redis_manifest_required")
-        support.descriptor(manifest["config"])
-        require(manifest["config"]["digest"] == q["config_digest"], "redis_config_binding")
-        descriptors = [manifest["config"], *manifest["layers"]]
-        for item in descriptors:
-            support.descriptor(item)
-            data = support.run([executable, "blob", repository + "@" + item["digest"]], env=env)
-            require("sha256:" + r.sha(data) == item["digest"] and len(data) == item["size"], "redis_blob_hash_or_size")
-            if item is manifest["config"]:
-                config = r.decode(data)
-                require(config.get("os") == "linux" and config.get("architecture") == "amd64", "redis_platform")
-    return {"status": "content_verified_untrusted", "platform": "linux/amd64", "manifest_digest": q["manifest_digest"],
-        "config_digest": q["config_digest"], "layers_verified": len(manifest["layers"]), "publisher_provenance": "unresolved",
-        "admission_decision": q["admission_decision"], "mirror_or_sign_performed": False}
+    if repository == r.policy()["registry"] + q["intended_mirror_suffix"]:
+        return redis.verify_chain(q, r.Cloud())
+    require(repository in (None, q["upstream_repository"], q["selection_repository"]), "unapproved_redis_repository")
+    result = redis.upstream(q)
+    if repository == q["selection_repository"]:
+        with redis.reader(repository, q) as read: redis.content(read, q)
+        return {**result, "status": "canonical_content_verified"}
+    return result
+
 
 def existing_occurrences(cloud, artifacts):
     token = ""; seen = set(); found = {artifact: [] for artifact in artifacts}
@@ -379,7 +363,7 @@ def main():
                 else:
                     record = r.read(args.candidate)
                     validate_candidate(record, args.configuration_revision, refs)
-                    redis_admission()  # No credential/evidence/signing calls for a known blocked dependency.
+                    redis_admission()  # Evidence still must pass the full dependency chain below.
                     cloud = r.Cloud()
                     result = (verify(record, args.configuration_revision, value, refs, cloud) if args.action == "verify"
                               else attest(record, args.configuration_revision, value, refs, cloud, inspect=args.action == "inspect"))

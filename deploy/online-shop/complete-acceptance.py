@@ -112,7 +112,7 @@ def signals(snapshot,record,since,value,refs,cloud):
         if identity not in rows:continue
         require(labels.get("release_set_id")==record["release_set_id"] and labels.get("component_digest")==rows[identity]["digest"]
             and labels.get("deployment_environment_name")=="dev","metric_component_attribution")
-        require(labels.get("service_version")== (c.r.REVISION if identity in c.APPS else "external-unresolved"),"metric_component_version")
+        require(labels.get("service_version")== (c.r.REVISION if identity in c.APPS else c.redis_policy()["redis_version"]),"metric_component_version")
         positive=any(w.legacy.sample.utc(p["interval"]["endTime"])>=start and float(p.get("value",{}).get("int64Value",p.get("value",{}).get("doubleValue",0)))>0 for p in series.get("points",[]))
         if identity=="redis-cart":redis_measured=redis_measured or (positive and "redis" in metric.get("type","") and metric["type"].startswith("workload.googleapis.com/"))
         elif positive and labels.get("kind")=="server" and "online_shop" in metric.get("type","") and "requests" in metric["type"]:measured.add(identity)

@@ -1,0 +1,82 @@
+{
+  "version": 2,
+  "id": "redis-cart",
+  "redis_version": "7.4.12",
+  "platform": "linux/amd64",
+  "upstream_repository": "docker.io/library/redis",
+  "discovery_selector": "7.4.12-alpine3.21",
+  "index_digest": "sha256:8da19c7399dca900c6822a1cf30f9d2285585e2c4b457ff4095b0f4500054d3f",
+  "manifest_digest": "sha256:1cf73a2f04808e55a8bd2f5706c2aa0ebb0f71938f93deb7af79f48311cd5cb9",
+  "config_digest": "sha256:98c6ca8f397f86e469be752c3e7ed5eb8b17f2479840cb69a2e413037038e9f4",
+  "selection_repository": "docker.io/dmitryzhuravlev/online-shop-redis-cart",
+  "canonical_new_tag": "7.4.12-alpine3.21",
+  "intended_mirror_suffix": "/redis-cart",
+  "publisher_provenance": "docker_official_images_registry_source_association",
+  "admission_decision": "requires_verified_official_canonical_registry_chain",
+  "producing_source": {
+    "repository": "https://github.com/redis/docker-library-redis",
+    "revision": "786872f8c248c1f0990f93244cbcb3949329016d",
+    "directory": "alpine",
+    "filesSha256": {
+      "alpine/Dockerfile": "sha256:4e97a743bef79aaf917f7ca3334f4284a86fda09b8406b69f0f85adcb55ae5b2",
+      "alpine/docker-entrypoint.sh": "sha256:f8122ddc0eb2ae6ca7762725999f08b2ee7a6975da54e9061feee88f6d4ab2bb"
+    }
+  },
+  "producing_build": {
+    "builder_id": "https://github.com/docker-library",
+    "build_type": "https://mobyproject.org/buildkit@v1",
+    "id": "yfknsyfxvj00lki3zrdos7mff",
+    "statement_digest": "sha256:b5e4a0ae9c7c176abe5548d7a7aacbcf409425daef5f10b0bb7af4255b5f0705"
+  },
+  "source_proof": {
+    "official_images": {
+      "repository": "https://github.com/docker-library/official-images",
+      "revision": "72aa61399c17a658738763be8dbbf987880a7b2a",
+      "path": "library/redis",
+      "sha256": "sha256:a4f1354292623327e5d48f282431e08886c3fb3d9374e2c746608326ca34a659"
+    },
+    "attestation_manifest": {
+      "annotations": {
+        "com.docker.official-images.bashbrew.arch": "amd64",
+        "vnd.docker.reference.digest": "sha256:1cf73a2f04808e55a8bd2f5706c2aa0ebb0f71938f93deb7af79f48311cd5cb9",
+        "vnd.docker.reference.type": "attestation-manifest"
+      },
+      "digest": "sha256:e734018a3bc60138d82e1084e231149b53bc8dcd5179c9e84bf21f32e94d5f04",
+      "mediaType": "application/vnd.oci.image.manifest.v1+json",
+      "platform": {
+        "architecture": "unknown",
+        "os": "unknown"
+      },
+      "size": 840
+    },
+    "statement": {
+      "mediaType": "application/vnd.in-toto+json",
+      "digest": "sha256:b5e4a0ae9c7c176abe5548d7a7aacbcf409425daef5f10b0bb7af4255b5f0705",
+      "size": 24690,
+      "annotations": {
+        "in-toto.io/predicate-type": "https://slsa.dev/provenance/v0.2"
+      }
+    },
+    "trust_basis": "Docker Official Images metadata and digest-pinned Docker Hub library/redis publication; index-bound unsigned BuildKit provenance, not a verified publisher signature"
+  },
+  "selection_source": {
+    "repository": "https://github.com/DimitryZH/application-modernization-lab",
+    "revision": "23b5b28de59e73fbfe2d4eff027f33bd82ae5e26",
+    "workload_path": "workloads/online-shop"
+  },
+  "selection_contracts_sha256": {
+    "images.lock.json": "sha256:6e5ccb029dc0aaa2c9fa8322139b406b814865a7e31b06df0103b0b8d8539f0c",
+    "redis.runtime.json": "sha256:12324ccfae81d46eaead0f17f7fa2453e9b293fd647382252b60bcd2a0e41682",
+    "redis.source-v2.json": "sha256:050c315a444a936eacc31da9b5409810f3be8bfd1a986fcd0faae16d0653c37a",
+    "kubernetes/online-shop.yaml": "sha256:2f02fc2f04463274453e7cb20ae27d49506b7971ea00750e0099e99566d418ed",
+    "validation/otel/compose.yaml": "sha256:89410b7df52760fb05913345e715521542b926996f66e32fe9e3ef50a743a749"
+  },
+  "required_evidence": [
+    "merged immutable AML dependency contracts",
+    "official metadata/source and index-bound provenance",
+    "actual upstream platform/config/all layers",
+    "equal canonical Docker Hub mirror",
+    "equal approved Artifact Registry mirror",
+    "separate required-attestor signing and occurrence/signature readback"
+  ]
+}

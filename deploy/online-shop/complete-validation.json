@@ -2,8 +2,8 @@
   "version": 1,
   "issue": 100,
   "phase": "implementation_review_only",
-  "observed_date": "2026-11-01",
-  "base_configuration_revision": "2d808445ba154143de5a02be93b445744a474456",
+  "observed_date": "2026-11-02",
+  "base_configuration_revision": "8d4548c7359ec4dc2698f647319e7d5c812577ff",
   "aml_revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
   "profile": "complete-shop-v1",
   "candidate_version": 2,
@@ -51,16 +51,6 @@
       "trusted_collector": {
         "verification": "passed"
       }
-    },
-    "redis_content": {
-      "admission_decision": "blocked_unresolved_publisher_lineage",
-      "config_digest": "sha256:aa189b5a1954929c393585e6dc5717a75b18f75a931df8bdcc00a3d3bd546be6",
-      "layers_verified": 8,
-      "manifest_digest": "sha256:81be8a1f52db5f99fe3de0bbbd2efce827f51ce409155a95e9bdbac8c2721ba6",
-      "mirror_or_sign_performed": false,
-      "platform": "linux/amd64",
-      "publisher_provenance": "unresolved",
-      "status": "content_verified_untrusted"
     },
     "capacity": {
       "snapshot_observed_at": "2026-11-01T15:09:44.573672+00:00",
@@ -162,6 +152,24 @@
       "all_checked_passed": true,
       "effective_authorization_not_claimed": true,
       "no_grants_changed": true
+    },
+    "scope": "Account/capacity/quota/artifact readbacks below are historical initial-profile observations; not refreshed during this dependency-only change.",
+    "redis_source": {
+      "build_invocation": "yfknsyfxvj00lki3zrdos7mff",
+      "config_digest": "sha256:98c6ca8f397f86e469be752c3e7ed5eb8b17f2479840cb69a2e413037038e9f4",
+      "index_digest": "sha256:8da19c7399dca900c6822a1cf30f9d2285585e2c4b457ff4095b0f4500054d3f",
+      "layers_verified": 7,
+      "manifest_digest": "sha256:1cf73a2f04808e55a8bd2f5706c2aa0ebb0f71938f93deb7af79f48311cd5cb9",
+      "platform": "linux/amd64",
+      "publisher_signature_verified": false,
+      "source_association": "verified",
+      "status": "official_source_content_verified",
+      "trust_basis": "Docker Official Images metadata and digest-pinned Docker Hub library/redis publication; index-bound unsigned BuildKit provenance, not a verified publisher signature"
+    },
+    "dependency_main_check": {
+      "status": "blocked_as_expected",
+      "reason": "dependency_contract_commit_not_on_canonical_main",
+      "mirror_or_signing_calls": 0
     }
   },
   "terraform": {
@@ -311,19 +319,22 @@
     "saved_json_plan": ".local-validation/issue100-20261101/complete-shop.plan.json",
     "binary_plan_sha256": "sha256:68a4fc19bd5e27c1445c2044d71beb51bbd2270b0f140e8853fc4207fab0c222",
     "terraform_proposal_sha256": "sha256:96c3cdadcf258605d0d946268b14314482842026ce0c018f645c25fdcee29e84",
-    "apply_performed": false
+    "apply_performed": false,
+    "scope": "Historical full plan for the unchanged proposal; not refreshed for this Redis-only change. Refresh/review before any apply."
   },
   "local_validation": {
     "python_regressions": {
       "command": "python -m unittest discover -s scripts/tests",
-      "tests": 215,
+      "tests": 224,
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "new_focused_tests": 27,
+      "new_focused_tests": 36,
       "pinned_aml_all_ten_plans_and_materialization": "passed",
       "native_collector_agent_and_singleton_metrics_configuration": "passed",
-      "loopback_http_journey_fixture": "passed; synthetic fake storefront, not live acceptance"
+      "loopback_http_journey_fixture": "passed; synthetic fake storefront, not live acceptance",
+      "redis_source_tests": 9,
+      "real_selected_redis_byte_fixtures": "passed; all seven layers plus source/index/provenance/config"
     },
     "full_render_inventory": {
       "resource_count": 39,
@@ -334,9 +345,65 @@
     "git_diff_check": "passed",
     "local_links": {
       "status": "passed",
-      "local_targets_checked": 26
+      "local_targets_checked": 32
     },
-    "hypothetical_approved_dependency_fakes": "offline tests only; real Redis policy remains blocked",
+    "hypothetical_approved_dependency_fakes": "Verified-chain fixtures are offline only; actual publication/admission still needs both live mirrors and signatures."
+  },
+  "live_operations": {
+    "application_builds": 0,
+    "redis_mirror_or_signing": 0,
+    "signing_builds": 0,
+    "cloud_deploy_releases": 0,
+    "rollouts": 0,
+    "infrastructure_apply": 0,
+    "iam_changes": 0,
+    "runtime_journey": "not executed",
+    "real_complete_telemetry": "not collected",
+    "negative_admission": "not executed"
+  },
+  "validation_limits": [
+    "Official source association/content verified with index-bound unsigned registry provenance; no verified publisher signature or reproducible-build claim. Production chain remains blocked until the pinned AML contract is merged and both canonical/approved-registry copies independently verify; required attestation is still pending.",
+    "No fresh real Redis/cart runtime, restart/outage/recovery or telemetry acceptance: local Linux Docker engine unavailable. Static/source/reference tests do not replace those checks.",
+    "Current single-node capacity is insufficient. Additional node/logging exclusion proposal is planned but not applied. Proposed-node bin packing is an estimate; fresh actual allocation, daemonsets, pressures, image disk use and quota/capacity checks are mandatory.",
+    "Nine new application builds and full candidate/independent verification/separate signing/occurrence readback remain unexecuted. Existing catalog and Collector proofs were read-only reverified.",
+    "Actual Cloud Deploy rendered artifacts, generation/hash/retention protections, one all-member dev rollout, exact running digests/readiness and complete shopping journey remain pending reviewed-main authorization.",
+    "All-service cross-language traces/metrics/native linked logs, sink/exclusion no-duplicate proof, Redis native signals, negative admission and exact test-data cleanup still require real acceptance. Offline API fixtures are not live proof.",
+    "Collector queues/cursors are not durable; throughput, log rotation, restart loss, node failures and long-running behavior are not proven. Redis is ephemeral and singleton; no HA/durability promise.",
+    "Local offline Skaffold CLI render timed out during Windows client configuration. Exact generated inventory and both native Collector configs passed local validation; server render remains untested.",
+    "No rollout beyond dev, ingress, production sizing, broad load testing, disaster recovery or completion/closure of #100 is claimed."
+  ],
+  "implementation_hashes": {
+    "cloudbuild/online-shop/complete.py": "sha256:ca6359832ecd8ac6ff791c1fcaba6c7f490cf24c3e8d63dbb18c514cb04329e6",
+    "cloudbuild/online-shop/complete-v1.json": "sha256:3fc00dee52b0829f98c36c9d1fd2d7c6a34a3f3c405648138eb07d555460b6dc",
+    "cloudbuild/online-shop/complete-candidate-v1.schema.json": "sha256:36b4ab8c1b19d19bbd4139a8e923fb204c1e2d952954fe57775600a34e52678a",
+    "cloudbuild/online-shop/redis-policy-v1.json": "sha256:c3e35a722662e7695df196e3141b77cb27a31def336a7c01a505c0e3f2519dea",
+    "deploy/online-shop/complete.py": "sha256:c9c3a912d23f4d9e6ba35675a7f4fd0f93ea57354b8a94c1aeaa50bd1f3d97f3",
+    "deploy/online-shop/complete-acceptance.py": "sha256:0330975c04ab4b87f70b3780a8f091b6ba06f4d5dd3882d2407db9462ad78bd3",
+    "deploy/online-shop/complete-runtime-v1.json": "sha256:97f3d3b3adf1b6334c727274d6bf4f1d969afdd0f01300796bb9bfc132d632c2",
+    "deploy/online-shop/complete-skaffold.yaml": "sha256:088ae75361550b1911cd655b286c2da07f35f6dbc74c380beb7cbc34efcb7d3a",
+    "deploy/online-shop/complete-README.md": "sha256:870d4f52ab2fce22150baa440c81fc61e516f180c12dd7e40dc07dd0ede46230",
+    "scripts/tests/test_complete_shop.py": "sha256:eff8cdc9a58ee4d488d5605a877dcbdf1ea00bccc19ea4173f57e47ebd65aaa7",
+    "terraform/foundation/complete-shop.tf": "sha256:96c3cdadcf258605d0d946268b14314482842026ce0c018f645c25fdcee29e84",
+    "cloudbuild/online-shop/redis.py": "sha256:d1687b1551e3b5a8fbdb603b30d98b303e2d69e4aacdb0ced0438688c21011d0",
+    "cloudbuild/online-shop/redis-policy-v2.json": "sha256:8ad0587ef4fdd1298be088440f25a229edf15f5ce87caabf2de79335bdaf1925",
+    "cloudbuild/online-shop/redis-adoption.md": "sha256:6b89b515dec9053b30f247740c03d2fc1f12a971c909b1875e0dfa6fdbdafaf2",
+    "scripts/tests/test_redis_source.py": "sha256:ac7bc256585ae171a7e52b57a0a3abf33768f1ca3a5d12fdc0962e48ce45eef3"
+  },
+  "history": {
+    "initial_dependency_observation": {
+      "observed_date": "2026-11-01",
+      "base_configuration_revision": "2d808445ba154143de5a02be93b445744a474456",
+      "redis_content": {
+        "admission_decision": "blocked_unresolved_publisher_lineage",
+        "config_digest": "sha256:aa189b5a1954929c393585e6dc5717a75b18f75a931df8bdcc00a3d3bd546be6",
+        "layers_verified": 8,
+        "manifest_digest": "sha256:81be8a1f52db5f99fe3de0bbbd2efce827f51ce409155a95e9bdbac8c2721ba6",
+        "mirror_or_sign_performed": false,
+        "platform": "linux/amd64",
+        "publisher_provenance": "unresolved",
+        "status": "content_verified_untrusted"
+      }
+    },
     "cleanup_review": {
       "previous_head": "5aad13edaee40d6580a89906ed0cd415a435e9be",
       "previous_full_regression_tests": 211,
@@ -356,39 +423,88 @@
       "private_test_log": ".local-validation/issue100-cleanup-review/all-tests.private.log"
     }
   },
-  "live_operations": {
-    "application_builds": 0,
-    "redis_mirror_or_signing": 0,
-    "signing_builds": 0,
-    "cloud_deploy_releases": 0,
-    "rollouts": 0,
-    "infrastructure_apply": 0,
-    "iam_changes": 0,
-    "runtime_journey": "not executed",
-    "real_complete_telemetry": "not collected",
-    "negative_admission": "not executed"
-  },
-  "validation_limits": [
-    "Redis publisher/producing-source/build lineage unresolved: no full verification, signing, prepare or READY is permitted. Owner proof and a reviewed independent adoption/profile revision are required.",
-    "Current single-node capacity is insufficient. Additional node/logging exclusion proposal is planned but not applied. Proposed-node bin packing is an estimate; fresh actual allocation, daemonsets, pressures, image disk use and quota/capacity checks are mandatory.",
-    "Nine new application builds and full candidate/independent verification/separate signing/occurrence readback remain unexecuted. Existing catalog and Collector proofs were read-only reverified.",
-    "Actual Cloud Deploy rendered artifacts, generation/hash/retention protections, one all-member dev rollout, exact running digests/readiness and complete shopping journey remain pending reviewed-main authorization.",
-    "All-service cross-language traces/metrics/native linked logs, sink/exclusion no-duplicate proof, Redis native signals, negative admission and exact test-data cleanup still require real acceptance. Offline API fixtures are not live proof.",
-    "Collector queues/cursors are not durable; throughput, log rotation, restart loss, node failures and long-running behavior are not proven. Redis is ephemeral and singleton; no HA/durability promise.",
-    "Local offline Skaffold CLI render timed out during Windows client configuration. Exact generated inventory and both native Collector configs passed local validation; server render remains untested.",
-    "No rollout beyond dev, ingress, production sizing, broad load testing, disaster recovery or completion/closure of #100 is claimed."
-  ],
-  "implementation_hashes": {
-    "cloudbuild/online-shop/complete.py": "sha256:8f6d21e9e39bdf2034aef8e4027e417463b24ad4f34fcaff8f6043c7233cc21e",
-    "cloudbuild/online-shop/complete-v1.json": "sha256:4766ad8f2c1d3c771fb9c02a6c81a76f152fdf723de7c0013fb910a5f4143126",
-    "cloudbuild/online-shop/complete-candidate-v1.schema.json": "sha256:fee55de88f7b2e4b76b8b669ccb349865ae4312a2b7813d494bb4771b2024006",
-    "cloudbuild/online-shop/redis-policy-v1.json": "sha256:c3e35a722662e7695df196e3141b77cb27a31def336a7c01a505c0e3f2519dea",
-    "deploy/online-shop/complete.py": "sha256:5cbe36f1bb403a308a73198961d35f3fdbe03706ece4aea78cd588430b69365a",
-    "deploy/online-shop/complete-acceptance.py": "sha256:297a62096fc2cc3990c46878c4042bced208ca59d6b1b647b71271b3027754ac",
-    "deploy/online-shop/complete-runtime-v1.json": "sha256:97f3d3b3adf1b6334c727274d6bf4f1d969afdd0f01300796bb9bfc132d632c2",
-    "deploy/online-shop/complete-skaffold.yaml": "sha256:088ae75361550b1911cd655b286c2da07f35f6dbc74c380beb7cbc34efcb7d3a",
-    "deploy/online-shop/complete-README.md": "sha256:cadc1eb9c4c24987a4eccbbcab87d3bc9f70d3b077838a0e1d525598f6ca4a5a",
-    "scripts/tests/test_complete_shop.py": "sha256:3c93c2b3bf1b5ba7e9ff1bd80a90317ed6918abd6da0a3cd2eb49b6cecb1a527",
-    "terraform/foundation/complete-shop.tf": "sha256:96c3cdadcf258605d0d946268b14314482842026ce0c018f645c25fdcee29e84"
+  "redis_transition": {
+    "dependency_policy_version": 2,
+    "selection": {
+      "redis_version": "7.4.12",
+      "upstream_repository": "docker.io/library/redis",
+      "discovery_selector": "7.4.12-alpine3.21",
+      "index_digest": "sha256:8da19c7399dca900c6822a1cf30f9d2285585e2c4b457ff4095b0f4500054d3f",
+      "manifest_digest": "sha256:1cf73a2f04808e55a8bd2f5706c2aa0ebb0f71938f93deb7af79f48311cd5cb9",
+      "config_digest": "sha256:98c6ca8f397f86e469be752c3e7ed5eb8b17f2479840cb69a2e413037038e9f4"
+    },
+    "producing_source": {
+      "repository": "https://github.com/redis/docker-library-redis",
+      "revision": "786872f8c248c1f0990f93244cbcb3949329016d",
+      "directory": "alpine",
+      "filesSha256": {
+        "alpine/Dockerfile": "sha256:4e97a743bef79aaf917f7ca3334f4284a86fda09b8406b69f0f85adcb55ae5b2",
+        "alpine/docker-entrypoint.sh": "sha256:f8122ddc0eb2ae6ca7762725999f08b2ee7a6975da54e9061feee88f6d4ab2bb"
+      }
+    },
+    "producing_build": {
+      "builder_id": "https://github.com/docker-library",
+      "build_type": "https://mobyproject.org/buildkit@v1",
+      "id": "yfknsyfxvj00lki3zrdos7mff",
+      "statement_digest": "sha256:b5e4a0ae9c7c176abe5548d7a7aacbcf409425daef5f10b0bb7af4255b5f0705"
+    },
+    "dependency_aml_revision": "23b5b28de59e73fbfe2d4eff027f33bd82ae5e26",
+    "dependency_aml_pr": "https://github.com/DimitryZH/application-modernization-lab/pull/27",
+    "application_aml_revision_unchanged": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
+    "publisher_signature_verified": false,
+    "source_association": "verified against immutable official metadata and index-bound unsigned provenance",
+    "canonical_publication": "not performed; expected reference only",
+    "approved_registry_publication": "not performed; expected reference only",
+    "signing": "not performed",
+    "compatibility_static": {
+      "layers_hash_size_verified": 7,
+      "image_runtime_files": {
+        "etc/passwd": {
+          "mode": "0o644",
+          "uid": 0,
+          "gid": 0,
+          "regular_file": true,
+          "sha256": "sha256:305c31c876110cc0e1ed4f2cdc455c4f66370d9d17e1501de03f09c732ead76a"
+        },
+        "etc/group": {
+          "mode": "0o644",
+          "uid": 0,
+          "gid": 0,
+          "regular_file": true,
+          "sha256": "sha256:9c6691957cab32b964e3d6ebc2f4e86064b55684dfda6276729079ef70004ffd"
+        },
+        "usr/local/bin/redis-server": {
+          "mode": "0o755",
+          "uid": 0,
+          "gid": 0,
+          "regular_file": true,
+          "sha256": "sha256:509f65ffdcc372a3b1c825e4292c3a1f64711a4e9d240f963811825b429699ed"
+        },
+        "usr/local/bin/redis-cli": {
+          "mode": "0o755",
+          "uid": 0,
+          "gid": 0,
+          "regular_file": true,
+          "sha256": "sha256:39eee7c218bb0cd7e51fb26de0add73fe74315aa049ed8e9e2eb76ef6227d1e3"
+        },
+        "usr/local/bin/docker-entrypoint.sh": {
+          "mode": "0o755",
+          "uid": 0,
+          "gid": 0,
+          "regular_file": true,
+          "sha256": "sha256:f8122ddc0eb2ae6ca7762725999f08b2ee7a6975da54e9061feee88f6d4ab2bb"
+        }
+      },
+      "entrypoint_matches_pinned_source": true,
+      "docker_engine_available": false
+    },
+    "aml_local_checks": {
+      "redis_source_compose_tests": 6,
+      "build_planner_tests": 21,
+      "failures": 0
+    },
+    "real_redis_cart_runtime": "pending; local Linux Docker engine unavailable",
+    "existing_images_and_tags": "untouched; previous immutable reference retained; policy v1 frozen",
+    "next_stage": "merge coordinated review branches, then separately authorize canonical/registry digest-preserving copies, independent verification and complete-set signing"
   }
 }
