@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Complete-shop acceptance: fresh cloud guard before runtime, signals or traffic."""
 import argparse
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import http.cookiejar
 import importlib.util
 import json
@@ -94,17 +94,25 @@ def runtime(snapshot,record,revision,value,refs,cloud):
     require(status.get("observedGeneration")==ds["metadata"].get("generation") and status.get("desiredNumberScheduled")==status.get("updatedNumberScheduled")==status.get("numberReady")==status.get("numberAvailable")==len(collector_nodes),"collector_daemonset_unavailable")
     return {"runtime":"passed","members":counts}
 
+CLOCK_SKEW = timedelta(seconds=2)  # Fixed bound; never caller configurable.
+
 def signals(snapshot,record,since,value,refs,cloud):
     guard(record,value,refs,cloud)
     start=w.legacy.sample.utc(since);require(start<=datetime.now(timezone.utc),"future_traffic_window")
     trace=snapshot["trace"];require(re.fullmatch(r"[0-9a-f]{32}",trace.get("traceId","")) and trace.get("spans"),"empty_complete_trace")
+    journey=snapshot.get("journey",{})
+    require(type(journey.get("version")) is int and journey["version"]==1
+        and journey.get("kind")=="issue100-shopping-journey" and journey.get("completed") is True
+        and re.fullmatch(r"issue100-[0-9a-f]{32}",journey.get("session", ""))
+        and journey.get("trace_id")==trace["traceId"] and journey.get("since")==since,
+        "trace_not_bound_to_recorded_journey")
     rows={x["id"]:x for x in record["components"]};spans={};services=set();edges=set()
     for span in trace["spans"]:
         labels=span.get("labels",{});identity=labels.get("service.name")
         require(identity in c.APPS,"unknown_trace_component")
         require(labels.get("service.version")==rows[identity]["source"]["revision"] and labels.get("deployment.environment.name")=="dev"
             and labels.get("release_set_id")==record["release_set_id"] and labels.get("component_digest")==rows[identity]["digest"],"trace_component_attribution")
-        require(w.legacy.sample.utc(span["startTime"])>=start,"trace_outside_traffic_window")
+        require(start-CLOCK_SKEW<=w.legacy.sample.utc(span["startTime"])<=datetime.now(timezone.utc)+CLOCK_SKEW,"trace_outside_traffic_window")
         sid=format(int(span["spanId"]),"016x");require(sid not in spans,"duplicate_trace_span")
         spans[sid]=(identity,span);services.add(identity)
     for identity,span in spans.values():

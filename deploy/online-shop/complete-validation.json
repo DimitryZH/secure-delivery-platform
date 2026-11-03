@@ -1,13 +1,13 @@
 {
   "version": 1,
   "issue": 100,
-  "phase": "telemetry_fixes_review",
-  "observed_date": "2026-11-02",
+  "phase": "dev_telemetry_acceptance_blocked",
+  "observed_date": "2026-11-03",
   "base_configuration_revision": "00e925e724808ac80f1313fb85da1c6b3ec19f3f",
   "aml_revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
   "profile": "complete-shop-v1",
   "candidate_version": 2,
-  "implementation_status": "deployment telemetry fixes proposed for review; existing trusted candidate/images retained; no new live acceptance",
+  "implementation_status": "Merged telemetry fixes deployed with existing trusted artifacts; runtime and bounded journey passed; signals rejected trace timestamps before operator-local journey start.",
   "membership": {
     "application_services": [
       "adservice",
@@ -112,13 +112,14 @@
       "native_collector_agent_and_singleton_metrics_configuration": "passed",
       "native_otlp_datapoint_conversion": "passed; 192 sum points, 6 gauges, 6 histograms",
       "loopback_http_journey_fixture": "passed; synthetic fake storefront, not live acceptance",
-      "optional_skipped_fixture": "actual public Redis registry/source byte capture; earlier byte verification retained in immutable prior validation"
+      "optional_skipped_fixture": "actual public Redis registry/source byte capture; earlier byte verification retained in immutable prior validation",
+      "result_origin": "Historical PR #103 local regression run; not repeated for this documentation/evidence-only update."
     },
     "full_render_inventory": {
       "resource_count": 39,
       "exact_inventory_and_generated_labels": "passed offline fixtures",
-      "cloud_deploy_render": "pending for proposed deployment revision; original live render SUCCEEDED in dev_acceptance_20261102",
-      "skaffold_cli_offline_render": "not rerun for fixes; historical isolated local render passed before original live rollout"
+      "cloud_deploy_render": "SUCCEEDED for merged deployment 0c12993dccb802b47270ca2730a4e0c2005a98a6; actual protected inventory reviewed in dev_acceptance_20261103",
+      "skaffold_cli_offline_render": "passed for the new prepared bundle before release creation"
     },
     "git_diff_check": "passed",
     "local_links": {
@@ -126,29 +127,31 @@
       "local_targets_checked": 12,
       "scope": "focused complete-README.md"
     },
-    "hypothetical_approved_dependency_fakes": "Cloud/signature fixtures in regressions are offline only. Actual existing trusted candidate and images are preserved; no fresh live acceptance is claimed by these fixes."
+    "hypothetical_approved_dependency_fakes": "Historical unit fixtures remain offline only. Fresh live runtime and journey passed; signals CLI failed on trace time-window binding as recorded separately."
   },
   "live_operations": {
+    "cloud_deploy_releases": 1,
+    "dev_rollouts": 1,
+    "bounded_shopping_journeys": 1,
+    "http_requests": 14,
     "application_builds": 0,
     "signing_builds": 0,
-    "cloud_deploy_releases": 0,
-    "rollouts": 0,
+    "mirror_uploads": 0,
+    "negative_admission_tests": 0,
     "infrastructure_apply": 0,
     "iam_changes": 0,
-    "runtime_journey": "not repeated",
-    "real_complete_telemetry": "historical evidence replay only; no new cloud queries",
-    "negative_admission": "not repeated",
     "metric_descriptor_deletions": 0
   },
   "validation_limits": [
-    "Historical currency/payment DOUBLE/INT64 export failures are preserved in dev_acceptance_20261102. Proposed normalization passed native local OTLP tests; fresh Cloud Monitoring acceptance requires the merged deployment configuration and a new authorized rollout/journey.",
-    "Historical operation.completed/request.completed acceptance mismatch is preserved. Proposed component-specific server completion checks passed regressions and historical native-linked log replay; no new live signals acceptance is claimed.",
-    "Collector reports permanent metric export errors/drops from descriptor type conflicts; no loss-free telemetry claim is made. Initial Redis startup scrape/descriptor contention errors were also observed before native Redis metrics appeared.",
-    "Only one bounded 14-request shopping journey was executed; no load test, sustained throughput, restart/outage/recovery or log rotation validation was performed.",
-    "Overlap capacity passes with 350m CPU left after all reservations; request-based scheduling does not prove runtime performance or HA. Collector queues/cursors are ephemeral and Redis remains singleton/ephemeral.",
+    "Signals CLI exit 3 remains authoritative: eleven spans precede operator-local journey.since, earliest by 0.872361 seconds. Clock offset is suspected, not independently established. No time window adjustment, span filtering, new journey or live code patch.",
+    "Real readbacks contain request metrics and component-specific native completion logs for all ten services, 326 spans with 13 cross-service edges, and 13 native Redis metric types. These do not override failed signals acceptance.",
+    "No INT64/DOUBLE conflicts observed in the three new Collector Pod logs. Two startup export failures (write ordering and Duplicate TimeSeries, 50 dropped items) occurred before journey; none during the observed journey window. No loss-free or sustained no-duplication claim.",
+    "Currency/payment request and business INT64 datapoints were read back. Error-counter INT64 descriptor exists, but no error-counter datapoints were generated by the successful journey.",
+    "One 14-request journey in this attempt. No load, sustained throughput, restart/outage/recovery, durability or HA validation. Redis and Collector queues/cursors remain ephemeral.",
+    "Overlap capacity passes with 350m CPU after reservations; request-based scheduling is not a runtime performance guarantee.",
+    "Source/rendered/resolved generations protected at preflight; future rollout requires fresh protection/capacity checks.",
     "Redis admission is based on the reviewed Docker Official Images source/content chain and verified required attestation; upstream index-bound provenance is unsigned and no verified upstream publisher signature or reproducible-build claim is made.",
-    "Source/rendered/resolved artifact generations were protected at preflight; recorded retention is time-bound and must be freshly checked before any future rollout.",
-    "Dev only. No stage/prod shop rollout, ingress, infrastructure/IAM change, new application build/signing, production sizing, disaster recovery or issue closure occurred in this deployment attempt."
+    "Existing negative admission success and previous failed acceptance unchanged. No new negative Pod, image build/signing, infrastructure/IAM change or stage/prod shop rollout."
   ],
   "implementation_hashes": {
     "cloudbuild/online-shop/complete.py": "sha256:ca6359832ecd8ac6ff791c1fcaba6c7f490cf24c3e8d63dbb18c514cb04329e6",
@@ -156,11 +159,11 @@
     "cloudbuild/online-shop/complete-candidate-v1.schema.json": "sha256:36b4ab8c1b19d19bbd4139a8e923fb204c1e2d952954fe57775600a34e52678a",
     "cloudbuild/online-shop/redis-policy-v1.json": "sha256:c3e35a722662e7695df196e3141b77cb27a31def336a7c01a505c0e3f2519dea",
     "deploy/online-shop/complete.py": "sha256:40350f8968703963baf70868e4bfe02aca5c933929b3b5eebf402a607bc6b3ff",
-    "deploy/online-shop/complete-acceptance.py": "sha256:385dc1d575ed64a87252f16d7d3eed7acc261c4d5e57dd41c8d30524110a4b6f",
+    "deploy/online-shop/complete-acceptance.py": "sha256:5144cb3ff00e02516f9b20dfde952a170bc4ea6c645a475620a7dd71df7893fb",
     "deploy/online-shop/complete-runtime-v1.json": "sha256:97f3d3b3adf1b6334c727274d6bf4f1d969afdd0f01300796bb9bfc132d632c2",
     "deploy/online-shop/complete-skaffold.yaml": "sha256:088ae75361550b1911cd655b286c2da07f35f6dbc74c380beb7cbc34efcb7d3a",
-    "deploy/online-shop/complete-README.md": "sha256:0e42b8bb2e2428e9018e0e8e36f319020227cf45d5331ff8d0ae1268df442823",
-    "scripts/tests/test_complete_shop.py": "sha256:593525b187372a59470a613502559a156d32bd34214c705f09ae69d27d25ac49",
+    "deploy/online-shop/complete-README.md": "sha256:5b18b8bd1b87a458edc9e9d2643aed1f8fe46456d93be50944996ef45f2a9472",
+    "scripts/tests/test_complete_shop.py": "sha256:b582a00acbdadbe2a00a7b6268a035aaab9b40b6def6352e0eb38666f496cf5c",
     "terraform/foundation/complete-shop.tf": "sha256:96c3cdadcf258605d0d946268b14314482842026ce0c018f645c25fdcee29e84",
     "cloudbuild/online-shop/redis.py": "sha256:d1687b1551e3b5a8fbdb603b30d98b303e2d69e4aacdb0ced0438688c21011d0",
     "cloudbuild/online-shop/redis-policy-v2.json": "sha256:8ad0587ef4fdd1298be088440f25a229edf15f5ce87caabf2de79335bdaf1925",
@@ -1064,5 +1067,779 @@
     "new_live_signals_acceptance": "pending review/merge and separately authorized rollout/journey",
     "private_evidence_directory": ".local-validation/issue100-telemetry-fixes-20261102-577f5b21"
   },
-  "live_operations_scope": "telemetry fixes only; original live deployment is retained in dev_acceptance_20261102"
+  "live_operations_scope": "One protected dev release, one rollout and one bounded journey; read-only diagnostics; no execution code changes.",
+  "dev_acceptance_20261103": {
+    "deployment_revision": "0c12993dccb802b47270ca2730a4e0c2005a98a6",
+    "producing_revision": "00e925e724808ac80f1313fb85da1c6b3ec19f3f",
+    "release_set_id": "sha256:d3ddfc09ec0f0195d38fadfba8a2c31ce290b41bf4211ac4631a5b20039d3891",
+    "trusted_candidate": {
+      "uri": "gs://sre-platform-staging-507220-attestation-source/complete-shop-v1/00e925e724808ac80f1313fb85da1c6b3ec19f3f/d3ddfc09ec0f0195d38fadfba8a2c31ce290b41bf4211ac4631a5b20039d3891/candidate.json#1793633780298303",
+      "generation": "1793633780298303",
+      "sha256": "sha256:d7bdbc5d4e2f5cda5801281de2ecf08cbb599a6ea08d92c7dd1309c878fd21cc",
+      "size": 17777,
+      "release_set_id": "sha256:d3ddfc09ec0f0195d38fadfba8a2c31ce290b41bf4211ac4631a5b20039d3891",
+      "create_only": true,
+      "reused_existing_object": false,
+      "readback_verified": true
+    },
+    "artifacts_reused": true,
+    "trusted_components": [
+      {
+        "id": "adservice",
+        "artifact": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-adservice@sha256:09fd5e79bfdcc78b022835bc1645d4ad01f672bd63b4ccd5ab05f202b8ca273a",
+        "occurrence": "projects/sre-platform-staging-507220/occurrences/0fe2f6a6-5ba9-4e60-a663-f81a96c2fa00",
+        "signature_verified": true
+      },
+      {
+        "id": "cartservice",
+        "artifact": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-cartservice@sha256:53ddcef4d0b8abe7bfa8a4a2c9094c40cbdbd4f229021a5053574513c8e28fc4",
+        "occurrence": "projects/sre-platform-staging-507220/occurrences/ef41f2bc-89ef-4f1d-9cd5-67a15e5f0840",
+        "signature_verified": true
+      },
+      {
+        "id": "checkoutservice",
+        "artifact": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-checkoutservice@sha256:c97ff706a96012c4cadf46ee782b630d0a95c3da09e2e3fcce48fcb05a612f18",
+        "occurrence": "projects/sre-platform-staging-507220/occurrences/85eb0449-bc33-4128-90dc-23042668a424",
+        "signature_verified": true
+      },
+      {
+        "id": "currencyservice",
+        "artifact": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-currencyservice@sha256:6a9e6a935ffa29748824bb2277de478850031108cb00565a0a497c497a10fd68",
+        "occurrence": "projects/sre-platform-staging-507220/occurrences/99a6a17b-50b8-44cb-932b-fc8a72a4524c",
+        "signature_verified": true
+      },
+      {
+        "id": "emailservice",
+        "artifact": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-emailservice@sha256:53d5db0aff174f5b96d78fc6d81306d1eab0c9182fa920e38730ef693f80990b",
+        "occurrence": "projects/sre-platform-staging-507220/occurrences/a1a58263-26a8-4451-9f68-adaccd4ea30a",
+        "signature_verified": true
+      },
+      {
+        "id": "frontend",
+        "artifact": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-frontend@sha256:986a6633a2624a6b1d7b98dac075388c06ed83626ce6aef4834dad66513c9a83",
+        "occurrence": "projects/sre-platform-staging-507220/occurrences/640ac0dd-ff19-41a3-ac84-391dd780bee4",
+        "signature_verified": true
+      },
+      {
+        "id": "paymentservice",
+        "artifact": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-paymentservice@sha256:33773c413859ecfce09daa23884aec85647265ba9c9f0f870ec8b3cf5126e6c9",
+        "occurrence": "projects/sre-platform-staging-507220/occurrences/65f6e696-d791-4d28-ba03-6ee49cb88947",
+        "signature_verified": true
+      },
+      {
+        "id": "productcatalogservice",
+        "artifact": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-productcatalogservice@sha256:03b4d18587152a9c28a6aba743edbfffc6762234189c885a1b2e535ce4a81ee2",
+        "occurrence": "projects/sre-platform-staging-507220/occurrences/c274dea4-483a-43d6-b241-ed4d593e617e",
+        "signature_verified": true
+      },
+      {
+        "id": "recommendationservice",
+        "artifact": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-recommendationservice@sha256:70a9c039ad399dd44d8ae382d4b962394beeddaf3f5bad5e17ee0f6f20905235",
+        "occurrence": "projects/sre-platform-staging-507220/occurrences/f9839e9c-4b6e-4091-b63d-f74e92005a97",
+        "signature_verified": true
+      },
+      {
+        "id": "shippingservice",
+        "artifact": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-shippingservice@sha256:abc451eb998b19341aa4ea693082a1a0ce8ecf7f7ccc6318e3a100048f6686f9",
+        "occurrence": "projects/sre-platform-staging-507220/occurrences/3d62b9fb-cd38-4a13-9cd9-bc0e1519998a",
+        "signature_verified": true
+      },
+      {
+        "id": "redis-cart",
+        "artifact": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/redis-cart@sha256:1cf73a2f04808e55a8bd2f5706c2aa0ebb0f71938f93deb7af79f48311cd5cb9",
+        "occurrence": "projects/sre-platform-staging-507220/occurrences/66aebec0-a3df-48f0-9125-93aa837e59d3",
+        "signature_verified": true
+      }
+    ],
+    "collector_occurrence": "projects/sre-platform-staging-507220/occurrences/2b1c6135-42d3-453a-9942-f473dea60444",
+    "read_only_prerequisites": {
+      "observed_at": "2026-11-03T13:18:27.167794Z",
+      "configuration_sha": "0c12993dccb802b47270ca2730a4e0c2005a98a6",
+      "prerequisites_passed": true,
+      "project_mapping_verified": true,
+      "capacity": {
+        "capacity_ready": true,
+        "unscheduled_budget_items": 0,
+        "unassigned_pods": 0,
+        "node_count": 2,
+        "application_overlap_replicas": 2,
+        "redis_overlap_replicas": 1,
+        "collector_per_node": 1,
+        "remaining_bins": [
+          {
+            "cpu_m": 21.0,
+            "memory_mi": 8922.800537109375,
+            "slots": 79
+          },
+          {
+            "cpu_m": 329.0,
+            "memory_mi": 3865.5323486328125,
+            "slots": 86
+          }
+        ]
+      },
+      "sample_all_ready_http200": true,
+      "wi_grants_exclusion_metadata_ready": true,
+      "no_active_rollout": true,
+      "candidate_transport_sha256": "sha256:d7bdbc5d4e2f5cda5801281de2ecf08cbb599a6ea08d92c7dd1309c878fd21cc",
+      "release_resource": "projects/sre-platform-staging-507220/locations/us-central1/deliveryPipelines/catalog-dev/releases/shop-100-0c12993-20261103-6c84e807"
+    },
+    "clouddeploy": {
+      "release": "projects/sre-platform-staging-507220/locations/us-central1/deliveryPipelines/catalog-dev/releases/shop-100-0c12993-20261103-6c84e807",
+      "initial_rollout_disabled": true,
+      "render_build": "cf9cdb33-c05b-4ff3-baec-87a2a56d1d68",
+      "render_status": "SUCCEEDED",
+      "rollout_id": "dev-full-001",
+      "rollout_status": "SUCCEEDED",
+      "deployment_build": "5a201a55-7cfb-46b7-be2f-2406de9fb342",
+      "source_and_artifacts": {
+        "observed_at": "2026-11-03T13:22:05.962473Z",
+        "source": {
+          "uri": "gs://sre-platform-staging-507220-clouddeploy/source/1793712071.476164-8e9b30519c624880a515182d8c444d3f.gz",
+          "generation": "1793712070787395",
+          "sha256": "8c14f2a28ad7a9e58fdc0801bd5e8f73fcdc2e3fac44c442cd921b85054811e0",
+          "bytes": 9821,
+          "retention_expires_at": "2026-11-04T13:21:10.794Z",
+          "observed_at": "2026-11-03T13:22:02.937461Z"
+        },
+        "rendered": {
+          "uri": "gs://sre-platform-staging-507220-clouddeploy/rendered/dev/catalog-dev-6bb9801802d94227b56a2b48669c126e/shop-100-0c12993-20261103-6c84e807/dev/stable/manifest.yaml",
+          "generation": "1793712087060640",
+          "sha256": "f9d148e70007cb6dd5481f467489a013934251f47a2bb0d0607534bd8f22387a",
+          "bytes": 146937,
+          "retention_expires_at": "2026-11-04T13:21:27.067Z",
+          "observed_at": "2026-11-03T13:22:03.704640Z"
+        },
+        "resolved_skaffold": {
+          "uri": "gs://sre-platform-staging-507220-clouddeploy/rendered/dev/catalog-dev-6bb9801802d94227b56a2b48669c126e/shop-100-0c12993-20261103-6c84e807/dev/stable/skaffold.yaml",
+          "generation": "1793712087077904",
+          "sha256": "d332a3b6fe8c027f163571636a3a0e94ed6b05724b1c5588c66682cbfd01e171",
+          "bytes": 250,
+          "retention_expires_at": "2026-11-04T13:21:27.090Z",
+          "observed_at": "2026-11-03T13:22:04.064926Z"
+        },
+        "inventory": {
+          "applications": 10,
+          "dependencies": [
+            "redis-cart"
+          ],
+          "supporting": [
+            "collector"
+          ],
+          "loadgenerator": "excluded"
+        },
+        "documents": 39,
+        "canonical_inventory_sha256": "a316d62eb4ed833eff0252635c079008ffeeff094ca9dbc071123ceb24ee50b5",
+        "approved_protected": true
+      }
+    },
+    "preflight": {
+      "checks": [
+        {
+          "id": "request_binding",
+          "status": "PASS"
+        },
+        {
+          "id": "release_fresh_bound",
+          "status": "PASS"
+        },
+        {
+          "id": "release_independently_verified",
+          "status": "PASS"
+        },
+        {
+          "id": "release_all_eleven_signatures_verified",
+          "status": "PASS"
+        },
+        {
+          "id": "release_redis_provenance_approved",
+          "status": "PASS"
+        },
+        {
+          "id": "release_collector_independently_verified",
+          "status": "PASS"
+        },
+        {
+          "id": "admission_fresh_bound",
+          "status": "PASS"
+        },
+        {
+          "id": "admission_cluster_enforced",
+          "status": "PASS"
+        },
+        {
+          "id": "admission_exact_attestor_required",
+          "status": "PASS"
+        },
+        {
+          "id": "admission_no_bypass",
+          "status": "PASS"
+        },
+        {
+          "id": "target_fresh_bound",
+          "status": "PASS"
+        },
+        {
+          "id": "target_snapshot_matches_current",
+          "status": "PASS"
+        },
+        {
+          "id": "target_capacity_bin_packing_passed",
+          "status": "PASS"
+        },
+        {
+          "id": "target_metadata_and_wif_ready",
+          "status": "PASS"
+        },
+        {
+          "id": "target_all_stdout_exclusions_ready",
+          "status": "PASS"
+        },
+        {
+          "id": "target_no_duplicate_sinks",
+          "status": "PASS"
+        },
+        {
+          "id": "target_no_rollout_conflict",
+          "status": "PASS"
+        },
+        {
+          "id": "target_sample_baseline_preserved",
+          "status": "PASS"
+        },
+        {
+          "id": "caller_fresh_bound",
+          "status": "PASS"
+        },
+        {
+          "id": "caller_rollout_create",
+          "status": "PASS"
+        },
+        {
+          "id": "caller_deployment_act_as",
+          "status": "PASS"
+        },
+        {
+          "id": "review_fresh_bound",
+          "status": "PASS"
+        },
+        {
+          "id": "review_continue",
+          "status": "PASS"
+        },
+        {
+          "id": "reviewed_redis_admission",
+          "status": "PASS"
+        },
+        {
+          "id": "clouddeploy_context",
+          "status": "PASS"
+        },
+        {
+          "id": "exact_complete_inventory",
+          "status": "PASS"
+        },
+        {
+          "id": "immutable_rendered_commitment",
+          "status": "PASS"
+        },
+        {
+          "id": "source_protected_bytes",
+          "status": "PASS"
+        },
+        {
+          "id": "immutable_source_hash",
+          "status": "PASS"
+        },
+        {
+          "id": "rendered_protected_bytes",
+          "status": "PASS"
+        },
+        {
+          "id": "resolved_skaffold_protected_bytes",
+          "status": "PASS"
+        }
+      ],
+      "decision": "READY",
+      "mutation_performed": false,
+      "target": "dev"
+    },
+    "runtime": {
+      "members": {
+        "adservice": 1,
+        "cartservice": 1,
+        "checkoutservice": 1,
+        "collector": 2,
+        "currencyservice": 1,
+        "emailservice": 1,
+        "frontend": 1,
+        "paymentservice": 1,
+        "productcatalogservice": 1,
+        "recommendationservice": 1,
+        "redis-cart": 1,
+        "redis-metrics-collector": 1,
+        "shippingservice": 1
+      },
+      "runtime": "passed"
+    },
+    "final_runtime": {
+      "members": {
+        "adservice": 1,
+        "cartservice": 1,
+        "checkoutservice": 1,
+        "collector": 2,
+        "currencyservice": 1,
+        "emailservice": 1,
+        "frontend": 1,
+        "paymentservice": 1,
+        "productcatalogservice": 1,
+        "recommendationservice": 1,
+        "redis-cart": 1,
+        "redis-metrics-collector": 1,
+        "shippingservice": 1
+      },
+      "runtime": "passed"
+    },
+    "shopping_journey": {
+      "browse_details_currency_cart_checkout_confirmation": true,
+      "cleanup": "Cart cleared; exact Redis session key still requires scoped DEL per documented AML semantics.",
+      "journey": "passed",
+      "requests": 14,
+      "since": "2026-11-03T13:29:27.263478Z",
+      "trace_id": "4c6618d7564d411398f60bc6fc4c5a2a"
+    },
+    "telemetry": {
+      "signals_cli": {
+        "exit_code": 3,
+        "result": {
+          "status": "failed",
+          "reason": "complete_acceptance_evidence_missing_or_inconsistent"
+        },
+        "observations": [
+          {
+            "observed_at": "2026-11-03T13:30:08.890154Z",
+            "trace_spans": 326,
+            "trace_services": [
+              "adservice",
+              "cartservice",
+              "checkoutservice",
+              "currencyservice",
+              "emailservice",
+              "frontend",
+              "paymentservice",
+              "productcatalogservice",
+              "recommendationservice",
+              "shippingservice"
+            ],
+            "linked_logs": 443,
+            "metric_series": 59,
+            "metric_types": [
+              "workload.googleapis.com/online_shop.transport.requests",
+              "workload.googleapis.com/redis.clients.blocked",
+              "workload.googleapis.com/redis.clients.connected",
+              "workload.googleapis.com/redis.clients.max_input_buffer",
+              "workload.googleapis.com/redis.clients.max_output_buffer",
+              "workload.googleapis.com/redis.commands",
+              "workload.googleapis.com/redis.commands.processed",
+              "workload.googleapis.com/redis.connections.received",
+              "workload.googleapis.com/redis.connections.rejected",
+              "workload.googleapis.com/redis.memory.fragmentation_ratio",
+              "workload.googleapis.com/redis.memory.lua",
+              "workload.googleapis.com/redis.memory.peak",
+              "workload.googleapis.com/redis.memory.rss",
+              "workload.googleapis.com/redis.memory.used"
+            ],
+            "stdout_duplicate_entries": 0
+          }
+        ],
+        "ingestion_observation_limit_seconds": 300
+      },
+      "exact_guarded_function_failure": {
+        "exception_type": "ValueError",
+        "reason": "trace_outside_traffic_window",
+        "independent_guard": "passed before failure",
+        "source_file": "deploy/online-shop/complete-acceptance.py",
+        "source_line": 107
+      },
+      "trace": {
+        "trace_id": "4c6618d7564d411398f60bc6fc4c5a2a",
+        "spans": 326,
+        "components": [
+          "adservice",
+          "cartservice",
+          "checkoutservice",
+          "currencyservice",
+          "emailservice",
+          "frontend",
+          "paymentservice",
+          "productcatalogservice",
+          "recommendationservice",
+          "shippingservice"
+        ],
+        "cross_service_edges": 13
+      },
+      "window_diagnosis": {
+        "journey_since": "2026-11-03T13:29:27.263478+00:00",
+        "trace_min_start_offset_seconds": -0.872361,
+        "trace_max_start_offset_seconds": 3.792235,
+        "trace_spans_before_since": 11,
+        "native_logs_min_timestamp_offset_seconds": 1.161985,
+        "trace_before_since_by_component": {
+          "frontend": 5,
+          "currencyservice": 1,
+          "productcatalogservice": 2,
+          "cartservice": 3
+        },
+        "diagnosis": "Trace event timestamps precede operator-local journey start; fail-closed time-window comparison rejects the otherwise correlated trace. Clock offset is suspected; root cause requires review.",
+        "window_adjusted": false,
+        "trace_filtered": false,
+        "additional_journey": false
+      },
+      "native_logs": {
+        "entries": 443,
+        "component_completion_counts": {
+          "adservice": 4,
+          "cartservice": 14,
+          "checkoutservice": 10,
+          "currencyservice": 48,
+          "emailservice": 1,
+          "frontend": 98,
+          "paymentservice": 1,
+          "productcatalogservice": 10,
+          "recommendationservice": 7,
+          "shippingservice": 7
+        },
+        "native_correlation_offline_checks": "passed for recognized completions; CLI failed before log validation",
+        "duplicate_insert_ids": 0,
+        "duplicate_native_event_payloads": 0
+      },
+      "metric_readbacks": {
+        "adservice": {
+          "series_count": 1,
+          "value_types": [
+            "INT64"
+          ],
+          "metric_types": [
+            "workload.googleapis.com/online_shop.transport.requests"
+          ]
+        },
+        "cartservice": {
+          "series_count": 6,
+          "value_types": [
+            "INT64"
+          ],
+          "metric_types": [
+            "workload.googleapis.com/online_shop.transport.requests"
+          ]
+        },
+        "checkoutservice": {
+          "series_count": 9,
+          "value_types": [
+            "INT64"
+          ],
+          "metric_types": [
+            "workload.googleapis.com/online_shop.transport.requests"
+          ]
+        },
+        "currencyservice": {
+          "series_count": 2,
+          "value_types": [
+            "INT64"
+          ],
+          "metric_types": [
+            "workload.googleapis.com/online_shop.transport.requests"
+          ]
+        },
+        "emailservice": {
+          "series_count": 2,
+          "value_types": [
+            "INT64"
+          ],
+          "metric_types": [
+            "workload.googleapis.com/online_shop.transport.requests"
+          ]
+        },
+        "frontend": {
+          "series_count": 18,
+          "value_types": [
+            "INT64"
+          ],
+          "metric_types": [
+            "workload.googleapis.com/online_shop.transport.requests"
+          ]
+        },
+        "paymentservice": {
+          "series_count": 1,
+          "value_types": [
+            "INT64"
+          ],
+          "metric_types": [
+            "workload.googleapis.com/online_shop.transport.requests"
+          ]
+        },
+        "productcatalogservice": {
+          "series_count": 2,
+          "value_types": [
+            "INT64"
+          ],
+          "metric_types": [
+            "workload.googleapis.com/online_shop.transport.requests"
+          ]
+        },
+        "recommendationservice": {
+          "series_count": 3,
+          "value_types": [
+            "INT64"
+          ],
+          "metric_types": [
+            "workload.googleapis.com/online_shop.transport.requests"
+          ]
+        },
+        "shippingservice": {
+          "series_count": 2,
+          "value_types": [
+            "INT64"
+          ],
+          "metric_types": [
+            "workload.googleapis.com/online_shop.transport.requests"
+          ]
+        },
+        "redis-cart": {
+          "series_count": 13,
+          "value_types": [
+            "DOUBLE",
+            "INT64"
+          ],
+          "metric_types": [
+            "workload.googleapis.com/redis.clients.blocked",
+            "workload.googleapis.com/redis.clients.connected",
+            "workload.googleapis.com/redis.clients.max_input_buffer",
+            "workload.googleapis.com/redis.clients.max_output_buffer",
+            "workload.googleapis.com/redis.commands",
+            "workload.googleapis.com/redis.commands.processed",
+            "workload.googleapis.com/redis.connections.received",
+            "workload.googleapis.com/redis.connections.rejected",
+            "workload.googleapis.com/redis.memory.fragmentation_ratio",
+            "workload.googleapis.com/redis.memory.lua",
+            "workload.googleapis.com/redis.memory.peak",
+            "workload.googleapis.com/redis.memory.rss",
+            "workload.googleapis.com/redis.memory.used"
+          ]
+        }
+      },
+      "counter_readbacks": {
+        "online_shop.transport.requests": {
+          "descriptor_value_type": "INT64",
+          "components_int64_points": {
+            "currencyservice": 26,
+            "paymentservice": 13
+          }
+        },
+        "online_shop.transport.errors": {
+          "descriptor_value_type": "INT64",
+          "components_int64_points": {}
+        },
+        "online_shop.business.operations": {
+          "descriptor_value_type": "INT64",
+          "components_int64_points": {
+            "currencyservice": 14,
+            "paymentservice": 14
+          }
+        }
+      },
+      "error_counter_limit": "INT64 descriptor confirmed; successful journey emitted no currency/payment error-counter points. Historical native regressions are not fresh live error-path proof.",
+      "exporter": {
+        "collector_log_files": 3,
+        "pods": [
+          {
+            "log_file": "collector-diagnostic-14.private.log",
+            "lines": 9,
+            "export_errors": 0
+          },
+          {
+            "log_file": "collector-diagnostic-2.private.log",
+            "lines": 51,
+            "export_errors": 2
+          },
+          {
+            "log_file": "collector-diagnostic-3.private.log",
+            "lines": 23,
+            "export_errors": 0
+          }
+        ],
+        "events": [
+          {
+            "timestamp": "2026-11-03T13:25:49.697781124Z",
+            "during_or_after_journey_start": false,
+            "rpc_codes": [
+              "FailedPrecondition"
+            ],
+            "category": "timeseries_write_order",
+            "dropped_items": 20,
+            "old_int64_double_conflict": false
+          },
+          {
+            "timestamp": "2026-11-03T13:25:59.862624144Z",
+            "during_or_after_journey_start": false,
+            "rpc_codes": [
+              "InvalidArgument"
+            ],
+            "category": "duplicate_timeseries",
+            "dropped_items": 30,
+            "old_int64_double_conflict": false
+          }
+        ],
+        "rollout_export_errors": 2,
+        "journey_window_export_errors": 0,
+        "int64_double_descriptor_conflicts": 0,
+        "startup_dropped_items": 50,
+        "loss_free_claim": false,
+        "observation_end": "2026-11-03T13:35:52.666246Z"
+      },
+      "original_stdout_duplicate_entries": 0,
+      "sink_review_no_duplicates": true,
+      "accepted": false
+    },
+    "cleanup": {
+      "cleanup": "passed",
+      "exact_synthetic_key_removed": true,
+      "other_keys_modified": false
+    },
+    "final_health": {
+      "observed_at": "2026-11-03T13:37:10.142262Z",
+      "samples": [
+        {
+          "namespace": "dev",
+          "ready_available": true,
+          "healthz_http": 200,
+          "uids_templates_unchanged": true
+        },
+        {
+          "namespace": "stage",
+          "ready_available": true,
+          "healthz_http": 200,
+          "uids_templates_unchanged": true
+        },
+        {
+          "namespace": "prod",
+          "ready_available": true,
+          "healthz_http": 200,
+          "uids_templates_unchanged": true
+        }
+      ],
+      "nodes_ready_no_pressure": true,
+      "owned_ports_closed": [
+        8080,
+        16379
+      ],
+      "cleanup": {
+        "cleanup": "passed",
+        "exact_synthetic_key_removed": true,
+        "other_keys_modified": false
+      }
+    },
+    "capacity_after_cleanup": {
+      "capacity_ready": true,
+      "unscheduled_budget_items": 0,
+      "unassigned_pods": 0,
+      "node_count": 2,
+      "application_overlap_replicas": 2,
+      "redis_overlap_replicas": 1,
+      "collector_per_node": 1,
+      "remaining_bins": [
+        {
+          "cpu_m": 21.0,
+          "memory_mi": 8922.800537109375,
+          "slots": 79
+        },
+        {
+          "cpu_m": 329.0,
+          "memory_mi": 3865.5323486328125,
+          "slots": 86
+        }
+      ]
+    },
+    "negative_admission": {
+      "repeated": false,
+      "previous_success_preserved": "dev_acceptance_20261102.negative_admission"
+    },
+    "execution_code_changed": false,
+    "live_operations_this_attempt": {
+      "cloud_deploy_releases": 1,
+      "dev_rollouts": 1,
+      "bounded_shopping_journeys": 1,
+      "http_requests": 14,
+      "application_builds": 0,
+      "signing_builds": 0,
+      "mirror_uploads": 0,
+      "negative_admission_tests": 0,
+      "infrastructure_apply": 0,
+      "iam_changes": 0,
+      "metric_descriptor_deletions": 0
+    },
+    "acceptance_status": "blocked: trace_outside_traffic_window; no complete signals acceptance claimed",
+    "private_evidence_directory": ".local-validation/issue100-telemetry-live-20261103-6c84e807"
+  },
+  "deployment_revision": "0c12993dccb802b47270ca2730a4e0c2005a98a6",
+  "trace_clock_fix_review": {
+    "status": "proposed; not executed live",
+    "fixed_tolerance_seconds": 2,
+    "scope": "span start lower and future upper bound only",
+    "required_binding": "original completed issue100 journey record; exact trace_id and since; independent release and component attribution unchanged",
+    "utc_parser": "UTC-preserving; nanosecond truncation less than one microsecond",
+    "measurement": [
+      {
+        "source": "Google API HTTP Date (one-second resolution)",
+        "before": "2026-11-03T14:15:56.929085+00:00",
+        "after": "2026-11-03T14:15:57.301519+00:00",
+        "round_trip_seconds": 0.3724479000084102,
+        "server_utc": "2026-11-03T14:15:56+00:00",
+        "offset_lower_seconds": -1.301519,
+        "offset_upper_seconds": 0.070915
+      },
+      {
+        "source": "Google API HTTP Date (one-second resolution)",
+        "before": "2026-11-03T14:15:57.301566+00:00",
+        "after": "2026-11-03T14:15:57.583181+00:00",
+        "round_trip_seconds": 0.28163959993980825,
+        "server_utc": "2026-11-03T14:15:56+00:00",
+        "offset_lower_seconds": -1.583181,
+        "offset_upper_seconds": -0.301566
+      },
+      {
+        "source": "Google API HTTP Date (one-second resolution)",
+        "before": "2026-11-03T14:15:57.583228+00:00",
+        "after": "2026-11-03T14:15:57.871121+00:00",
+        "round_trip_seconds": 0.2879206999205053,
+        "server_utc": "2026-11-03T14:15:56+00:00",
+        "offset_lower_seconds": -1.871121,
+        "offset_upper_seconds": -0.583228
+      },
+      {
+        "source": "node cached CPU stats; not instantaneous clock proof",
+        "node_index": 0,
+        "before": "2026-11-03T14:15:58.186129+00:00",
+        "after": "2026-11-03T14:15:58.528604+00:00",
+        "sample_time": "2026-11-03T14:15:56Z"
+      },
+      {
+        "source": "node cached CPU stats; not instantaneous clock proof",
+        "node_index": 1,
+        "before": "2026-11-03T14:15:58.528637+00:00",
+        "after": "2026-11-03T14:15:59.026353+00:00",
+        "sample_time": "2026-11-03T14:15:51Z"
+      }
+    ],
+    "measurement_limits": "HTTP Date quantized and potentially cached; node CPU timestamps cached. Exact instantaneous node offset not established.",
+    "existing_journey_recheck": "sufficient for recorded journey after merge with preserved original session record and snapshot; no deployment or new traffic required",
+    "focused_tests": {
+      "count": 33,
+      "failed": 0,
+      "skipped": 3,
+      "skip_reason": "optional AML/native Collector integrations not configured in this focused run"
+    },
+    "historical_failed_acceptance_preserved": true,
+    "new_live_mutations": 0,
+    "new_traffic": 0
+  }
 }

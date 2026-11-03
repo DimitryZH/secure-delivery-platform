@@ -75,7 +75,7 @@ class CompleteTests(unittest.TestCase):
             logs.append({'labels':labels,'spanId':body['span_id'],'trace':'projects/'+c.r.policy()['project']+'/traces/'+trace,
                 'timestamp':stamp,'logName':'projects/'+c.r.policy()['project']+'/logs/online-shop%2Fcatalog',
                 'resource':{'type':'k8s_container','labels':{'namespace_name':'dev'}},'jsonPayload':body})
-        return stamp,{'trace':{'traceId':trace,'spans':spans},'logs':{'entries':logs},'metrics':{'timeSeries':metrics},
+        return stamp,{'journey':{'version':1,'kind':'issue100-shopping-journey','completed':True,'session':'issue100-'+'a'*32,'trace_id':trace,'since':stamp},'trace':{'traceId':trace,'spans':spans},'logs':{'entries':logs},'metrics':{'timeSeries':metrics},
                       'original_stdout_duplicate_entries':0,'sink_review_no_duplicates':True}
 
     def runtime_fixture(self,revision):
@@ -541,6 +541,23 @@ class CompleteTests(unittest.TestCase):
             self.assertEqual(a.signals(snapshot,self.record,stamp,self.plans,self.refs,Mock())['signals'],'passed')
             for mutate in (lambda s:s['trace']['spans'].pop(),lambda s:s['logs']['entries'][0]['labels'].update(component_digest='sha256:'+'0'*64),
                            lambda s:s.update(original_stdout_duplicate_entries=1),lambda s:s['metrics']['timeSeries'].pop()):
+                altered=copy.deepcopy(snapshot);mutate(altered)
+                with self.assertRaises(ValueError):a.signals(altered,self.record,stamp,self.plans,self.refs,Mock())
+
+    def test_trace_clock_skew_and_recorded_journey_binding(self):
+        stamp,snapshot=self.signal_fixture()
+        with patch.object(a,'guard'):
+            for seconds in (0,0.872361,2):
+                altered=copy.deepcopy(snapshot)
+                for span in altered['trace']['spans']:
+                    span['startTime']=(datetime.fromisoformat(stamp.replace('Z','+00:00'))-timedelta(seconds=seconds)).isoformat().replace('+00:00','Z')
+                self.assertEqual(a.signals(altered,self.record,stamp,self.plans,self.refs,Mock())['signals'],'passed')
+            for mutate in (
+                lambda s:s['trace']['spans'][0].update(startTime=(datetime.fromisoformat(stamp.replace('Z','+00:00'))-timedelta(seconds=2.000001)).isoformat().replace('+00:00','Z')),
+                lambda s:s['trace'].update(traceId='f'*32),
+                lambda s:s['journey'].update(since='2000-01-01T00:00:00Z'),
+                lambda s:s['trace']['spans'][0]['labels'].update(component_digest='sha256:'+'0'*64),
+                lambda s:s['trace']['spans'][0]['labels'].update(release_set_id='sha256:'+'0'*64)):
                 altered=copy.deepcopy(snapshot);mutate(altered)
                 with self.assertRaises(ValueError):a.signals(altered,self.record,stamp,self.plans,self.refs,Mock())
 
