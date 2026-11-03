@@ -17,6 +17,25 @@ require = c.require
 legacy = c.legacy
 ap = legacy.module("catalog_capacity", HERE / "acceptance.py")
 
+# Only these deployment executables may differ from a reused producer. The
+# current deployment still reviews *all* trust files; shared release verification,
+# profiles, runtime contracts, supporting policy and signing code must match both.
+DEPLOYMENT_CODE = ("deploy/online-shop/complete.py", "deploy/online-shop/complete-acceptance.py")
+
+
+def reviewed(record, revision):
+    c.reviewed(revision)
+    producing = record["configuration_revision"]
+    require(re.fullmatch(c.r.SHA, producing or ""), "producing_revision_required")
+    if producing != revision:
+        with c.r.fetched(c.r.SDP, producing) as source:
+            source.git("fetch", "--no-tags", c.r.SDP + ".git", "main")
+            source.git("merge-base", "--is-ancestor", producing, "FETCH_HEAD")
+            for name in c.TRUST_FILES:
+                if name not in DEPLOYMENT_CODE:
+                    require((ROOT / name).read_bytes().replace(b"\r\n", b"\n") == source.blob(name),
+                            "incompatible_producing_trust_files")
+
 def runtime_contract():
     value = c.r.read(HERE / "complete-runtime-v1.json")
     require(type(value.get("version")) is int and value["version"] == 1 and value["aml_revision"] == c.r.REVISION
@@ -33,6 +52,18 @@ def collector_config(record):
     q = copy.deepcopy(c.r.read(HERE / "collector.json"))
     q["receivers"] = {"otlp": q["receivers"]["otlp"]}
     q["processors"] = {"memory_limiter":{"check_interval":"1s","limit_mib":512,"spike_limit_mib":64}, "batch":{"timeout":"1s","send_batch_size":128}}
+    # pdata's inactive numeric oneof getter returns zero. Checking value_int
+    # preserves existing nonzero INT64s; rewriting INT64 zero is a no-op. Convert
+    # only exact, nonnegative integral sums in range, including DOUBLE zero.
+    counters = ' or '.join('metric.name == "' + name + '"' for name in (
+        "online_shop.transport.requests", "online_shop.transport.errors", "online_shop.business.operations"))
+    q["processors"]["transform/integer_counters"] = {"error_mode":"propagate", "metric_statements":[{
+        "context":"datapoint", "statements":[
+            'set(datapoint.value_int, Int(datapoint.value_double)) where (' + counters + ')'
+            ' and metric.type == METRIC_DATA_TYPE_SUM and metric.is_monotonic == true'
+            ' and datapoint.value_int == 0 and datapoint.value_double >= 0'
+            ' and datapoint.value_double < 9223372036854775807'
+            ' and datapoint.value_double == Int(datapoint.value_double)']} ]}
     q["service"]["pipelines"] = {}
     for row in record["components"]:
         identity = row["id"]
@@ -57,8 +88,10 @@ def collector_config(record):
                          + c.r.REVISION + '" or resource.attributes["deployment.environment.name"] != "dev"')
             q["processors"]["filter/" + identity] = {"error_mode":"propagate", "traces":{"span":[condition]},"metrics":{"metric":[condition]}}
             for signal in ("traces","metrics"):
+                normalization = (["transform/integer_counters"]
+                    if signal == "metrics" and identity in ("currencyservice","paymentservice") else [])
                 q["service"]["pipelines"][signal + "/" + identity] = {"receivers":["otlp"],
-                    "processors":["memory_limiter","filter/" + identity,"resource/" + identity,"batch"],"exporters":["googlecloud"]}
+                    "processors":["memory_limiter","filter/" + identity,*normalization,"resource/" + identity,"batch"],"exporters":["googlecloud"]}
         q["receivers"]["file_log/" + identity] = receiver
         q["service"]["pipelines"]["logs/" + identity] = {"receivers":["file_log/" + identity],
             "processors":["memory_limiter","resource/" + identity,"batch"],"exporters":["googlecloud"]}
@@ -220,8 +253,7 @@ def capacity(snapshot, documents):
         "remaining_bins":[{"cpu_m":float(b[0]),"memory_mi":float(b[1]/1024**2),"slots":b[2]} for b in bins]}
 
 def prepare(record, revision, refs, value, release, output, cloud):
-    c.reviewed(revision)
-    if record["configuration_revision"]!=revision:c.reviewed(record["configuration_revision"])
+    reviewed(record, revision)
     context={"release_resource":release,"target_resource":"projects/"+c.r.policy()["project"]+"/locations/us-central1/targets/dev"}
     legacy.clouddeploy_labels(context)
     c.verify(record,record["configuration_revision"],value,refs,cloud)
@@ -287,9 +319,8 @@ def main():
     for name in ("candidate","deployment-revision","clouddeploy-release","output-dir","snapshot"):parser.add_argument("--"+name,required=name in ("candidate","deployment-revision","clouddeploy-release"))
     args=parser.parse_args()
     try:
-        c.reviewed(args.deployment_revision)
         record=c.r.read(args.candidate)
-        if record["configuration_revision"]!=args.deployment_revision:c.reviewed(record["configuration_revision"])
+        reviewed(record,args.deployment_revision)
         with c.r.fetched(c.r.AML,c.r.REVISION) as source:value=c.plans(source);refs=c.references(source,value)
         c.validate_candidate(record,record["configuration_revision"],refs)
         if args.action=="prepare":result=prepare(record,args.deployment_revision,refs,value,args.clouddeploy_release,args.output_dir,c.r.Cloud())

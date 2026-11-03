@@ -19,6 +19,32 @@ w=importlib.util.module_from_spec(spec);spec.loader.exec_module(w)
 c=w.c;require=c.require
 CLEANUP_TARGET="projects/sre-platform-staging-507220/locations/us-central1-a/clusters/secure-delivery-platform/namespaces/dev/services/redis-cart"
 CLEANUP_ENDPOINT="127.0.0.1:16379"
+RPC_COMPLETIONS = {
+    "cartservice": {"/hipstershop.CartService/" + name for name in ("AddItem","GetCart","EmptyCart")},
+    "emailservice": {"hipstershop.EmailService/SendOrderConfirmation"},
+    "recommendationservice": {"hipstershop.RecommendationService/ListRecommendations"},
+}
+
+
+def server_completion(identity, body, sid, spans):
+    """Pinned AML RPC completion, not a dependency or business-internal event."""
+    if identity not in RPC_COMPLETIONS:
+        return body.get("event") == "request.completed"
+    if (body.get("event") != "operation.completed" or body.get("category") != "application"
+            or body.get("operation") not in RPC_COMPLETIONS[identity] or sid not in spans):
+        return False
+    _, span = spans[sid]
+    operation = body["operation"].removeprefix("/")
+    if identity == "cartservice":
+        # ASP.NET owns SERVER; the interceptor logs while its cart.* child is
+        # active. Require that exact child and its same-component SERVER parent.
+        if span.get("kind") not in (None,"SPAN_KIND_UNSPECIFIED") or span.get("name") != "cart." + operation.rsplit("/",1)[1]:
+            return False
+        parent = format(int(span.get("parentSpanId") or 0),"016x")
+        if parent not in spans or spans[parent][0] != identity:
+            return False
+        _, span = spans[parent]
+    return span.get("kind") == "RPC_SERVER" and span.get("name") == operation
 
 def guard(record, value, refs, cloud):
     proof=c.verify(record,record["configuration_revision"],value,refs,cloud)
@@ -95,8 +121,8 @@ def signals(snapshot,record,since,value,refs,cloud):
     logged=set()
     for entry in snapshot["logs"].get("entries",[]):
         labels=entry.get("labels",{});identity=labels.get("service.name")
-        if identity not in c.APPS or entry.get("jsonPayload",{}).get("event")!="request.completed":continue
-        body=entry["jsonPayload"];sid=entry.get("spanId")
+        body=entry.get("jsonPayload",{});sid=entry.get("spanId")
+        if identity not in c.APPS or not server_completion(identity,body,sid,spans):continue
         require(entry.get("trace")=="projects/"+c.r.policy()["project"]+"/traces/"+trace["traceId"]
             and body.get("trace_id")==trace["traceId"] and body.get("span_id")==sid and sid in spans and spans[sid][0]==identity,"native_component_log_correlation")
         require(labels.get("service.version")==rows[identity]["source"]["revision"] and labels.get("deployment.environment.name")=="dev"
@@ -210,13 +236,14 @@ def main():
         if args.action=="cleanup":
             result=cleanup_from_record(args.session_record,args.session,args.redis,args.redis_target)
             print(json.dumps(result,sort_keys=True));return 0
-        c.reviewed(args.configuration_revision)
         record=c.r.read(args.candidate)
+        revision=args.deployment_revision or args.configuration_revision
+        w.reviewed(record,revision)
         with c.r.fetched(c.r.AML,c.r.REVISION) as source:value=c.plans(source);refs=c.references(source,value)
         c.validate_candidate(record,args.configuration_revision,refs)
         cloud=c.r.Cloud()
-        if args.action=="capacity":result=w.capacity(c.r.read(args.snapshot),w.render(record,args.deployment_revision,refs))
-        elif args.action=="runtime":result=runtime(c.r.read(args.snapshot),record,args.deployment_revision,value,refs,cloud)
+        if args.action=="capacity":result=w.capacity(c.r.read(args.snapshot),w.render(record,revision,refs))
+        elif args.action=="runtime":result=runtime(c.r.read(args.snapshot),record,revision,value,refs,cloud)
         elif args.action=="signals":result=signals(c.r.read(args.snapshot),record,args.since,value,refs,cloud)
         else:
             guard(record,value,refs,cloud)
