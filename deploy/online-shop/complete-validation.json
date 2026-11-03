@@ -159,11 +159,11 @@
     "cloudbuild/online-shop/complete-candidate-v1.schema.json": "sha256:36b4ab8c1b19d19bbd4139a8e923fb204c1e2d952954fe57775600a34e52678a",
     "cloudbuild/online-shop/redis-policy-v1.json": "sha256:c3e35a722662e7695df196e3141b77cb27a31def336a7c01a505c0e3f2519dea",
     "deploy/online-shop/complete.py": "sha256:40350f8968703963baf70868e4bfe02aca5c933929b3b5eebf402a607bc6b3ff",
-    "deploy/online-shop/complete-acceptance.py": "sha256:385dc1d575ed64a87252f16d7d3eed7acc261c4d5e57dd41c8d30524110a4b6f",
+    "deploy/online-shop/complete-acceptance.py": "sha256:5144cb3ff00e02516f9b20dfde952a170bc4ea6c645a475620a7dd71df7893fb",
     "deploy/online-shop/complete-runtime-v1.json": "sha256:97f3d3b3adf1b6334c727274d6bf4f1d969afdd0f01300796bb9bfc132d632c2",
     "deploy/online-shop/complete-skaffold.yaml": "sha256:088ae75361550b1911cd655b286c2da07f35f6dbc74c380beb7cbc34efcb7d3a",
-    "deploy/online-shop/complete-README.md": "sha256:3ce70c9634b00dd65ab3984d99ed5820c4cccf65b9e37d5aa56bbf6de7f248d7",
-    "scripts/tests/test_complete_shop.py": "sha256:593525b187372a59470a613502559a156d32bd34214c705f09ae69d27d25ac49",
+    "deploy/online-shop/complete-README.md": "sha256:5b18b8bd1b87a458edc9e9d2643aed1f8fe46456d93be50944996ef45f2a9472",
+    "scripts/tests/test_complete_shop.py": "sha256:b582a00acbdadbe2a00a7b6268a035aaab9b40b6def6352e0eb38666f496cf5c",
     "terraform/foundation/complete-shop.tf": "sha256:96c3cdadcf258605d0d946268b14314482842026ce0c018f645c25fdcee29e84",
     "cloudbuild/online-shop/redis.py": "sha256:d1687b1551e3b5a8fbdb603b30d98b303e2d69e4aacdb0ced0438688c21011d0",
     "cloudbuild/online-shop/redis-policy-v2.json": "sha256:8ad0587ef4fdd1298be088440f25a229edf15f5ce87caabf2de79335bdaf1925",
@@ -1780,5 +1780,66 @@
     "acceptance_status": "blocked: trace_outside_traffic_window; no complete signals acceptance claimed",
     "private_evidence_directory": ".local-validation/issue100-telemetry-live-20261103-6c84e807"
   },
-  "deployment_revision": "0c12993dccb802b47270ca2730a4e0c2005a98a6"
+  "deployment_revision": "0c12993dccb802b47270ca2730a4e0c2005a98a6",
+  "trace_clock_fix_review": {
+    "status": "proposed; not executed live",
+    "fixed_tolerance_seconds": 2,
+    "scope": "span start lower and future upper bound only",
+    "required_binding": "original completed issue100 journey record; exact trace_id and since; independent release and component attribution unchanged",
+    "utc_parser": "UTC-preserving; nanosecond truncation less than one microsecond",
+    "measurement": [
+      {
+        "source": "Google API HTTP Date (one-second resolution)",
+        "before": "2026-11-03T14:15:56.929085+00:00",
+        "after": "2026-11-03T14:15:57.301519+00:00",
+        "round_trip_seconds": 0.3724479000084102,
+        "server_utc": "2026-11-03T14:15:56+00:00",
+        "offset_lower_seconds": -1.301519,
+        "offset_upper_seconds": 0.070915
+      },
+      {
+        "source": "Google API HTTP Date (one-second resolution)",
+        "before": "2026-11-03T14:15:57.301566+00:00",
+        "after": "2026-11-03T14:15:57.583181+00:00",
+        "round_trip_seconds": 0.28163959993980825,
+        "server_utc": "2026-11-03T14:15:56+00:00",
+        "offset_lower_seconds": -1.583181,
+        "offset_upper_seconds": -0.301566
+      },
+      {
+        "source": "Google API HTTP Date (one-second resolution)",
+        "before": "2026-11-03T14:15:57.583228+00:00",
+        "after": "2026-11-03T14:15:57.871121+00:00",
+        "round_trip_seconds": 0.2879206999205053,
+        "server_utc": "2026-11-03T14:15:56+00:00",
+        "offset_lower_seconds": -1.871121,
+        "offset_upper_seconds": -0.583228
+      },
+      {
+        "source": "node cached CPU stats; not instantaneous clock proof",
+        "node_index": 0,
+        "before": "2026-11-03T14:15:58.186129+00:00",
+        "after": "2026-11-03T14:15:58.528604+00:00",
+        "sample_time": "2026-11-03T14:15:56Z"
+      },
+      {
+        "source": "node cached CPU stats; not instantaneous clock proof",
+        "node_index": 1,
+        "before": "2026-11-03T14:15:58.528637+00:00",
+        "after": "2026-11-03T14:15:59.026353+00:00",
+        "sample_time": "2026-11-03T14:15:51Z"
+      }
+    ],
+    "measurement_limits": "HTTP Date quantized and potentially cached; node CPU timestamps cached. Exact instantaneous node offset not established.",
+    "existing_journey_recheck": "sufficient for recorded journey after merge with preserved original session record and snapshot; no deployment or new traffic required",
+    "focused_tests": {
+      "count": 33,
+      "failed": 0,
+      "skipped": 3,
+      "skip_reason": "optional AML/native Collector integrations not configured in this focused run"
+    },
+    "historical_failed_acceptance_preserved": true,
+    "new_live_mutations": 0,
+    "new_traffic": 0
+  }
 }
