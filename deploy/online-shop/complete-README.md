@@ -129,3 +129,8 @@ The original snapshot, candidate and `journey/session.private.json` match the hi
 Together with the retained full release/runtime, 14-request checkout journey, negative admission, cleanup and sample-service evidence, this supplies the recorded-run acceptance criteria for review in #100. No new runtime/health/capacity or admission measurements were made. Both historical failed CLI outcomes remain unchanged in their original records; the success is stored separately in `recorded_signals_recheck_20261103`.
 
 Remaining limits include two historical startup export failures and 50 dropped items before the journey, no live error-counter datapoints from the successful journey, bounded two-second skew policy with no exact instantaneous node offset proof, narrow historical capacity, ephemeral Redis/Collector storage, and no sustained/load/HA/recovery validation. Private raw evidence stays local. Keep #100 open until review.
+
+
+## Protected endpoint proposal (#106)
+
+The reviewed full-workload baseline above remains historical. The proposed [protected HTTPS endpoint](endpoint-README.md) adds six exact dev resources (45 total) and endpoint-specific preflight readbacks, retaining accepted application/Collector images and source/build/signature guards. Terraform/DNS/rollout and live endpoint acceptance require separately reviewed plans and authorization. See [endpoint validation](endpoint-validation.json).

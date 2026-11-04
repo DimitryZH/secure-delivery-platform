@@ -4,6 +4,7 @@ import argparse
 import copy
 from datetime import datetime, timedelta, timezone
 import importlib.util
+import ipaddress
 import json
 from pathlib import Path
 import re
@@ -110,6 +111,39 @@ def redis_metrics_config(record):
         "processors":["memory_limiter","resource/redis-cart","batch"],"exporters":["googlecloud"]}}}
     return q
 
+ENDPOINT_HOST = "shop.runtimeplatforms.dev"
+ENDPOINT_NAME = "shop-dev-edge"
+
+
+def endpoint_resources(record, revision):
+    annotations = meta(record,revision,"frontend",next(x["digest"] for x in record["components"] if x["id"]=="frontend"))
+    def resource(api,kind,name,spec,extra=None):
+        return {"apiVersion":api,"kind":kind,"metadata":{"name":name,"namespace":"dev",
+            "annotations":{**annotations,**(extra or {})}},"spec":spec}
+    parent={"name":ENDPOINT_NAME,"namespace":"dev"}
+    target={"group":"","kind":"Service","name":"frontend"}
+    return [
+      resource("gateway.networking.k8s.io/v1","Gateway",ENDPOINT_NAME,{
+        "gatewayClassName":"gke-l7-global-external-managed",
+        "addresses":[{"type":"NamedAddress","value":ENDPOINT_NAME}],
+        "listeners":[{"name":"http","hostname":ENDPOINT_HOST,"port":80,"protocol":"HTTP","allowedRoutes":{"namespaces":{"from":"Same"},"kinds":[{"group":"gateway.networking.k8s.io","kind":"HTTPRoute"}]}},
+          {"name":"https","hostname":ENDPOINT_HOST,"port":443,"protocol":"HTTPS","tls":{"mode":"Terminate"},"allowedRoutes":{"namespaces":{"from":"Same"},"kinds":[{"group":"gateway.networking.k8s.io","kind":"HTTPRoute"}]}}]},
+        {"networking.gke.io/certmap":ENDPOINT_NAME}),
+      resource("gateway.networking.k8s.io/v1","HTTPRoute","shop-https",{
+        "parentRefs":[{**parent,"sectionName":"https"}],"hostnames":[ENDPOINT_HOST],
+        "rules":[{"matches":[{"path":{"type":"PathPrefix","value":"/"}}],"backendRefs":[{"group":"","kind":"Service","name":"frontend","port":80,"weight":1}]}]}),
+      resource("gateway.networking.k8s.io/v1","HTTPRoute","shop-http-redirect",{
+        "parentRefs":[{**parent,"sectionName":"http"}],"hostnames":[ENDPOINT_HOST],
+        "rules":[{"filters":[{"type":"RequestRedirect","requestRedirect":{"scheme":"https","hostname":ENDPOINT_HOST,"port":443,"statusCode":301}}]}]}),
+      resource("networking.gke.io/v1","GCPGatewayPolicy",ENDPOINT_NAME,{
+        "default":{"sslPolicy":ENDPOINT_NAME},"targetRef":{"group":"gateway.networking.k8s.io","kind":"Gateway","name":ENDPOINT_NAME}}),
+      resource("networking.gke.io/v1","GCPBackendPolicy",ENDPOINT_NAME,{
+        "default":{"securityPolicy":ENDPOINT_NAME,"logging":{"enabled":True,"sampleRate":1000000}},"targetRef":target}),
+      resource("networking.gke.io/v1","HealthCheckPolicy",ENDPOINT_NAME,{
+        "default":{"checkIntervalSec":15,"timeoutSec":5,"healthyThreshold":2,"unhealthyThreshold":2,
+          "config":{"type":"HTTP","httpHealthCheck":{"portSpecification":"USE_FIXED_PORT","port":8080,"requestPath":"/_healthz"}}},"targetRef":target})]
+
+
 def render(record, revision, refs):
     c.validate_candidate(record, record["configuration_revision"], refs)
     require(re.fullmatch(c.r.SHA, revision or ""), "invalid_deployment_revision")
@@ -194,6 +228,7 @@ def render(record, revision, refs):
     app["resources"]={"requests":{"cpu":"100m","memory":"192Mi"},"limits":{"cpu":"300m","memory":"256Mi"}}
     documents += [agent,{"apiVersion":"v1","kind":"ConfigMap","metadata":{"name":metrics_name,"namespace":"dev","annotations":metrics_meta},
                          "immutable":True,"data":{"config.json":metrics_raw}}]
+    documents += endpoint_resources(record,revision)
     return sorted(documents,key=lambda d:(d["kind"],d["metadata"]["name"]))
 
 def rendered(record, revision, refs, context):
@@ -272,6 +307,44 @@ def prepare(record, revision, refs, value, release, output, cloud):
     (output/"preparation.json").write_text(json.dumps(result,indent=2),encoding="utf-8")
     return result
 
+def endpoint_evidence(item, now):
+    """Reviewed readbacks, not labels or unbound readiness assertions."""
+    require(now-timedelta(minutes=5)<=legacy.sample.utc(item["observed_at"])<=now+timedelta(seconds=30)
+        and bool(item["evidence_ref"]),"endpoint_evidence_stale")
+    require(item["project"]==c.r.policy()["project"] and item["hostname"]==ENDPOINT_HOST
+        and item["scope"]=="global","endpoint_scope_mismatch")
+    address=item["address"]
+    require(address["name"]==ENDPOINT_NAME and address["ipVersion"]=="IPV4"
+        and address["addressType"]=="EXTERNAL" and ipaddress.ip_address(address["address"]).version==4
+        and ipaddress.ip_address(address["address"]).is_global,"endpoint_address_mismatch")
+    require(item["dns"]=={"name":ENDPOINT_HOST+".","type":"A","rrdatas":[address["address"]],
+        "delegation_matches_reviewed_child_zone":True},"endpoint_dns_mismatch")
+    require(item["ssl_policy"]=={"name":ENDPOINT_NAME,"profile":"MODERN","minTlsVersion":"TLS_1_2"},"endpoint_tls_policy_mismatch")
+    cert=item["certificate"]
+    require(cert["name"] in {"projects/"+identity+"/locations/global/certificates/"+ENDPOINT_NAME
+        for identity in (c.r.policy()["project"],c.r.policy()["project_number"])}
+        and cert["managed"]["domains"]==[ENDPOINT_HOST] and cert["managed"]["state"]=="ACTIVE"
+        and legacy.sample.utc(cert["expireTime"])>=now+timedelta(minutes=75),"endpoint_certificate_not_active")
+    require(item["certificate_map"]=={"name":ENDPOINT_NAME,"hostname":ENDPOINT_HOST,"certificates":[cert["name"]]},"endpoint_certificate_map_mismatch")
+    policy=item["armor"]
+    require(policy["name"]==ENDPOINT_NAME and policy["type"]=="CLOUD_ARMOR","endpoint_armor_scope")
+    rules={r["priority"]:r for r in policy["rules"]}
+    require(len(policy["rules"])==len(rules)==4 and set(rules)=={100,1000,2000,2147483647},"endpoint_armor_rules")
+    require(rules[100]["action"]=="deny(403)" and not rules[100].get("preview",False)
+        and rules[100]["match"]=={"expr":{"expression":"request.path == '/__sdp_edge_probe__'"}},"endpoint_probe_policy")
+    waf="evaluatePreconfiguredWaf('sqli-v33-stable', {'sensitivity': 1}) || evaluatePreconfiguredWaf('xss-v33-stable', {'sensitivity': 1})"
+    require(rules[1000]["action"]=="deny(403)" and rules[1000].get("preview") is True
+        and rules[1000]["match"]=={"expr":{"expression":waf}},"endpoint_waf_preview")
+    any_ip={"versionedExpr":"SRC_IPS_V1","config":{"srcIpRanges":["*"]}}
+    require(rules[2000]["action"]=="throttle" and rules[2000].get("preview") is True
+        and rules[2000]["match"]==any_ip and rules[2000]["rateLimitOptions"]=={
+            "conformAction":"allow","exceedAction":"deny(429)","enforceOnKey":"IP",
+            "rateLimitThreshold":{"count":1200,"intervalSec":60}},"endpoint_rate_preview")
+    require(rules[2147483647]["action"]=="allow" and not rules[2147483647].get("preview",False)
+        and rules[2147483647]["match"]==any_ip,"endpoint_default_policy")
+    return True
+
+
 def evaluate(snapshot, record, revision, refs, release, now=None):
     c.validate_candidate(record,record["configuration_revision"],refs)
     now=now or datetime.now(timezone.utc);checks=[]
@@ -279,7 +352,7 @@ def evaluate(snapshot, record, revision, refs, release, now=None):
     check("request_binding",snapshot.get("request")=={"release_set_id":record["release_set_id"],"deployment_revision":revision,"target":"dev","action":"deploy","clouddeploy_release":release})
     required={"release":["independently_verified","all_eleven_signatures_verified","redis_provenance_approved","collector_independently_verified"],
         "admission":["cluster_enforced","exact_attestor_required","no_bypass"],
-        "target":["snapshot_matches_current","capacity_bin_packing_passed","metadata_and_wif_ready","all_stdout_exclusions_ready","no_duplicate_sinks","no_rollout_conflict","sample_baseline_preserved"],
+        "target":["snapshot_matches_current","capacity_bin_packing_passed","metadata_and_wif_ready","all_stdout_exclusions_ready","no_duplicate_sinks","no_rollout_conflict","sample_baseline_preserved","gateway_api_ready","endpoint_infrastructure_reviewed","dns_delegation_reviewed","certificate_active","armor_preview_policy_ready","frontend_only_exposure"],
         "caller":["rollout_create","deployment_act_as"],"review":["continue"]}
     for section,fields in required.items():
         value=snapshot.get(section,{})
@@ -287,6 +360,11 @@ def evaluate(snapshot, record, revision, refs, release, now=None):
         except (ValueError,TypeError):fresh=False
         check(section+"_fresh_bound",fresh and bool(value.get("evidence_ref")) and value.get("release_set_id")==record["release_set_id"] and value.get("deployment_revision")==revision)
         for field in fields:check(section+"_"+field,value.get(field) is True)
+    try:
+        edge=snapshot.get("endpoint",{})
+        require(edge.get("release_set_id")==record["release_set_id"] and edge.get("deployment_revision")==revision,"endpoint_release_binding")
+        check("endpoint_readbacks",endpoint_evidence(edge,now))
+    except (ValueError,KeyError,TypeError,AttributeError):check("endpoint_readbacks",False)
     try:c.redis_admission();approved=True
     except ValueError:approved=False
     check("reviewed_redis_admission",approved)

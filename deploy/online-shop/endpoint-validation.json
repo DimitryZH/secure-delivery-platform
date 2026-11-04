@@ -1,0 +1,355 @@
+{
+  "version": 1,
+  "issue": 106,
+  "phase": "implementation_review",
+  "observed_date": "2026-11-04",
+  "base_configuration_revision": "34e423344dee3b059b4e338fe8b52508acf35a57",
+  "decision": "review plan/cost before separately authorized apply, DNS changes and live deployment",
+  "endpoint": {
+    "hostname": "shop.runtimeplatforms.dev",
+    "delegated_zone": "shop.runtimeplatforms.dev.",
+    "scope": "global",
+    "gateway_class": "gke-l7-global-external-managed",
+    "tls": "Certificate Manager map + MODERN/TLS_1_2 SSL policy",
+    "exposure": "only dev/frontend:80 via HTTPS; HTTP redirect has no backend",
+    "inventory_resources": 45,
+    "new_endpoint_resources": 6,
+    "armor": "Standard; enforced exact deny probe, WAF/rate preview, reviewed later enforcement"
+  },
+  "accepted_artifacts": {
+    "producing_revision": "00e925e724808ac80f1313fb85da1c6b3ec19f3f",
+    "release_set_id": "sha256:d3ddfc09ec0f0195d38fadfba8a2c31ce290b41bf4211ac4631a5b20039d3891",
+    "application_and_collector_references_unchanged": true,
+    "candidate_local_validation": "passed",
+    "new_builds_signing_mirrors": 0,
+    "fresh_cloud_release_verification": "pending normal reviewed prepare/preflight; historical accepted proof retained"
+  },
+  "read_only_prerequisites": {
+    "cluster_version": "1.35.8-gke.1796000",
+    "vpc_native": true,
+    "http_load_balancing_addon_enabled": true,
+    "gateway_api_enabled_before_change": false,
+    "current_cloud_dns_zones": 0,
+    "current_global_addresses": 0,
+    "current_global_forwarding_rules": 0,
+    "samples": [
+      {
+        "namespace": "dev",
+        "ready": true,
+        "available": true,
+        "healthz_http_200": true
+      },
+      {
+        "namespace": "stage",
+        "ready": true,
+        "available": true,
+        "healthz_http_200": true
+      },
+      {
+        "namespace": "prod",
+        "ready": true,
+        "available": true,
+        "healthz_http_200": true
+      }
+    ],
+    "dns_resolver_observations": [
+      {
+        "name": "runtimeplatforms.dev",
+        "type": "NS",
+        "exit_code": 0,
+        "negative_response": false
+      },
+      {
+        "name": "runtimeplatforms.dev",
+        "type": "MX",
+        "exit_code": 0,
+        "negative_response": false
+      },
+      {
+        "name": "runtimeplatforms.dev",
+        "type": "A",
+        "exit_code": 0,
+        "negative_response": false
+      },
+      {
+        "name": "shop.runtimeplatforms.dev",
+        "type": "NS",
+        "exit_code": 0,
+        "negative_response": true
+      },
+      {
+        "name": "shop.runtimeplatforms.dev",
+        "type": "A",
+        "exit_code": 0,
+        "negative_response": true
+      },
+      {
+        "name": "runtimeplatforms.dev",
+        "type": "CAA",
+        "exit_code": 0,
+        "negative_response": true
+      }
+    ],
+    "caller_permissions": {
+      "checked_permissions": [
+        "dns.managedZones.create",
+        "dns.changes.create",
+        "certificatemanager.dnsauthorizations.create",
+        "certificatemanager.certs.create",
+        "certificatemanager.certmaps.create",
+        "certificatemanager.certmapentries.create",
+        "compute.globalAddresses.create",
+        "compute.securityPolicies.create",
+        "container.clusters.update",
+        "clouddeploy.releases.create",
+        "clouddeploy.rollouts.create",
+        "serviceusage.services.enable"
+      ],
+      "missing": [],
+      "scope": "current gcloud caller only; Terraform ADC/deployer/controller authorization still needs execution-time review",
+      "iam_changes": 0,
+      "global_forwarding_rules_count": 0,
+      "global_forwarding_rules_pagination_pending": false
+    },
+    "limitations": "Resolver answers are not authoritative parent inventory. Current gcloud caller permissions do not prove Terraform ADC/deployer/controller create authority."
+  },
+  "terraform": {
+    "fmt_check": "passed",
+    "validate": "passed",
+    "backend": {
+      "type": "gcs",
+      "bucket": "sre-platform-staging-507220-tf-state",
+      "prefix": "secure-delivery-platform/foundation"
+    },
+    "workspace": "default",
+    "private_input_source": "verified existing state/live deployment_operator binding; process-scoped only",
+    "plan_summary": {
+      "create": 13,
+      "delete": 0,
+      "read": 0,
+      "replace": 0,
+      "update": 3
+    },
+    "resource_changes": [
+      {
+        "actions": [
+          "create"
+        ],
+        "address": "google_certificate_manager_certificate.shop_edge"
+      },
+      {
+        "actions": [
+          "create"
+        ],
+        "address": "google_certificate_manager_certificate_map.shop_edge"
+      },
+      {
+        "actions": [
+          "create"
+        ],
+        "address": "google_certificate_manager_certificate_map_entry.shop_edge"
+      },
+      {
+        "actions": [
+          "create"
+        ],
+        "address": "google_certificate_manager_dns_authorization.shop_edge"
+      },
+      {
+        "actions": [
+          "create"
+        ],
+        "address": "google_compute_global_address.shop_edge"
+      },
+      {
+        "actions": [
+          "create"
+        ],
+        "address": "google_compute_security_policy.shop_edge"
+      },
+      {
+        "actions": [
+          "create"
+        ],
+        "address": "google_compute_ssl_policy.shop_edge"
+      },
+      {
+        "actions": [
+          "update"
+        ],
+        "address": "google_container_cluster.platform"
+      },
+      {
+        "actions": [
+          "create"
+        ],
+        "address": "google_dns_managed_zone.shop_edge"
+      },
+      {
+        "actions": [
+          "create"
+        ],
+        "address": "google_dns_record_set.shop_address"
+      },
+      {
+        "actions": [
+          "create"
+        ],
+        "address": "google_dns_record_set.shop_certificate"
+      },
+      {
+        "actions": [
+          "update"
+        ],
+        "address": "google_logging_project_exclusion.catalog_stdout"
+      },
+      {
+        "actions": [
+          "update"
+        ],
+        "address": "google_logging_project_exclusion.complete_shop_stdout"
+      },
+      {
+        "actions": [
+          "create"
+        ],
+        "address": "google_project_service.shop_edge[\"certificatemanager.googleapis.com\"]"
+      },
+      {
+        "actions": [
+          "create"
+        ],
+        "address": "google_project_service.shop_edge[\"compute.googleapis.com\"]"
+      },
+      {
+        "actions": [
+          "create"
+        ],
+        "address": "google_project_service.shop_edge[\"dns.googleapis.com\"]"
+      }
+    ],
+    "unexpected_changes": [
+      {
+        "address": "google_logging_project_exclusion.catalog_stdout",
+        "actions": [
+          "update"
+        ],
+        "reason": "filter CRLF/LF normalization only; all other fields unchanged"
+      },
+      {
+        "address": "google_logging_project_exclusion.complete_shop_stdout",
+        "actions": [
+          "update"
+        ],
+        "reason": "filter CRLF/LF normalization only; all other fields unchanged"
+      }
+    ],
+    "drift": [
+      {
+        "address": "google_container_cluster.platform",
+        "changed_paths": [
+          ".node_pool"
+        ]
+      },
+      {
+        "address": "google_container_node_pool.complete_shop",
+        "changed_paths": [
+          ".node_config[0].resource_manager_tags",
+          ".node_config[0].tags"
+        ]
+      }
+    ],
+    "imports": [],
+    "deployment_operator_unchanged": true,
+    "state_unchanged": true,
+    "binary_plan_sha256": "sha256:040aef1814503ed2d2e27d56c380da5a2f7fb60b04fbd3f5e42fce6e5d1627c8",
+    "private_saved_plan": ".local-validation/issue106/final-plan/shop-endpoint.tfplan",
+    "apply_performed": false
+  },
+  "cost_estimate": {
+    "currency": "USD",
+    "hours_per_month": 730,
+    "incremental_fixed_monthly": 27.45,
+    "components": {
+      "global_forwarding_rule_bucket": 18.25,
+      "armor_standard_policy": 5,
+      "armor_four_rules": 4,
+      "dns_zone": 0.2,
+      "certificate_first_100": 0,
+      "attached_ipv4": 0
+    },
+    "variable_rates": {
+      "armor_global_requests_per_million": 0.75,
+      "dns_regular_queries_per_million": 0.4,
+      "us_central1_lb_processing_per_gib": 0.008
+    },
+    "additional": "internet egress, logging/storage, small build/render/storage operations; unused reserved-address charges until attached",
+    "assumptions": "one global ALB/two rules within first-five project bucket, one zone/policy/certificate. Existing GKE/Collector cost excluded. Verify current SKUs/discounts before apply.",
+    "sources": [
+      "https://cloud.google.com/load-balancing/pricing",
+      "https://cloud.google.com/vpc/network-pricing",
+      "https://cloud.google.com/armor/pricing",
+      "https://cloud.google.com/dns/pricing",
+      "https://cloud.google.com/certificate-manager/pricing"
+    ]
+  },
+  "validation": {
+    "full_regressions": {
+      "tests": 233,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1,
+      "skip": "optional actual public Redis registry/source capture fixture; pinned AML/native Collector passed"
+    },
+    "new_focused_cases": "exact endpoint inventory and raw preflight readback negatives; global/host/TLS/cert/Armor/redirect/backend substitutions; HTTPS origin/cookie/redirect/budget and CLI independent guard",
+    "native_offline_skaffold": {
+      "documents": 45,
+      "accepted_application_and_collector_images_unchanged": true,
+      "candidate_local_validation": "passed",
+      "cloud_verification": "not repeated; accepted candidate reused",
+      "skaffold_exit_code": 0,
+      "roadmap_exact_bytes": true
+    },
+    "roadmap_exact_uploaded_bytes": true,
+    "roadmap_releases": "v0.2.0 after milestone 8; v0.3.0 after milestone 10; milestone 9 no required separate release",
+    "git_diff_check": "passed"
+  },
+  "live_acceptance": {
+    "status": "pending separate authorization",
+    "checks": [
+      "child delegation/parent service preservation",
+      "ACTIVE certificate and correct hostname/chain/expiry",
+      "actual server render/protected artifacts/fresh READY",
+      "authorized dev rollout and Gateway/HTTPRoute/policy status",
+      "HTTPS frontend and HTTP redirect; weak TLS/unknown Host rejection",
+      "bounded synthetic checkout and exact session cleanup",
+      "normal/WAF/rate preview evidence then reviewed enforcement with 403/429 logs",
+      "running trusted digests/admission and samples dev/stage/prod health"
+    ]
+  },
+  "new_live_operations": {
+    "apply": 0,
+    "dns_mutations": 0,
+    "rollouts": 0,
+    "application_traffic": 0,
+    "build_signing": 0,
+    "iam_grants": 0
+  },
+  "limits": [
+    "Local fixtures/native render are not actual server render or live endpoint admission proof.",
+    "Initial WAF/rate rules are preview; deterministic deny probe does not prove WAF/throttle enforcement. Separate reviewed full plan/authorization required after preview evaluation.",
+    "Initial preflight contract is bootstrap-preview phase; future full application rollouts under enforced Armor need a reviewed corresponding phase contract.",
+    "No instantaneous clock, HA, durability, load or production sizing claim; accepted historical telemetry failures/losses retained.",
+    "Certificate/delegation/controller availability, quota and execution-time permissions remain live prerequisites. No fabricated IP/nameserver values."
+  ],
+  "implementation_hashes": {
+    "deploy/online-shop/complete-README.md": "sha256:e15910623beadd15d4ba79fc59d1e19b5a2458ee8d18ebd9342e2bcb27a2d6ff",
+    "deploy/online-shop/complete-acceptance.py": "sha256:755ac5256965bd1129417bcf163685b0202c035508e873c7a8c5485c9bf4da11",
+    "deploy/online-shop/complete.py": "sha256:5a0219cfbbdb41ca03bd9f423510af2e7739c69276518a9133b495da830f4d47",
+    "docs/roadmap.md": "sha256:51fcf8d10230efa8bc9021412ad580c6b9e901e052fe008a226a25ce2ee5c18e",
+    "scripts/tests/test_complete_shop.py": "sha256:864bf02682b0d264f609392642f1f889b8ea7ebbb65db39bee8ec1b778388f73",
+    "terraform/foundation/gke.tf": "sha256:ef0aeee981ef6101856a53e3e058c89fc948dc4e559b8a94e79279c8c0fd5372",
+    "deploy/online-shop/endpoint-README.md": "sha256:a163db4dca6e78481b80f90bbaaa7ab8890da6bea17e042d816aaf7fa7c53229",
+    "terraform/foundation/shop-endpoint.tf": "sha256:f04a295db090bf0ab81cc2440ca8e72504eec0ee47d5fd45fd55d24840120b9b"
+  }
+}
