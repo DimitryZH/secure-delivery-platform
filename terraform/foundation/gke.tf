@@ -18,6 +18,11 @@ resource "google_container_cluster" "platform" {
     evaluation_mode = "PROJECT_SINGLETON_POLICY_ENFORCE"
   }
 
+  # Gateway controller owns ALB resources; no Terraform ownership overlap.
+  gateway_api_config {
+    channel = "CHANNEL_STANDARD"
+  }
+
   # Dedicated Collector identity; application Pods receive no exporter grants.
   workload_identity_config {
     workload_pool = "${var.project_id}.svc.id.goog"

@@ -92,15 +92,101 @@ class CompleteTests(unittest.TestCase):
         return {'pods':{'items':pods},'deployments':{'items':[d for d in docs if d['kind']=='Deployment']},
                 'daemonsets':{'items':[d for d in docs if d['kind']=='DaemonSet']}}
 
+    def endpoint_fixture(self,binding,now):
+        cert='projects/'+c.r.policy()['project']+'/locations/global/certificates/shop-dev-edge'
+        any_ip={'versionedExpr':'SRC_IPS_V1','config':{'srcIpRanges':['*']}}
+        return {**binding,'project':c.r.policy()['project'],'hostname':w.ENDPOINT_HOST,'scope':'global','ssl_policy':{'name':w.ENDPOINT_NAME,'profile':'MODERN','minTlsVersion':'TLS_1_2'},
+            'address':{'name':w.ENDPOINT_NAME,'address':'34.1.2.3','ipVersion':'IPV4','addressType':'EXTERNAL'},
+            'dns':{'name':w.ENDPOINT_HOST+'.','type':'A','rrdatas':['34.1.2.3'],'delegation_matches_reviewed_child_zone':True},
+            'certificate':{'name':cert,'managed':{'domains':[w.ENDPOINT_HOST],'state':'ACTIVE'},'expireTime':(now+timedelta(days=30)).isoformat().replace('+00:00','Z')},
+            'certificate_map':{'name':w.ENDPOINT_NAME,'hostname':w.ENDPOINT_HOST,'certificates':[cert]},
+            'armor':{'name':w.ENDPOINT_NAME,'type':'CLOUD_ARMOR','rules':[
+                {'priority':100,'action':'deny(403)','match':{'expr':{'expression':"request.path == '/__sdp_edge_probe__'"}}},
+                {'priority':1000,'action':'deny(403)','preview':True,'match':{'expr':{'expression':"evaluatePreconfiguredWaf('sqli-v33-stable', {'sensitivity': 1}) || evaluatePreconfiguredWaf('xss-v33-stable', {'sensitivity': 1})"}}},
+                {'priority':2000,'action':'throttle','preview':True,'match':any_ip,'rateLimitOptions':{'conformAction':'allow','exceedAction':'deny(429)','enforceOnKey':'IP','rateLimitThreshold':{'count':1200,'intervalSec':60}}},
+                {'priority':2147483647,'action':'allow','match':any_ip}]}}
+
+    def test_endpoint_exact_inventory_rejects_substitution_and_extra_exposure(self):
+        docs=w.render(self.record,REV,self.refs)
+        self.assertEqual(len(docs),45)
+        backend=next(d for d in docs if d['kind']=='GCPBackendPolicy')
+        self.assertIs(type(backend['spec']['default']['logging']['sampleRate']),int)
+        self.assertEqual(backend['spec']['default']['logging']['sampleRate'],1000000)
+        routes={d['metadata']['name']:d for d in docs if d['kind']=='HTTPRoute'}
+        self.assertNotIn('backendRefs',routes['shop-http-redirect']['spec']['rules'][0])
+        self.assertEqual(routes['shop-https']['spec']['rules'][0]['backendRefs'][0]['name'],'frontend')
+        for kind,change in (
+            ('Gateway',lambda d:d['spec'].update(gatewayClassName='gke-l7-regional-external-managed')),
+            ('Gateway',lambda d:d['metadata']['annotations'].update({'networking.gke.io/certmap':'wrong'})),
+            ('HTTPRoute',lambda d:d['spec'].update(hostnames=['foreign.invalid'])),
+            ('HTTPRoute',lambda d:d['spec'].update(parentRefs=[{'name':'other'}])),
+            ('GCPGatewayPolicy',lambda d:d['spec']['default'].update(sslPolicy='other')),
+            ('GCPBackendPolicy',lambda d:d['spec']['default'].update(securityPolicy='other')),
+            ('HealthCheckPolicy',lambda d:d['spec']['default']['config']['httpHealthCheck'].update(requestPath='/')),
+            ('Service',lambda d:d['spec'].update(type='LoadBalancer'))):
+            altered=copy.deepcopy(docs);change(next(d for d in altered if d['kind']==kind))
+            with self.assertRaises(ValueError):w.inventory(altered,self.record,REV,self.refs)
+        altered=copy.deepcopy(docs);altered.append(copy.deepcopy(docs[0]))
+        with self.assertRaises(ValueError):w.inventory(altered,self.record,REV,self.refs)
+
+    def test_endpoint_journey_exact_https_origin_cookie_and_budget(self):
+        import http.cookiejar
+        state={'jar':None,'requests':[]}
+        class Response:
+            status=200
+            def __init__(inner,body):inner.body=body
+            def __enter__(inner):return inner
+            def __exit__(inner,*args):pass
+            def read(inner,limit):return inner.body.encode()
+        class Store:
+            def open(inner,request,timeout):
+                self.assertTrue(request.full_url.startswith('https://shop.runtimeplatforms.dev/'))
+                state['requests'].append(request.full_url)
+                if '/setCurrency' in request.full_url:
+                    state['jar'].set_cookie(http.cookiejar.Cookie(0,'shop_currency','EUR',None,False,'shop.runtimeplatforms.dev',False,False,'/',True,True,None,True,None,None,{}))
+                body='Your order is complete! Tracking # 11111111-2222-3333-4444-555555555555' if '/cart/checkout' in request.full_url else 'Your shopping cart is empty! /product/ABC ABC Quantity: 2'
+                return Response(body)
+        def opener(*handlers):
+            state['jar']=next(h.cookiejar for h in handlers if isinstance(h,a.urllib.request.HTTPCookieProcessor))
+            state['redirect']=next(h for h in handlers if isinstance(h,a.urllib.request.HTTPRedirectHandler))
+            return Store()
+        with tempfile.TemporaryDirectory() as tmp,patch.object(a.urllib.request,'build_opener',side_effect=opener):
+            result=a.journey('https://shop.runtimeplatforms.dev',Path(tmp)/'journey',endpoint=True)
+            self.assertEqual(result['journey'],'passed');self.assertLessEqual(result['requests'],20)
+            session=next(x for x in state['jar'] if x.name=='shop_session-id')
+            self.assertTrue(session.secure);self.assertEqual(session.domain,'shop.runtimeplatforms.dev')
+            for origin in ('http://shop.runtimeplatforms.dev','https://foreign.invalid','https://shop.runtimeplatforms.dev.evil','https://shop.runtimeplatforms.dev:443','https://user@shop.runtimeplatforms.dev'):
+                with self.assertRaises(ValueError):a.journey(origin,Path(tmp)/'invalid',endpoint=True)
+            with self.assertRaises(ValueError):a.journey('https://shop.runtimeplatforms.dev',Path(tmp)/'legacy')
+            for target in ('http://shop.runtimeplatforms.dev/cart','https://foreign.invalid/cart','https://user@shop.runtimeplatforms.dev/cart','https://shop.runtimeplatforms.dev/cart#fragment'):
+                with self.assertRaises(ValueError):state['redirect'].redirect_request(None,None,302,'redirect',{},target)
+
+    def test_endpoint_readbacks_fail_closed(self):
+        now,snapshot=self.preflight_fixture(REV)
+        with patch.object(c,'redis_admission'):
+            self.assertEqual(w.evaluate(snapshot,self.record,REV,self.refs,RESOURCE,now)['decision'],'READY')
+            for mutate in (
+                lambda e:e['ssl_policy'].update(minTlsVersion='TLS_1_0'),
+                lambda e:e.update(project='foreign-project'),lambda e:e.update(scope='regional'),
+                lambda e:e['dns'].update(rrdatas=['34.1.2.4']),lambda e:e['certificate']['managed'].update(state='PROVISIONING'),
+                lambda e:e['certificate']['managed'].update(domains=['foreign.invalid']),
+                lambda e:e['certificate'].update(name='projects/999999999/locations/global/certificates/shop-dev-edge'),
+                lambda e:e['armor']['rules'][1].update(preview=False),
+                lambda e:e['armor']['rules'][2]['rateLimitOptions']['rateLimitThreshold'].update(count=999999),
+                lambda e:e.update(deployment_revision='f'*40),lambda e:e.update(observed_at='2000-01-01T00:00:00Z')):
+                altered=copy.deepcopy(snapshot);mutate(altered['endpoint'])
+                self.assertEqual(w.evaluate(altered,self.record,REV,self.refs,RESOURCE,now)['decision'],'BLOCKED')
+
     def preflight_fixture(self,revision):
         now=datetime.now(timezone.utc);stamp=now.isoformat().replace('+00:00','Z')
         snapshot={'request':{'release_set_id':self.record['release_set_id'],'deployment_revision':revision,'target':'dev','action':'deploy','clouddeploy_release':RESOURCE}}
         sections={'release':['independently_verified','all_eleven_signatures_verified','redis_provenance_approved','collector_independently_verified'],
             'admission':['cluster_enforced','exact_attestor_required','no_bypass'],
-            'target':['snapshot_matches_current','capacity_bin_packing_passed','metadata_and_wif_ready','all_stdout_exclusions_ready','no_duplicate_sinks','no_rollout_conflict','sample_baseline_preserved'],
+            'target':['snapshot_matches_current','capacity_bin_packing_passed','metadata_and_wif_ready','all_stdout_exclusions_ready','no_duplicate_sinks','no_rollout_conflict','sample_baseline_preserved','gateway_api_ready','endpoint_infrastructure_reviewed','dns_delegation_reviewed','certificate_active','armor_preview_policy_ready','frontend_only_exposure'],
             'caller':['rollout_create','deployment_act_as'],'review':['continue']}
         binding={'observed_at':stamp,'evidence_ref':'private-readback','release_set_id':self.record['release_set_id'],'deployment_revision':revision}
         for section,flags in sections.items():snapshot[section]={**binding,**{key:True for key in flags}}
+        snapshot['endpoint']=self.endpoint_fixture(binding,now)
         snapshot['clouddeploy']={**binding,**CONTEXT,'release_snapshot_matches_current':True}
         snapshot['rendered_documents']=w.rendered(self.record,revision,self.refs,CONTEXT)
         snapshot['release_annotations']={'rendered_inventory_sha256':c.r.sha(c.r.canonical(snapshot['rendered_documents'])),'source_sha256':'a'*64}
@@ -242,7 +328,7 @@ class CompleteTests(unittest.TestCase):
     def test_complete_render_all_services_dependency_and_runtime_contract(self):
         docs=w.render(self.record,REV,self.refs);self.assertEqual(w.inventory(docs,self.record,REV,self.refs)['applications'],10)
         deployments={d['metadata']['name']:d for d in docs if d['kind']=='Deployment' and d['metadata']['name'] in c.MEMBERS}
-        self.assertEqual(set(deployments),set(c.MEMBERS));self.assertEqual(len(docs),39)
+        self.assertEqual(set(deployments),set(c.MEMBERS));self.assertEqual(len(docs),45)
         redis=deployments['redis-cart'];self.assertEqual(redis['spec']['strategy'],{'type':'Recreate'})
         self.assertEqual(redis['spec']['template']['spec']['containers'][0]['command'],['redis-server','--save','','--appendonly','no'])
         for identity,d in deployments.items():
@@ -486,7 +572,7 @@ class CompleteTests(unittest.TestCase):
         outcomes=[{'id':r['id'],'artifact':r['repository']+'@'+r['digest']} for r in self.record['components']]
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);candidate=root/'candidate.json';candidate.write_text(json.dumps(self.record));snapshot=root/'snapshot.json'
-            for action in ('runtime','signals','journey','capacity'):
+            for action in ('runtime','signals','journey','endpoint-journey','capacity'):
                 snapshot.write_text(json.dumps(signals if action=='signals' else self.runtime_fixture(deployment)))
                 args=['acceptance',action,'--candidate',str(candidate),'--configuration-revision',REV,'--deployment-revision',deployment,
                       '--snapshot',str(snapshot),'--since',stamp,'--frontend','http://127.0.0.1:8080','--output-dir',str(root/'journey')]

@@ -154,8 +154,10 @@ def signals(snapshot,record,since,value,refs,cloud):
     require(snapshot.get("original_stdout_duplicate_entries")==0 and snapshot.get("sink_review_no_duplicates") is True,"duplicate_ingestion_unproven")
     return {"signals":"passed","application_components":sorted(services),"cross_service_edges":len(edges),"native_component_logs":sorted(logged),"redis_native_metrics":True}
 
-def journey(base, output):
-    require(base=="http://127.0.0.1:8080","frontend_loopback_only")
+def journey(base, output, *, endpoint=False):
+    expected="https://shop.runtimeplatforms.dev" if endpoint else "http://127.0.0.1:8080"
+    require(base==expected,"frontend_origin_not_approved")
+    origin=urllib.parse.urlsplit(expected)
     output=Path(output);require(not output.exists(),"journey_output_must_not_exist");output.mkdir(parents=True)
     count=0
     class Redirect(urllib.request.HTTPRedirectHandler):
@@ -163,11 +165,11 @@ def journey(base, output):
             nonlocal count
             count+=1;require(count<=20,"journey_request_budget")
             target=urllib.parse.urlsplit(newurl)
-            require(target.scheme=="http" and target.netloc=="127.0.0.1:8080" and not target.fragment,"unexpected_frontend_redirect")
+            require(target.scheme==origin.scheme and target.netloc==origin.netloc and not target.fragment,"unexpected_frontend_redirect")
             return super().redirect_request(req,fp,code,msg,headers,newurl)
     jar=http.cookiejar.CookieJar();opener=urllib.request.build_opener(urllib.request.ProxyHandler({}),urllib.request.HTTPCookieProcessor(jar),Redirect())
     session="issue100-"+uuid.uuid4().hex;trace=uuid.uuid4().hex
-    jar.set_cookie(http.cookiejar.Cookie(0,"shop_session-id",session,None,False,"127.0.0.1",False,False,"/",True,False,None,True,None,None,{}))
+    jar.set_cookie(http.cookiejar.Cookie(0,"shop_session-id",session,None,False,origin.hostname,False,False,"/",True,origin.scheme=="https",None,True,None,None,{}))
     def request(path,data=None):
         nonlocal count
         count+=1;require(count<=20,"journey_request_budget")
@@ -237,7 +239,7 @@ def cleanup_from_record(path, session, endpoint, target):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action",choices=("capacity","runtime","signals","journey","cleanup"))
+    parser.add_argument("action",choices=("capacity","runtime","signals","journey","endpoint-journey","cleanup"))
     for name in ("candidate","configuration-revision","deployment-revision","snapshot","since","frontend","output-dir","session","session-record","redis","redis-target"):parser.add_argument("--"+name)
     args=parser.parse_args()
     try:
@@ -255,7 +257,7 @@ def main():
         elif args.action=="signals":result=signals(c.r.read(args.snapshot),record,args.since,value,refs,cloud)
         else:
             guard(record,value,refs,cloud)
-            result=journey(args.frontend,args.output_dir)
+            result=journey(args.frontend,args.output_dir,endpoint=args.action=="endpoint-journey")
         print(json.dumps(result,sort_keys=True));return 3 if result.get("capacity_ready") is False else 0
     except (OSError,ValueError,KeyError,TypeError,AttributeError,subprocess.SubprocessError):
         print(json.dumps({"status":"failed","reason":"complete_acceptance_evidence_missing_or_inconsistent"}));return 3
