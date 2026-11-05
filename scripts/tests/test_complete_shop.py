@@ -109,6 +109,11 @@ class CompleteTests(unittest.TestCase):
     def test_endpoint_exact_inventory_rejects_substitution_and_extra_exposure(self):
         docs=w.render(self.record,REV,self.refs)
         self.assertEqual(len(docs),45)
+        gateway=next(d for d in docs if d['kind']=='Gateway')
+        listener=next(x for x in gateway['spec']['listeners'] if x['name']=='https')
+        self.assertEqual((listener['protocol'],listener['port']),('HTTPS',443))
+        self.assertNotIn('tls',listener)
+        self.assertEqual(gateway['metadata']['annotations']['networking.gke.io/certmap'],'shop-dev-edge')
         backend=next(d for d in docs if d['kind']=='GCPBackendPolicy')
         self.assertIs(type(backend['spec']['default']['logging']['sampleRate']),int)
         self.assertEqual(backend['spec']['default']['logging']['sampleRate'],1000000)
@@ -540,6 +545,23 @@ class CompleteTests(unittest.TestCase):
         with patch.object(w.c,'reviewed') as current,patch.object(w.c.r,'fetched') as source:
             w.reviewed(self.record,REV);current.assert_called_once_with(REV);source.assert_not_called()
 
+    def test_preflight_requires_admission_of_the_exact_rendered_gateway(self):
+        _,snapshot=self.preflight_fixture(REV)
+        gateway=next(d for d in snapshot['rendered_documents'] if d['kind']=='Gateway')
+        cloud=object()
+        with patch.object(w.c,'redis_admission'),patch.object(w,'gateway_dry_run') as dry_run:
+            self.assertEqual(w.preflight(snapshot,self.record,REV,self.refs,RESOURCE,cloud)['decision'],'READY')
+            dry_run.assert_called_once_with(gateway,cloud)
+            dry_run.side_effect=ValueError('gateway_dry_run_http_422')
+            result=w.preflight(snapshot,self.record,REV,self.refs,RESOURCE,cloud)
+            self.assertEqual(result['decision'],'BLOCKED')
+            self.assertEqual(result['reason'],'gateway_dry_run_http_422')
+            self.assertIn({'id':'gateway_server_dry_run','status':'FAIL'},result['checks'])
+            dry_run.reset_mock()
+            next(x for x in gateway['spec']['listeners'] if x['name']=='https')['tls']={'mode':'Terminate'}
+            self.assertEqual(w.preflight(snapshot,self.record,REV,self.refs,RESOURCE,cloud)['decision'],'BLOCKED')
+            dry_run.assert_not_called()
+
     def test_prepare_and_preflight_cli_reuse_original_candidate_with_new_deployment(self):
         deployment='e'*40;original=c.r.canonical(self.record)
         with tempfile.TemporaryDirectory() as tmp:
@@ -553,7 +575,7 @@ class CompleteTests(unittest.TestCase):
                      patch.object(w.c,'plans',return_value=self.plans),patch.object(w.c,'references',return_value=self.refs),\
                      patch.object(w.c,'verify',return_value={'status':'passed'}) as verify,\
                      patch.object(w.c,'attest',return_value={'status':'trusted'}) as attest,\
-                     patch.object(w.legacy,'verify_support'),patch.object(w.c.r,'Cloud'),patch.object(w.c,'redis_admission'):
+                     patch.object(w.legacy,'verify_support'),patch.object(w.c.r,'Cloud'),patch.object(w.c,'redis_admission'),patch.object(w,'gateway_dry_run'):
                     self.assertEqual(w.main(),0,stdout.getvalue())
                     self.assertTrue(all(x.args==(deployment,) for x in reviewed.call_args_list))
                     self.assertEqual(verify.call_args.args[1],REV)

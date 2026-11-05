@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 """Prepare and evaluate the complete dev shop; never creates releases or rollouts."""
 import argparse
+import base64
 import copy
 from datetime import datetime, timedelta, timezone
+import http.client
 import importlib.util
 import ipaddress
 import json
 from pathlib import Path
 import re
+import ssl
 import subprocess
 
 HERE = Path(__file__).resolve().parent
@@ -127,7 +130,7 @@ def endpoint_resources(record, revision):
         "gatewayClassName":"gke-l7-global-external-managed",
         "addresses":[{"type":"NamedAddress","value":ENDPOINT_NAME}],
         "listeners":[{"name":"http","hostname":ENDPOINT_HOST,"port":80,"protocol":"HTTP","allowedRoutes":{"namespaces":{"from":"Same"},"kinds":[{"group":"gateway.networking.k8s.io","kind":"HTTPRoute"}]}},
-          {"name":"https","hostname":ENDPOINT_HOST,"port":443,"protocol":"HTTPS","tls":{"mode":"Terminate"},"allowedRoutes":{"namespaces":{"from":"Same"},"kinds":[{"group":"gateway.networking.k8s.io","kind":"HTTPRoute"}]}}]},
+          {"name":"https","hostname":ENDPOINT_HOST,"port":443,"protocol":"HTTPS","allowedRoutes":{"namespaces":{"from":"Same"},"kinds":[{"group":"gateway.networking.k8s.io","kind":"HTTPRoute"}]}}]},
         {"networking.gke.io/certmap":ENDPOINT_NAME}),
       resource("gateway.networking.k8s.io/v1","HTTPRoute","shop-https",{
         "parentRefs":[{**parent,"sectionName":"https"}],"hostnames":[ENDPOINT_HOST],
@@ -391,6 +394,52 @@ def evaluate(snapshot, record, revision, refs, release, now=None):
         if label=="source":check("immutable_source_hash",snapshot.get("release_annotations",{}).get("source_sha256")==item.get("expected_sha256"))
     return {"decision":"READY" if all(x["status"]=="PASS" for x in checks) else "BLOCKED","checks":checks,"target":"dev","mutation_performed":False}
 
+def gateway_dry_run(gateway, cloud):
+    """Submit the verified rendered Gateway to the reviewed dev API without persisting it."""
+    env = c.r.read(ROOT / "deploy/environments.json")
+    cluster_path = f"projects/{env['project']}/locations/{env['location']}/clusters/{env['cluster']}"
+    cluster = c.r.decode(cloud.request("https://container.googleapis.com/v1/" + cluster_path))
+    require(cluster["name"] == env["cluster"] and cluster["location"] == env["location"],
+            "gateway_dry_run_cluster_mismatch")
+    endpoint = str(ipaddress.IPv4Address(cluster["endpoint"]))
+    ca = base64.b64decode(cluster["masterAuth"]["clusterCaCertificate"], validate=True).decode("ascii")
+    context = ssl.create_default_context(cadata=ca)
+    path = ("/apis/gateway.networking.k8s.io/v1/namespaces/dev/gateways/"
+            + ENDPOINT_NAME + "?dryRun=All&fieldManager=sdp-preflight")
+    connection = http.client.HTTPSConnection(endpoint, context=context, timeout=30)
+    try:
+        connection.request("PATCH", path, body=c.r.canonical(gateway), headers={
+            "Authorization": "Bearer " + cloud.token,
+            "Content-Type": "application/apply-patch+yaml",
+        })
+        response = connection.getresponse()
+        require(response.status in (200, 201), f"gateway_dry_run_http_{response.status}")
+        admitted = c.r.decode(response.read())
+        require(admitted["kind"] == "Gateway" and admitted["metadata"]["name"] == ENDPOINT_NAME
+                and admitted["metadata"]["namespace"] == "dev", "gateway_dry_run_response_mismatch")
+    finally:
+        connection.close()
+
+
+def preflight(snapshot, record, revision, refs, release, cloud):
+    result = evaluate(snapshot, record, revision, refs, release)
+    if result["decision"] != "READY":
+        return result
+    gateway = next(doc for doc in snapshot["rendered_documents"] if doc["kind"] == "Gateway")
+    try:
+        gateway_dry_run(gateway, cloud)
+    except (OSError, http.client.HTTPException, ValueError, KeyError, TypeError, AttributeError) as error:
+        result["decision"] = "BLOCKED"
+        result["checks"].append({"id": "gateway_server_dry_run", "status": "FAIL"})
+        reason = str(error)
+        result["reason"] = reason if re.fullmatch(r"gateway_dry_run_http_[0-9]{3}", reason) else "gateway_dry_run_failed"
+        return result
+    # The admission request can outlast the snapshot's freshness window.
+    result = evaluate(snapshot, record, revision, refs, release)
+    result["checks"].append({"id": "gateway_server_dry_run", "status": "PASS"})
+    return result
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action",choices=("prepare","preflight"))
@@ -403,8 +452,9 @@ def main():
         c.validate_candidate(record,record["configuration_revision"],refs)
         if args.action=="prepare":result=prepare(record,args.deployment_revision,refs,value,args.clouddeploy_release,args.output_dir,c.r.Cloud())
         else:
-            c.verify(record,record["configuration_revision"],value,refs,c.r.Cloud())
-            result=evaluate(c.r.read(args.snapshot),record,args.deployment_revision,refs,args.clouddeploy_release)
+            cloud = c.r.Cloud()
+            c.verify(record,record["configuration_revision"],value,refs,cloud)
+            result=preflight(c.r.read(args.snapshot),record,args.deployment_revision,refs,args.clouddeploy_release,cloud)
         print(json.dumps(result,sort_keys=True));return 3 if result.get("decision")=="BLOCKED" else 0
     except (OSError,ValueError,KeyError,TypeError,AttributeError,subprocess.SubprocessError):
         print(json.dumps({"decision":"BLOCKED","reason":"complete_policy_or_evidence_check_failed","mutation_performed":False}));return 3
