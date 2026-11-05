@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 """Prepare and evaluate the complete dev shop; never creates releases or rollouts."""
 import argparse
-import base64
 import copy
 from datetime import datetime, timedelta, timezone
-import http.client
 import importlib.util
 import ipaddress
 import json
+import os
 from pathlib import Path
 import re
-import ssl
+import shutil
 import subprocess
+from tempfile import TemporaryDirectory
+from urllib.parse import parse_qs, urlsplit
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
@@ -137,7 +138,7 @@ def endpoint_resources(record, revision):
         "rules":[{"matches":[{"path":{"type":"PathPrefix","value":"/"}}],"backendRefs":[{"group":"","kind":"Service","name":"frontend","port":80,"weight":1}]}]}),
       resource("gateway.networking.k8s.io/v1","HTTPRoute","shop-http-redirect",{
         "parentRefs":[{**parent,"sectionName":"http"}],"hostnames":[ENDPOINT_HOST],
-        "rules":[{"filters":[{"type":"RequestRedirect","requestRedirect":{"scheme":"https","hostname":ENDPOINT_HOST,"port":443,"statusCode":301}}]}]}),
+        "rules":[{"filters":[{"type":"RequestRedirect","requestRedirect":{"scheme":"https","hostname":ENDPOINT_HOST,"statusCode":301}}]}]}),
       resource("networking.gke.io/v1","GCPGatewayPolicy",ENDPOINT_NAME,{
         "default":{"sslPolicy":ENDPOINT_NAME},"targetRef":{"group":"gateway.networking.k8s.io","kind":"Gateway","name":ENDPOINT_NAME}}),
       resource("networking.gke.io/v1","GCPBackendPolicy",ENDPOINT_NAME,{
@@ -377,6 +378,13 @@ def evaluate(snapshot, record, revision, refs, release, now=None):
         check("clouddeploy_context",fresh and bool(context.get("evidence_ref")) and context.get("release_resource")==release and context.get("release_snapshot_matches_current") is True
             and context.get("release_set_id")==record["release_set_id"] and context.get("deployment_revision")==revision)
         actual=snapshot.get("rendered_documents")
+        redirect = next((doc for doc in actual if doc["kind"] == "HTTPRoute"
+            and doc["metadata"]["name"] == "shop-http-redirect"
+            and doc["metadata"]["namespace"] == "dev"), None)
+        # GKE rejects explicit redirect ports during reconciliation, after Kubernetes admission.
+        check("gke_redirect_implicit_port", redirect is not None and all(
+            "port" not in entry.get("requestRedirect", {})
+            for rule in redirect["spec"]["rules"] for entry in rule.get("filters", [])))
         inventory(actual,record,revision,refs,context)
         check("exact_complete_inventory",True)
         expected=c.r.sha(c.r.canonical(rendered(record,revision,refs,context)))
@@ -394,31 +402,73 @@ def evaluate(snapshot, record, revision, refs, release, now=None):
         if label=="source":check("immutable_source_hash",snapshot.get("release_annotations",{}).get("source_sha256")==item.get("expected_sha256"))
     return {"decision":"READY" if all(x["status"]=="PASS" for x in checks) else "BLOCKED","checks":checks,"target":"dev","mutation_performed":False}
 
+def gateway_admission_statuses(stderr, endpoint):
+    """Read kubectl's HTTP response trace for this Gateway's dry-run writes."""
+    path = "/apis/gateway.networking.k8s.io/v1/namespaces/dev/gateways"
+    expected_paths = {"POST": path, "PATCH": f"{path}/{ENDPOINT_NAME}"}
+    for method, url, status in re.findall(
+            r'"Response" verb="(POST|PATCH)" url="([^"]+)" status="([0-9]{3})\b',
+            stderr.decode(errors="replace")):
+        target = urlsplit(url)
+        if (target.scheme == "https" and target.netloc == endpoint
+                and target.path == expected_paths[method] and parse_qs(target.query).get("dryRun") == ["All"]):
+            yield int(status)
+
+
 def gateway_dry_run(gateway, cloud):
-    """Submit the verified rendered Gateway to the reviewed dev API without persisting it."""
+    """Use Skaffold's client-side apply semantics with server-side admission."""
     env = c.r.read(ROOT / "deploy/environments.json")
     cluster_path = f"projects/{env['project']}/locations/{env['location']}/clusters/{env['cluster']}"
     cluster = c.r.decode(cloud.request("https://container.googleapis.com/v1/" + cluster_path))
     require(cluster["name"] == env["cluster"] and cluster["location"] == env["location"],
             "gateway_dry_run_cluster_mismatch")
     endpoint = str(ipaddress.IPv4Address(cluster["endpoint"]))
-    ca = base64.b64decode(cluster["masterAuth"]["clusterCaCertificate"], validate=True).decode("ascii")
-    context = ssl.create_default_context(cadata=ca)
-    path = ("/apis/gateway.networking.k8s.io/v1/namespaces/dev/gateways/"
-            + ENDPOINT_NAME + "?dryRun=All&fieldManager=sdp-preflight")
-    connection = http.client.HTTPSConnection(endpoint, context=context, timeout=30)
-    try:
-        connection.request("PATCH", path, body=c.r.canonical(gateway), headers={
-            "Authorization": "Bearer " + cloud.token,
-            "Content-Type": "application/apply-patch+yaml",
-        })
-        response = connection.getresponse()
-        require(response.status in (200, 201), f"gateway_dry_run_http_{response.status}")
-        admitted = c.r.decode(response.read())
-        require(admitted["kind"] == "Gateway" and admitted["metadata"]["name"] == ENDPOINT_NAME
-                and admitted["metadata"]["namespace"] == "dev", "gateway_dry_run_response_mismatch")
-    finally:
-        connection.close()
+    kubectl = shutil.which("kubectl")
+    auth_plugin = shutil.which("gke-gcloud-auth-plugin")
+    require(kubectl and auth_plugin, "gateway_dry_run_tools_unavailable")
+    kubeconfig = {
+        "apiVersion": "v1", "kind": "Config",
+        "clusters": [{"name": "reviewed-dev", "cluster": {
+            "server": f"https://{endpoint}",
+            "certificate-authority-data": cluster["masterAuth"]["clusterCaCertificate"],
+        }}],
+        "contexts": [{"name": "reviewed-dev", "context": {
+            "cluster": "reviewed-dev", "user": "gke", "namespace": "dev",
+        }}],
+        "current-context": "reviewed-dev",
+        "users": [{"name": "gke", "user": {"exec": {
+            "apiVersion": "client.authentication.k8s.io/v1beta1",
+            "command": auth_plugin, "interactiveMode": "Never", "provideClusterInfo": True,
+        }}}],
+    }
+    with TemporaryDirectory() as directory:
+        config = Path(directory) / "kubeconfig.json"
+        config.write_bytes(c.r.canonical(kubeconfig))
+        command = [kubectl, f"--kubeconfig={config}", f"--cache-dir={Path(directory) / 'cache'}"]
+
+        def admit(args, manifest=None):
+            result = subprocess.run(
+                command + args + ["--dry-run=server", "--request-timeout=30s", "--v=6", "-o", "json"],
+                input=manifest, capture_output=True, timeout=90, env={**os.environ, "KUBECTL_KUBERC": "false"})
+            statuses = list(gateway_admission_statuses(result.stderr, endpoint))
+            # kubectl may retry a conflict internally, even in dry-run mode.
+            require(409 not in statuses and b"(Conflict)" not in result.stderr, "gateway_dry_run_http_409")
+            require(result.returncode == 0, "gateway_dry_run_failed")
+            admitted = c.r.decode(result.stdout)
+            require(admitted["kind"] == "Gateway" and admitted["metadata"]["name"] == ENDPOINT_NAME
+                    and admitted["metadata"]["namespace"] == "dev", "gateway_dry_run_response_mismatch")
+            return admitted, statuses
+
+        admitted, statuses = admit(["apply", "--server-side=false", "-f", "-"], c.r.canonical(gateway))
+        if not statuses:
+            # A no-op client-side apply can stop after GET. Run admission for the same
+            # resource version without changing its contents or accepting a concurrent update.
+            version = admitted["metadata"]["resourceVersion"]
+            require(isinstance(version, str) and version, "gateway_dry_run_resource_version_missing")
+            patch = json.dumps({"metadata": {"resourceVersion": version}})
+            _, statuses = admit(["patch", "gateway", ENDPOINT_NAME, "--type=merge", "--patch=" + patch,
+                                 "--field-manager=kubectl-client-side-apply"])
+        require(bool(statuses) and all(status in (200, 201) for status in statuses), "gateway_dry_run_failed")
 
 
 def preflight(snapshot, record, revision, refs, release, cloud):
@@ -428,11 +478,11 @@ def preflight(snapshot, record, revision, refs, release, cloud):
     gateway = next(doc for doc in snapshot["rendered_documents"] if doc["kind"] == "Gateway")
     try:
         gateway_dry_run(gateway, cloud)
-    except (OSError, http.client.HTTPException, ValueError, KeyError, TypeError, AttributeError) as error:
+    except (OSError, subprocess.SubprocessError, ValueError, KeyError, TypeError, AttributeError) as error:
         result["decision"] = "BLOCKED"
         result["checks"].append({"id": "gateway_server_dry_run", "status": "FAIL"})
         reason = str(error)
-        result["reason"] = reason if re.fullmatch(r"gateway_dry_run_http_[0-9]{3}", reason) else "gateway_dry_run_failed"
+        result["reason"] = reason if reason in ("gateway_dry_run_http_409", "gateway_dry_run_tools_unavailable") else "gateway_dry_run_failed"
         return result
     # The admission request can outlast the snapshot's freshness window.
     result = evaluate(snapshot, record, revision, refs, release)

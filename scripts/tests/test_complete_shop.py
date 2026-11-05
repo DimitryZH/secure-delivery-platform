@@ -118,7 +118,10 @@ class CompleteTests(unittest.TestCase):
         self.assertIs(type(backend['spec']['default']['logging']['sampleRate']),int)
         self.assertEqual(backend['spec']['default']['logging']['sampleRate'],1000000)
         routes={d['metadata']['name']:d for d in docs if d['kind']=='HTTPRoute'}
-        self.assertNotIn('backendRefs',routes['shop-http-redirect']['spec']['rules'][0])
+        redirect=routes['shop-http-redirect']['spec']
+        self.assertEqual(redirect['parentRefs'],[{'name':'shop-dev-edge','namespace':'dev','sectionName':'http'}])
+        self.assertEqual(redirect['rules'],[{'filters':[{'type':'RequestRedirect','requestRedirect':{
+            'scheme':'https','hostname':'shop.runtimeplatforms.dev','statusCode':301}}]}])
         self.assertEqual(routes['shop-https']['spec']['rules'][0]['backendRefs'][0]['name'],'frontend')
         for kind,change in (
             ('Gateway',lambda d:d['spec'].update(gatewayClassName='gke-l7-regional-external-managed')),
@@ -552,15 +555,77 @@ class CompleteTests(unittest.TestCase):
         with patch.object(w.c,'redis_admission'),patch.object(w,'gateway_dry_run') as dry_run:
             self.assertEqual(w.preflight(snapshot,self.record,REV,self.refs,RESOURCE,cloud)['decision'],'READY')
             dry_run.assert_called_once_with(gateway,cloud)
-            dry_run.side_effect=ValueError('gateway_dry_run_http_422')
+            dry_run.side_effect=ValueError('gateway_dry_run_failed')
             result=w.preflight(snapshot,self.record,REV,self.refs,RESOURCE,cloud)
             self.assertEqual(result['decision'],'BLOCKED')
-            self.assertEqual(result['reason'],'gateway_dry_run_http_422')
+            self.assertEqual(result['reason'],'gateway_dry_run_failed')
             self.assertIn({'id':'gateway_server_dry_run','status':'FAIL'},result['checks'])
             dry_run.reset_mock()
             next(x for x in gateway['spec']['listeners'] if x['name']=='https')['tls']={'mode':'Terminate'}
             self.assertEqual(w.preflight(snapshot,self.record,REV,self.refs,RESOURCE,cloud)['decision'],'BLOCKED')
             dry_run.assert_not_called()
+
+    def test_gateway_uses_client_apply_with_server_admission_and_blocks_conflict(self):
+        _,snapshot=self.preflight_fixture(REV)
+        gateway=next(doc for doc in snapshot['rendered_documents'] if doc['kind']=='Gateway')
+        env=w.c.r.read(ROOT/'deploy/environments.json')
+        cluster={'name':env['cluster'],'location':env['location'],'endpoint':'192.0.2.3',
+                 'masterAuth':{'clusterCaCertificate':'cmV2aWV3ZWQtY2E='}}
+        cloud=Mock()
+        cloud.request.return_value=w.c.r.canonical(cluster)
+        url='https://192.0.2.3/apis/gateway.networking.k8s.io/v1/namespaces/dev/gateways/shop-dev-edge?dryRun=All'
+
+        def trace(status):
+            return f'"Response" verb="PATCH" url="{url}" status="{status}"\n'.encode()
+
+        def invoke(args, **kwargs):
+            config=Path(args[1].split('=',1)[1])
+            kubeconfig=json.loads(config.read_bytes())
+            self.assertEqual(kubeconfig['clusters'][0]['cluster'], {
+                'server':'https://192.0.2.3','certificate-authority-data':'cmV2aWV3ZWQtY2E='})
+            self.assertEqual(kubeconfig['contexts'][0]['context']['namespace'],'dev')
+            user=kubeconfig['users'][0]['user']
+            self.assertEqual(list(user),['exec'])
+            self.assertEqual(user['exec']['command'],'gke-gcloud-auth-plugin')
+            self.assertEqual(args[-5:],['--dry-run=server','--request-timeout=30s','--v=6','-o','json'])
+            if args[3]=='apply':
+                self.assertEqual(args[3:-5],['apply','--server-side=false','-f','-'])
+                self.assertEqual(kwargs['input'],w.c.r.canonical(gateway))
+                return subprocess.CompletedProcess(args,0,readback,apply_trace)
+            self.assertEqual(args[3:-5],['patch','gateway','shop-dev-edge','--type=merge',
+                                         '--patch={"metadata": {"resourceVersion": "42"}}',
+                                         '--field-manager=kubectl-client-side-apply'])
+            self.assertIsNone(kwargs['input'])
+            return subprocess.CompletedProcess(args,0,readback,trace('200 OK'))
+
+        readback=w.c.r.canonical({**gateway,'metadata':{**gateway['metadata'],'resourceVersion':'42'}})
+        apply_trace=trace('409 Conflict')+trace('200 OK')
+        with patch.object(w.c,'redis_admission'),patch.object(w.shutil,'which',side_effect=lambda name:name),\
+             patch.object(w.subprocess,'run',side_effect=invoke) as kubectl:
+            result=w.preflight(snapshot,self.record,REV,self.refs,RESOURCE,cloud)
+            kubectl.assert_called_once()
+            self.assertEqual(result['decision'],'BLOCKED')
+            self.assertEqual(result['reason'],'gateway_dry_run_http_409')
+            self.assertIn({'id':'gateway_server_dry_run','status':'FAIL'},result['checks'])
+            kubectl.reset_mock()
+            apply_trace=b''
+            self.assertEqual(w.preflight(snapshot,self.record,REV,self.refs,RESOURCE,cloud)['decision'],'READY')
+            self.assertEqual(kubectl.call_count,2)
+
+    def test_preflight_blocks_explicit_redirect_port_even_with_matching_inventory(self):
+        _,snapshot=self.preflight_fixture(REV)
+        docs=snapshot['rendered_documents']
+        route=next(d for d in docs if d['kind']=='HTTPRoute' and d['metadata']['name']=='shop-http-redirect')
+        route['spec']['rules'][0]['filters'][0]['requestRedirect']['port']=443
+        snapshot['release_annotations']['rendered_inventory_sha256']=w.c.r.sha(w.c.r.canonical(docs))
+        # Simulate a renderer regression whose artifact and commitment both match.
+        with patch.object(w.c,'redis_admission'),patch.object(w,'rendered',return_value=docs),\
+             patch.object(w,'gateway_dry_run',return_value=None) as dry_run:
+            result=w.preflight(snapshot,self.record,REV,self.refs,RESOURCE,object())
+        self.assertEqual(result['decision'],'BLOCKED')
+        self.assertEqual([check['id'] for check in result['checks'] if check['status']=='FAIL'],
+                         ['gke_redirect_implicit_port'])
+        dry_run.assert_not_called()
 
     def test_prepare_and_preflight_cli_reuse_original_candidate_with_new_deployment(self):
         deployment='e'*40;original=c.r.canonical(self.record)

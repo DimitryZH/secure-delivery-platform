@@ -342,14 +342,72 @@
     "No instantaneous clock, HA, durability, load or production sizing claim; accepted historical telemetry failures/losses retained.",
     "Certificate/delegation/controller availability, quota and execution-time permissions remain live prerequisites. No fabricated IP/nameserver values."
   ],
+  "redirect_recovery": {
+    "baseline_deployment_revision": "d1c7db4e4a527d41cc699511ce8945bd840fce6d",
+    "previous_release": "shop-106-d1c7db4-e9f1b6f3",
+    "previous_rollout": "dev-full-002",
+    "previous_rollout_status": "SUCCEEDED",
+    "previous_endpoint_status": "BLOCKED",
+    "previous_gateway_programmed": false,
+    "previous_controller_error": "GWCER104: explicit RequestRedirect port is unsupported",
+    "gateway_class": "gke-l7-global-external-managed",
+    "route": "dev/shop-http-redirect",
+    "local_render": {
+      "documents": 45,
+      "baseline_context_change": "Removed only requestRedirect.port",
+      "canonical_sha256": "sha256:198070a5a5dd72d5f767e434a6e2c16e014934db95bdce898c6fcb4146ba7b3b"
+    },
+    "dev_api_dry_run": {
+      "observed_at": "2026-11-05T20:40:35.950513Z",
+      "previous_route": "passed admission",
+      "corrected_route": "passed admission and omitted explicit port",
+      "http_listener_and_redirect_fields_preserved": true,
+      "existing_route_uid_generation_spec_and_annotations_unchanged": true
+    },
+    "preflight_regression": "An explicit redirect port blocks preflight before Gateway dry-run even when the expected inventory and immutable commitment match",
+    "local_regressions": {
+      "tests": 236,
+      "passed": 235,
+      "skipped": 1,
+      "skip": "Optional public Redis registry/source byte fixture",
+      "immutable_aml_and_native_collector": "passed",
+      "git_diff_check": "passed"
+    },
+    "gateway_preflight_admission": {
+      "previous_server_side_apply_http_status": 409,
+      "deployment_build": "e9822e49-bf4c-45a7-96a8-511ed88a6a5e",
+      "resolved_skaffold_deployer": "kubectl with no apply overrides",
+      "live_gateway_field_manager": "kubectl-client-side-apply",
+      "verified_client": "kubectl v1.34.1",
+      "observed_at": "2026-11-05T20:53:12.533989Z",
+      "existing_deployment_sha": "d1c7db4e4a527d41cc699511ce8945bd840fce6d",
+      "tested_deployment_sha": "f3de53d97f0d388046304ed4a48ededf5e74abf2",
+      "corrected_gateway_new_sha_http_status": 200,
+      "previous_invalid_https_listener_http_status": 422,
+      "invalid_https_listener_reason": "Terminate requires certificateRefs or options",
+      "same_revision_noop_admission_http_status": 200,
+      "conflict_even_after_kubectl_retry_blocks_ready": true,
+      "live_gateway_before_after_exact_match": true,
+      "canonical_live_gateway_sha256": "sha256:3408e3c46c5c6a5c677a73daa0944c40e8b8809517bebd4ae3bcb44eb0c261c7",
+      "new_protected_release_preflight": "pending merge and release creation"
+    },
+    "next_endpoint_acceptance": [
+      "Gateway Programmed=True for current generation",
+      "Healthy frontend load balancer backend",
+      "HTTPS with valid certificate chain and hostname",
+      "Observed HTTP 301 to HTTPS preserving host, path and query"
+    ],
+    "new_release_created": false,
+    "new_rollout_created": false
+  },
   "implementation_hashes": {
     "deploy/online-shop/complete-README.md": "sha256:e15910623beadd15d4ba79fc59d1e19b5a2458ee8d18ebd9342e2bcb27a2d6ff",
     "deploy/online-shop/complete-acceptance.py": "sha256:755ac5256965bd1129417bcf163685b0202c035508e873c7a8c5485c9bf4da11",
-    "deploy/online-shop/complete.py": "sha256:5a0219cfbbdb41ca03bd9f423510af2e7739c69276518a9133b495da830f4d47",
+    "deploy/online-shop/complete.py": "sha256:698f37d4f0bb333ac36c11b25fb24a06db30120f1f034ab90282ac22cd663d11",
     "docs/roadmap.md": "sha256:51fcf8d10230efa8bc9021412ad580c6b9e901e052fe008a226a25ce2ee5c18e",
-    "scripts/tests/test_complete_shop.py": "sha256:864bf02682b0d264f609392642f1f889b8ea7ebbb65db39bee8ec1b778388f73",
+    "scripts/tests/test_complete_shop.py": "sha256:8af25b6573bd8616f6ec936a080c848dc915a6069bf31e1a0d87f848aad2dd99",
     "terraform/foundation/gke.tf": "sha256:ef0aeee981ef6101856a53e3e058c89fc948dc4e559b8a94e79279c8c0fd5372",
-    "deploy/online-shop/endpoint-README.md": "sha256:a163db4dca6e78481b80f90bbaaa7ab8890da6bea17e042d816aaf7fa7c53229",
+    "deploy/online-shop/endpoint-README.md": "sha256:f98d435c5a07cbf5fe3eddb5cac4c302cca9688c376e9e8e2b80a2b3c479dd71",
     "terraform/foundation/shop-endpoint.tf": "sha256:f04a295db090bf0ab81cc2440ca8e72504eec0ee47d5fd45fd55d24840120b9b"
   }
 }
