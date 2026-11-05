@@ -366,19 +366,30 @@
     },
     "preflight_regression": "An explicit redirect port blocks preflight before Gateway dry-run even when the expected inventory and immutable commitment match",
     "local_regressions": {
-      "tests": 235,
-      "passed": 234,
+      "tests": 236,
+      "passed": 235,
       "skipped": 1,
       "skip": "Optional public Redis registry/source byte fixture",
       "immutable_aml_and_native_collector": "passed",
       "git_diff_check": "passed"
     },
-    "next_rollout_preflight_blocker": {
-      "status": "unresolved",
-      "check": "gateway_server_dry_run",
-      "http_status": 409,
-      "reason": "Applying a changed deployment SHA conflicts with the existing Gateway annotation owned by kubectl-client-side-apply",
-      "client_side_apply_with_server_dry_run": "passed"
+    "gateway_preflight_admission": {
+      "previous_server_side_apply_http_status": 409,
+      "deployment_build": "e9822e49-bf4c-45a7-96a8-511ed88a6a5e",
+      "resolved_skaffold_deployer": "kubectl with no apply overrides",
+      "live_gateway_field_manager": "kubectl-client-side-apply",
+      "verified_client": "kubectl v1.34.1",
+      "observed_at": "2026-11-05T20:53:12.533989Z",
+      "existing_deployment_sha": "d1c7db4e4a527d41cc699511ce8945bd840fce6d",
+      "tested_deployment_sha": "f3de53d97f0d388046304ed4a48ededf5e74abf2",
+      "corrected_gateway_new_sha_http_status": 200,
+      "previous_invalid_https_listener_http_status": 422,
+      "invalid_https_listener_reason": "Terminate requires certificateRefs or options",
+      "same_revision_noop_admission_http_status": 200,
+      "conflict_even_after_kubectl_retry_blocks_ready": true,
+      "live_gateway_before_after_exact_match": true,
+      "canonical_live_gateway_sha256": "sha256:3408e3c46c5c6a5c677a73daa0944c40e8b8809517bebd4ae3bcb44eb0c261c7",
+      "new_protected_release_preflight": "pending merge and release creation"
     },
     "next_endpoint_acceptance": [
       "Gateway Programmed=True for current generation",
@@ -392,11 +403,11 @@
   "implementation_hashes": {
     "deploy/online-shop/complete-README.md": "sha256:e15910623beadd15d4ba79fc59d1e19b5a2458ee8d18ebd9342e2bcb27a2d6ff",
     "deploy/online-shop/complete-acceptance.py": "sha256:755ac5256965bd1129417bcf163685b0202c035508e873c7a8c5485c9bf4da11",
-    "deploy/online-shop/complete.py": "sha256:5ab5dbfd1d9a779b576b6a8fb8536da80454652dd35d0a23f897f1025e7eb375",
+    "deploy/online-shop/complete.py": "sha256:698f37d4f0bb333ac36c11b25fb24a06db30120f1f034ab90282ac22cd663d11",
     "docs/roadmap.md": "sha256:51fcf8d10230efa8bc9021412ad580c6b9e901e052fe008a226a25ce2ee5c18e",
-    "scripts/tests/test_complete_shop.py": "sha256:275cac17120b35039d2a41c03d3fe64639f297f10c44108f7775f0388152e0fa",
+    "scripts/tests/test_complete_shop.py": "sha256:8af25b6573bd8616f6ec936a080c848dc915a6069bf31e1a0d87f848aad2dd99",
     "terraform/foundation/gke.tf": "sha256:ef0aeee981ef6101856a53e3e058c89fc948dc4e559b8a94e79279c8c0fd5372",
-    "deploy/online-shop/endpoint-README.md": "sha256:3a3166d8e1103fb94b14c7c23d55184cd9d0d759f8fb21a3a223273a66b79280",
+    "deploy/online-shop/endpoint-README.md": "sha256:f98d435c5a07cbf5fe3eddb5cac4c302cca9688c376e9e8e2b80a2b3c479dd71",
     "terraform/foundation/shop-endpoint.tf": "sha256:f04a295db090bf0ab81cc2440ca8e72504eec0ee47d5fd45fd55d24840120b9b"
   }
 }
