@@ -342,14 +342,61 @@
     "No instantaneous clock, HA, durability, load or production sizing claim; accepted historical telemetry failures/losses retained.",
     "Certificate/delegation/controller availability, quota and execution-time permissions remain live prerequisites. No fabricated IP/nameserver values."
   ],
+  "redirect_recovery": {
+    "baseline_deployment_revision": "d1c7db4e4a527d41cc699511ce8945bd840fce6d",
+    "previous_release": "shop-106-d1c7db4-e9f1b6f3",
+    "previous_rollout": "dev-full-002",
+    "previous_rollout_status": "SUCCEEDED",
+    "previous_endpoint_status": "BLOCKED",
+    "previous_gateway_programmed": false,
+    "previous_controller_error": "GWCER104: explicit RequestRedirect port is unsupported",
+    "gateway_class": "gke-l7-global-external-managed",
+    "route": "dev/shop-http-redirect",
+    "local_render": {
+      "documents": 45,
+      "baseline_context_change": "Removed only requestRedirect.port",
+      "canonical_sha256": "sha256:198070a5a5dd72d5f767e434a6e2c16e014934db95bdce898c6fcb4146ba7b3b"
+    },
+    "dev_api_dry_run": {
+      "observed_at": "2026-11-05T20:40:35.950513Z",
+      "previous_route": "passed admission",
+      "corrected_route": "passed admission and omitted explicit port",
+      "http_listener_and_redirect_fields_preserved": true,
+      "existing_route_uid_generation_spec_and_annotations_unchanged": true
+    },
+    "preflight_regression": "An explicit redirect port blocks preflight before Gateway dry-run even when the expected inventory and immutable commitment match",
+    "local_regressions": {
+      "tests": 235,
+      "passed": 234,
+      "skipped": 1,
+      "skip": "Optional public Redis registry/source byte fixture",
+      "immutable_aml_and_native_collector": "passed",
+      "git_diff_check": "passed"
+    },
+    "next_rollout_preflight_blocker": {
+      "status": "unresolved",
+      "check": "gateway_server_dry_run",
+      "http_status": 409,
+      "reason": "Applying a changed deployment SHA conflicts with the existing Gateway annotation owned by kubectl-client-side-apply",
+      "client_side_apply_with_server_dry_run": "passed"
+    },
+    "next_endpoint_acceptance": [
+      "Gateway Programmed=True for current generation",
+      "Healthy frontend load balancer backend",
+      "HTTPS with valid certificate chain and hostname",
+      "Observed HTTP 301 to HTTPS preserving host, path and query"
+    ],
+    "new_release_created": false,
+    "new_rollout_created": false
+  },
   "implementation_hashes": {
     "deploy/online-shop/complete-README.md": "sha256:e15910623beadd15d4ba79fc59d1e19b5a2458ee8d18ebd9342e2bcb27a2d6ff",
     "deploy/online-shop/complete-acceptance.py": "sha256:755ac5256965bd1129417bcf163685b0202c035508e873c7a8c5485c9bf4da11",
-    "deploy/online-shop/complete.py": "sha256:5a0219cfbbdb41ca03bd9f423510af2e7739c69276518a9133b495da830f4d47",
+    "deploy/online-shop/complete.py": "sha256:5ab5dbfd1d9a779b576b6a8fb8536da80454652dd35d0a23f897f1025e7eb375",
     "docs/roadmap.md": "sha256:51fcf8d10230efa8bc9021412ad580c6b9e901e052fe008a226a25ce2ee5c18e",
-    "scripts/tests/test_complete_shop.py": "sha256:864bf02682b0d264f609392642f1f889b8ea7ebbb65db39bee8ec1b778388f73",
+    "scripts/tests/test_complete_shop.py": "sha256:275cac17120b35039d2a41c03d3fe64639f297f10c44108f7775f0388152e0fa",
     "terraform/foundation/gke.tf": "sha256:ef0aeee981ef6101856a53e3e058c89fc948dc4e559b8a94e79279c8c0fd5372",
-    "deploy/online-shop/endpoint-README.md": "sha256:a163db4dca6e78481b80f90bbaaa7ab8890da6bea17e042d816aaf7fa7c53229",
+    "deploy/online-shop/endpoint-README.md": "sha256:3a3166d8e1103fb94b14c7c23d55184cd9d0d759f8fb21a3a223273a66b79280",
     "terraform/foundation/shop-endpoint.tf": "sha256:f04a295db090bf0ab81cc2440ca8e72504eec0ee47d5fd45fd55d24840120b9b"
   }
 }

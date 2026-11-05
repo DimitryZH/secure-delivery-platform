@@ -137,7 +137,7 @@ def endpoint_resources(record, revision):
         "rules":[{"matches":[{"path":{"type":"PathPrefix","value":"/"}}],"backendRefs":[{"group":"","kind":"Service","name":"frontend","port":80,"weight":1}]}]}),
       resource("gateway.networking.k8s.io/v1","HTTPRoute","shop-http-redirect",{
         "parentRefs":[{**parent,"sectionName":"http"}],"hostnames":[ENDPOINT_HOST],
-        "rules":[{"filters":[{"type":"RequestRedirect","requestRedirect":{"scheme":"https","hostname":ENDPOINT_HOST,"port":443,"statusCode":301}}]}]}),
+        "rules":[{"filters":[{"type":"RequestRedirect","requestRedirect":{"scheme":"https","hostname":ENDPOINT_HOST,"statusCode":301}}]}]}),
       resource("networking.gke.io/v1","GCPGatewayPolicy",ENDPOINT_NAME,{
         "default":{"sslPolicy":ENDPOINT_NAME},"targetRef":{"group":"gateway.networking.k8s.io","kind":"Gateway","name":ENDPOINT_NAME}}),
       resource("networking.gke.io/v1","GCPBackendPolicy",ENDPOINT_NAME,{
@@ -377,6 +377,13 @@ def evaluate(snapshot, record, revision, refs, release, now=None):
         check("clouddeploy_context",fresh and bool(context.get("evidence_ref")) and context.get("release_resource")==release and context.get("release_snapshot_matches_current") is True
             and context.get("release_set_id")==record["release_set_id"] and context.get("deployment_revision")==revision)
         actual=snapshot.get("rendered_documents")
+        redirect = next((doc for doc in actual if doc["kind"] == "HTTPRoute"
+            and doc["metadata"]["name"] == "shop-http-redirect"
+            and doc["metadata"]["namespace"] == "dev"), None)
+        # GKE rejects explicit redirect ports during reconciliation, after Kubernetes admission.
+        check("gke_redirect_implicit_port", redirect is not None and all(
+            "port" not in entry.get("requestRedirect", {})
+            for rule in redirect["spec"]["rules"] for entry in rule.get("filters", [])))
         inventory(actual,record,revision,refs,context)
         check("exact_complete_inventory",True)
         expected=c.r.sha(c.r.canonical(rendered(record,revision,refs,context)))

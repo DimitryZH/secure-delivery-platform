@@ -118,7 +118,10 @@ class CompleteTests(unittest.TestCase):
         self.assertIs(type(backend['spec']['default']['logging']['sampleRate']),int)
         self.assertEqual(backend['spec']['default']['logging']['sampleRate'],1000000)
         routes={d['metadata']['name']:d for d in docs if d['kind']=='HTTPRoute'}
-        self.assertNotIn('backendRefs',routes['shop-http-redirect']['spec']['rules'][0])
+        redirect=routes['shop-http-redirect']['spec']
+        self.assertEqual(redirect['parentRefs'],[{'name':'shop-dev-edge','namespace':'dev','sectionName':'http'}])
+        self.assertEqual(redirect['rules'],[{'filters':[{'type':'RequestRedirect','requestRedirect':{
+            'scheme':'https','hostname':'shop.runtimeplatforms.dev','statusCode':301}}]}])
         self.assertEqual(routes['shop-https']['spec']['rules'][0]['backendRefs'][0]['name'],'frontend')
         for kind,change in (
             ('Gateway',lambda d:d['spec'].update(gatewayClassName='gke-l7-regional-external-managed')),
@@ -561,6 +564,21 @@ class CompleteTests(unittest.TestCase):
             next(x for x in gateway['spec']['listeners'] if x['name']=='https')['tls']={'mode':'Terminate'}
             self.assertEqual(w.preflight(snapshot,self.record,REV,self.refs,RESOURCE,cloud)['decision'],'BLOCKED')
             dry_run.assert_not_called()
+
+    def test_preflight_blocks_explicit_redirect_port_even_with_matching_inventory(self):
+        _,snapshot=self.preflight_fixture(REV)
+        docs=snapshot['rendered_documents']
+        route=next(d for d in docs if d['kind']=='HTTPRoute' and d['metadata']['name']=='shop-http-redirect')
+        route['spec']['rules'][0]['filters'][0]['requestRedirect']['port']=443
+        snapshot['release_annotations']['rendered_inventory_sha256']=w.c.r.sha(w.c.r.canonical(docs))
+        # Simulate a renderer regression whose artifact and commitment both match.
+        with patch.object(w.c,'redis_admission'),patch.object(w,'rendered',return_value=docs),\
+             patch.object(w,'gateway_dry_run',return_value=None) as dry_run:
+            result=w.preflight(snapshot,self.record,REV,self.refs,RESOURCE,object())
+        self.assertEqual(result['decision'],'BLOCKED')
+        self.assertEqual([check['id'] for check in result['checks'] if check['status']=='FAIL'],
+                         ['gke_redirect_implicit_port'])
+        dry_run.assert_not_called()
 
     def test_prepare_and_preflight_cli_reuse_original_candidate_with_new_deployment(self):
         deployment='e'*40;original=c.r.canonical(self.record)
