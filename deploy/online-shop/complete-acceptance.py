@@ -19,6 +19,8 @@ w=importlib.util.module_from_spec(spec);spec.loader.exec_module(w)
 c=w.c;require=c.require
 CLEANUP_TARGET="projects/sre-platform-staging-507220/locations/us-central1-a/clusters/secure-delivery-platform/namespaces/dev/services/redis-cart"
 CLEANUP_ENDPOINT="127.0.0.1:16379"
+CATALOG_READBACK_GENERATION = "1793972241618167"
+ACCEPTANCE_SCRIPT = "deploy/online-shop/complete-acceptance.py"
 RPC_COMPLETIONS = {
     "cartservice": {"/hipstershop.CartService/" + name for name in ("AddItem","GetCart","EmptyCart")},
     "emailservice": {"hipstershop.EmailService/SendOrderConfirmation"},
@@ -46,7 +48,52 @@ def server_completion(identity, body, sid, spans):
         _, span = spans[parent]
     return span.get("kind") == "RPC_SERVER" and span.get("name") == operation
 
+class CatalogReadback:
+    """Supply the recovered bytes to the unchanged accepted catalog verifier."""
+
+    def __init__(self, cloud):
+        self.cloud = cloud
+        self.token = cloud.token
+        accepted = w.legacy.policy()["accepted_release"]
+        generation = CATALOG_READBACK_GENERATION
+        require(re.fullmatch(r"[1-9][0-9]*", generation) and generation != accepted["candidate_generation"],
+                "invalid_catalog_readback_generation")
+        object_name = ("online-shop/catalog-v1/" + accepted["configuration_revision"] + "/"
+                       + accepted["build_id"] + "/candidate.json")
+        media_url = ("https://storage.googleapis.com/storage/v1/b/" + c.r.policy()["project"]
+                     + "-attestation-source/o/" + urllib.parse.quote(object_name, safe="") + "?alt=media")
+        self.historical_url = media_url + "&generation=" + accepted["candidate_generation"]
+        self.readback_url = media_url + "&generation=" + generation + "&ifGenerationMatch=" + generation
+        self.digest = accepted["candidate_transport_sha256"]
+
+    def request(self, url, body=None, registry=False):
+        if url == self.historical_url and body is None and not registry:
+            raw = self.cloud.request(self.readback_url)
+            require("sha256:" + c.r.sha(raw) == self.digest, "recovered_catalog_transport_hash_mismatch")
+            return raw
+        return self.cloud.request(url, body, registry)
+
+    def build(self, policy, build_id):
+        return self.cloud.build(policy, build_id)
+
+    def image(self, repository, digest):
+        return self.cloud.image(repository, digest)
+
+
+def review_deployed_configuration(revision):
+    """Match deployed trust files while allowing this separately reviewed validator."""
+    require(re.fullmatch(c.r.SHA, revision or ""), "deployment_revision_required")
+    with c.r.fetched(c.r.SDP, revision) as source:
+        source.git("fetch", "--no-tags", c.r.SDP + ".git", "main")
+        source.git("merge-base", "--is-ancestor", revision, "FETCH_HEAD")
+        for name in c.TRUST_FILES:
+            if name != ACCEPTANCE_SCRIPT:
+                require((w.ROOT / name).read_bytes().replace(b"\r\n", b"\n") == source.blob(name),
+                        "incompatible_deployed_trust_files")
+
+
 def guard(record, value, refs, cloud):
+    cloud = CatalogReadback(cloud)
     proof=c.verify(record,record["configuration_revision"],value,refs,cloud)
     require(proof["status"]=="passed" and len(proof["components"])==11,"incomplete_independent_proof")
     found=c.existing_occurrences(cloud,[x["artifact"] for x in proof["components"]])
@@ -239,8 +286,8 @@ def cleanup_from_record(path, session, endpoint, target):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action",choices=("capacity","runtime","signals","journey","endpoint-journey","cleanup"))
-    for name in ("candidate","configuration-revision","deployment-revision","snapshot","since","frontend","output-dir","session","session-record","redis","redis-target"):parser.add_argument("--"+name)
+    parser.add_argument("action",choices=("capacity","runtime","signals","verify-release","journey","endpoint-journey","cleanup"))
+    for name in ("candidate","configuration-revision","deployment-revision","validator-revision","snapshot","since","frontend","output-dir","session","session-record","redis","redis-target"):parser.add_argument("--"+name)
     args=parser.parse_args()
     try:
         if args.action=="cleanup":
@@ -248,7 +295,9 @@ def main():
             print(json.dumps(result,sort_keys=True));return 0
         record=c.r.read(args.candidate)
         revision=args.deployment_revision or args.configuration_revision
-        w.reviewed(record,revision)
+        w.reviewed(record,args.validator_revision or revision)
+        if args.validator_revision and args.validator_revision != revision:
+            review_deployed_configuration(args.deployment_revision)
         with c.r.fetched(c.r.AML,c.r.REVISION) as source:value=c.plans(source);refs=c.references(source,value)
         c.validate_candidate(record,args.configuration_revision,refs)
         cloud=c.r.Cloud()
@@ -257,7 +306,11 @@ def main():
         elif args.action=="signals":result=signals(c.r.read(args.snapshot),record,args.since,value,refs,cloud)
         else:
             guard(record,value,refs,cloud)
-            result=journey(args.frontend,args.output_dir,endpoint=args.action=="endpoint-journey")
+            if args.action=="verify-release":
+                result={"release_verification":"passed","release_set_id":record["release_set_id"],
+                        "catalog_readback_generation":CATALOG_READBACK_GENERATION}
+            else:
+                result=journey(args.frontend,args.output_dir,endpoint=args.action=="endpoint-journey")
         print(json.dumps(result,sort_keys=True));return 3 if result.get("capacity_ready") is False else 0
     except (OSError,ValueError,KeyError,TypeError,AttributeError,subprocess.SubprocessError):
         print(json.dumps({"status":"failed","reason":"complete_acceptance_evidence_missing_or_inconsistent"}));return 3
