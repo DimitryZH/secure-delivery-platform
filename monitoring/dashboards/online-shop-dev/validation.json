@@ -1,6 +1,6 @@
 {
   "issue": 111,
-  "status": "ready_for_dashboard_review",
+  "status": "dashboard_published_checkout_pending",
   "reviewed_main": "624911d3400e052523b19b2790f3c7a6f9860f2e",
   "observed_deployment": {
     "project": "sre-platform-staging-507220",
@@ -87,8 +87,39 @@
     "repository_document_links": "passed",
     "git_diff_check": "passed"
   },
+  "live_dashboard": {
+    "id": "63adf6ec-f633-4a9f-9697-71ebf108a051",
+    "promql_queries_matching_reviewed_render": 6
+  },
+  "catalog_candidate_recovery_20261106": {
+    "rollout": "dev-full-003",
+    "previous_checkout_attempt": {
+      "cli_exit_code": 3,
+      "catalog_generation_http_status": 404,
+      "storefront_requests": 0,
+      "redis_session_created": false
+    },
+    "catalog": {
+      "historical_signing_generation": "1793303013750824",
+      "recovered_readback_generation": "1793972241618167",
+      "transport_sha256": "sha256:1bef1fbc83350dc9449fee6b01c4ff6deed9121e782a7428d3542d8692a126b9",
+      "create_only_precondition": "ifGenerationMatch=0",
+      "temporary_hold_confirmed": true,
+      "generation_pinned_readback_hash_verified": true,
+      "historical_signing_build": "a6ca11bf-1da5-4899-b628-84dba69cbcb7"
+    },
+    "complete_release": {
+      "generation": "1793633780298303",
+      "transport_sha256": "sha256:d7bdbc5d4e2f5cda5801281de2ecf08cbb599a6ea08d92c7dd1309c878fd21cc",
+      "temporary_hold_confirmed": true,
+      "generation_pinned_readback_hash_verified": true
+    },
+    "draft_release_guard": "passed_against_live_evidence_without_storefront_traffic",
+    "guard_uses_original_historical_signing_request_and_signature_checks": true,
+    "merged_cli_invocation": "pending_review_and_merge"
+  },
   "pending_review": [
-    "Review the full foundation plan and publish the dashboard after separate approval.",
+    "Run the normal verify-release CLI from merged main with the actual dev deployment and original producing revisions.",
     "Run one new bounded checkout, verify the live dashboard and native correlation, and remove only the owned Redis session key.",
     "Recheck sample-service health in dev, stage and prod during live acceptance."
   ]

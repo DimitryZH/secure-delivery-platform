@@ -659,7 +659,7 @@ class CompleteTests(unittest.TestCase):
         outcomes=[{'id':r['id'],'artifact':r['repository']+'@'+r['digest']} for r in self.record['components']]
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);candidate=root/'candidate.json';candidate.write_text(json.dumps(self.record));snapshot=root/'snapshot.json'
-            for action in ('runtime','signals','journey','endpoint-journey','capacity'):
+            for action in ('runtime','signals','verify-release','journey','endpoint-journey','capacity'):
                 snapshot.write_text(json.dumps(signals if action=='signals' else self.runtime_fixture(deployment)))
                 args=['acceptance',action,'--candidate',str(candidate),'--configuration-revision',REV,'--deployment-revision',deployment,
                       '--snapshot',str(snapshot),'--since',stamp,'--frontend','http://127.0.0.1:8080','--output-dir',str(root/'journey')]
@@ -669,9 +669,12 @@ class CompleteTests(unittest.TestCase):
                      patch.object(a.c,'verify',return_value={'status':'passed','components':outcomes}) as verify,\
                      patch.object(a.c,'existing_occurrences',return_value={r['artifact']:['existing'] for r in outcomes}),\
                      patch.object(a.w.legacy,'verify_support'),patch.object(a.c.r,'Cloud'),\
-                     patch.object(a,'journey',return_value={'journey':'passed'}),patch.object(a.w,'capacity',return_value={'capacity_ready':True}):
+                     patch.object(a,'journey',return_value={'journey':'passed'}) as journey,patch.object(a.w,'capacity',return_value={'capacity_ready':True}):
                     self.assertEqual(a.main(),0,stdout.getvalue());reviewed.assert_called_once_with(deployment)
                     if action!='capacity':self.assertEqual(verify.call_args.args[1],REV)
+                    if action=='verify-release':
+                        journey.assert_not_called()
+                        self.assertEqual(json.loads(stdout.getvalue())['release_verification'],'passed')
                 with patch.object(sys,'argv',args),patch('sys.stdout',new_callable=io.StringIO),\
                      patch.object(a.c,'reviewed',side_effect=ValueError('unreviewed deployment')),patch.object(a.c.r,'Cloud') as cloud:
                     self.assertEqual(a.main(),3);cloud.assert_not_called()
@@ -680,6 +683,53 @@ class CompleteTests(unittest.TestCase):
                      patch.object(a.w,'reviewed'),patch.object(a.c.r,'fetched'),\
                      patch.object(a.c,'plans',return_value=self.plans),patch.object(a.c,'references',return_value=self.refs),patch.object(a.c.r,'Cloud') as cloud:
                     self.assertEqual(a.main(),3);cloud.assert_not_called()
+
+    def test_catalog_recovery_readback_uses_only_new_generation_and_original_hash(self):
+        policy=copy.deepcopy(a.w.legacy.policy())
+        accepted=policy['accepted_release']
+        raw=c.r.canonical({'release_set_id':accepted['release_set_id']})
+        accepted['candidate_transport_sha256']='sha256:'+c.r.sha(raw)
+        original=accepted['candidate_generation']
+        self.assertEqual(original,'1793303013750824')
+        cloud=Mock(token='offline-only')
+        with patch.object(a.w.legacy,'policy',return_value=policy), \
+                patch.object(a.w.legacy,'verify_application') as verify:
+            transport=a.CatalogReadback(cloud)
+            cloud.request.return_value=raw
+            self.assertEqual(a.c.catalog_candidate(transport),json.loads(raw))
+            self.assertIn('&generation='+a.CATALOG_READBACK_GENERATION+'&ifGenerationMatch='+a.CATALOG_READBACK_GENERATION,
+                          cloud.request.call_args.args[0])
+            self.assertNotIn(original,cloud.request.call_args.args[0])
+            verify.assert_called_once()
+            self.assertEqual(policy['accepted_release']['candidate_generation'],original)
+            verify.reset_mock()
+            for generation,data,reason in (
+                ('99999',OSError('generation_missing'),'generation_missing'),
+                (a.CATALOG_READBACK_GENERATION,b'tampered','recovered_catalog_transport_hash_mismatch'),
+            ):
+                with self.subTest(generation=generation),patch.object(a,'CATALOG_READBACK_GENERATION',generation):
+                    cloud.request.reset_mock()
+                    cloud.request.side_effect=data if isinstance(data,Exception) else None
+                    cloud.request.return_value=data
+                    with self.assertRaisesRegex((OSError,ValueError),reason):
+                        a.c.catalog_candidate(a.CatalogReadback(cloud))
+                    cloud.request.assert_called_once()
+                    verify.assert_not_called()
+            with patch.object(a,'CATALOG_READBACK_GENERATION',original):
+                with self.assertRaisesRegex(ValueError,'invalid_catalog_readback_generation'):
+                    a.CatalogReadback(cloud)
+
+    def test_separate_validator_still_requires_compatible_deployed_trust_files(self):
+        source=Mock()
+        with patch.object(a.c.r,'fetched') as fetched:
+            fetched.return_value.__enter__.return_value=source
+            source.blob.side_effect=lambda name: (a.w.ROOT/name).read_bytes().replace(b'\r\n',b'\n')
+            a.review_deployed_configuration('e'*40)
+            source.git.assert_any_call('merge-base','--is-ancestor','e'*40,'FETCH_HEAD')
+            self.assertNotIn(a.ACCEPTANCE_SCRIPT,[call.args[0] for call in source.blob.call_args_list])
+            source.blob.side_effect=lambda name: b'changed'
+            with self.assertRaisesRegex(ValueError,'incompatible_deployed_trust_files'):
+                a.review_deployed_configuration('e'*40)
 
     def test_runtime_positive_and_coherent_tamper_guard(self):
         docs=w.render(self.record,REV,self.refs);pods=[]
