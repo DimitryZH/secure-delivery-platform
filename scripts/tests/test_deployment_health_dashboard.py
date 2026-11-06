@@ -13,12 +13,15 @@ QUERIES = [dataset["timeSeriesQuery"]["timeSeriesFilter"]
 
 
 class DeploymentHealthDashboardTest(unittest.TestCase):
-    def test_single_resource_and_compact_signal_set(self):
+    def test_sample_service_resource_and_compact_signal_set(self):
         config = (ROOT / "terraform/foundation/dashboard.tf").read_text(encoding="utf-8")
-        self.assertEqual(re.findall(r'resource "([^"]+)" "([^"]+)"', config),
-                         [("google_monitoring_dashboard", "sample_service_health")])
-        self.assertIn('project = var.project_id', config)
-        self.assertIn('templatefile(', config)
+        resources = re.findall(
+            r'^resource "google_monitoring_dashboard" "sample_service_health" \{\n(.*?)^\}',
+            config, re.MULTILINE | re.DOTALL)
+        self.assertEqual(len(resources), 1)
+        resource, = resources
+        self.assertIn('project = var.project_id', resource)
+        self.assertIn('templatefile("${path.module}/../../monitoring/dashboards/sample-service-health.json.tftpl"', resource)
         self.assertEqual(len(WIDGETS), 5)
         types = {re.search(r'metric.type="([^"]+)"', query["filter"])[1] for query in QUERIES}
         self.assertEqual(types, {
