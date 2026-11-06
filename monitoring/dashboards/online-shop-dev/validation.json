@@ -1,6 +1,6 @@
 {
   "issue": 111,
-  "status": "dashboard_published_checkout_pending",
+  "status": "live_acceptance_passed",
   "reviewed_main": "624911d3400e052523b19b2790f3c7a6f9860f2e",
   "observed_deployment": {
     "project": "sre-platform-staging-507220",
@@ -85,7 +85,15 @@
     "dashboard_render_tiles": 7,
     "dashboard_render_queries_matching_tested_promql": 6,
     "repository_document_links": "passed",
-    "git_diff_check": "passed"
+    "git_diff_check": "passed",
+    "live_acceptance_change": {
+      "full_unittest_discovery": "passed",
+      "tests_discovered": 238,
+      "passed_in_full_run": 237,
+      "optional_redis_fixture_test": "passed_separately",
+      "immutable_aml_and_native_collector_integrations": "passed",
+      "git_diff_check": "passed"
+    }
   },
   "live_dashboard": {
     "id": "63adf6ec-f633-4a9f-9697-71ebf108a051",
@@ -116,11 +124,118 @@
     },
     "draft_release_guard": "passed_against_live_evidence_without_storefront_traffic",
     "guard_uses_original_historical_signing_request_and_signature_checks": true,
-    "merged_cli_invocation": "pending_review_and_merge"
+    "merged_cli_invocation": {
+      "exit_code": 0,
+      "release_verification": "passed",
+      "validator_sha": "777f446d118b87799c24fe6c84774b699af37065",
+      "catalog_readback_generation": "1793972241618167"
+    }
   },
-  "pending_review": [
-    "Run the normal verify-release CLI from merged main with the actual dev deployment and original producing revisions.",
-    "Run one new bounded checkout, verify the live dashboard and native correlation, and remove only the owned Redis session key.",
-    "Recheck sample-service health in dev, stage and prod during live acceptance."
+  "live_acceptance_20261106": {
+    "baseline": {
+      "utc": "2026-11-06T13:56:40.020300Z",
+      "rollout": "dev-full-003",
+      "cloud_deploy_release": "shop-106-849487e-1a9fbe62",
+      "release_set_id": "sha256:d3ddfc09ec0f0195d38fadfba8a2c31ce290b41bf4211ac4631a5b20039d3891",
+      "deployment_sha": "849487e988ec8f67700de183ab4b61e5f65d4966",
+      "producing_sha": "00e925e724808ac80f1313fb85da1c6b3ec19f3f",
+      "dashboard_id": "63adf6ec-f633-4a9f-9697-71ebf108a051",
+      "frontend_digest": "sha256:986a6633a2624a6b1d7b98dac075388c06ed83626ce6aef4834dad66513c9a83",
+      "validator_sha": "777f446d118b87799c24fe6c84774b699af37065"
+    },
+    "journey": {
+      "since_utc": "2026-11-06T13:58:22.997722Z",
+      "cli_finished_utc": "2026-11-06T13:58:25Z",
+      "http_requests": 14,
+      "http_budget": 20,
+      "checkout_confirmation": true
+    },
+    "cleanup": {
+      "exact_test_key": true,
+      "exists": 0,
+      "loopback_closed": true
+    },
+    "sample_after": {
+      "dev": {
+        "ready": 1,
+        "available": 1,
+        "http": 200
+      },
+      "stage": {
+        "ready": 1,
+        "available": 1,
+        "http": 200
+      },
+      "prod": {
+        "ready": 1,
+        "available": 1,
+        "http": 200
+      }
+    },
+    "correlation": {
+      "spans": 326,
+      "services": 10,
+      "checkout_http": 200,
+      "checkout_downstream_services": [
+        "cartservice",
+        "checkoutservice",
+        "currencyservice",
+        "emailservice",
+        "paymentservice",
+        "productcatalogservice",
+        "recommendationservice",
+        "shippingservice"
+      ],
+      "native_linked_completion_logs": 204,
+      "native_linked_completion_services": 10,
+      "checkout_downstream_native_linked_services": [
+        "cartservice",
+        "checkoutservice",
+        "currencyservice",
+        "emailservice",
+        "paymentservice",
+        "productcatalogservice",
+        "recommendationservice",
+        "shippingservice"
+      ],
+      "checkout_start": "2026-11-06T13:58:24.648329338Z"
+    },
+    "checkout_counter": {
+      "native_attributed_counter_increment": true,
+      "first_post_checkout_point_utc": "2026-11-06T13:58:33Z"
+    },
+    "promql": {
+      "range_start_utc": "2026-11-06T13:57:37Z",
+      "range_end_utc": "2026-11-06T13:59:28Z",
+      "step_seconds": 30,
+      "series_per_panel": {
+        "request_rate": 10,
+        "error_rate": 10,
+        "p95_latency": 10,
+        "observed_availability": 10,
+        "available_replicas": 10,
+        "desired_replicas": 10
+      },
+      "quiet_control_utc": "2026-11-06T11:55:32Z",
+      "no_traffic_errors_p95_availability_absent": true,
+      "missing_release_control_empty": true,
+      "checkout_request_rate_positive_and_observed_errors_zero": true,
+      "frontend_probe_path": "/_healthz",
+      "health_operations_excluded": true,
+      "health_only_transport_series": 0,
+      "available_and_desired_replicas_each": 1,
+      "application_attribution": [
+        "service_name",
+        "deployment_environment_name",
+        "service_version",
+        "release_set_id"
+      ]
+    },
+    "sample_smoke_mode": "one_parallel_post_checkout_check"
+  },
+  "validation_limits": [
+    "The result covers one observed checkout and the matching telemetry window.",
+    "Scheduled uptime/synthetic checks, alert routing and a controlled failure exercise are separate work.",
+    "Candidate retention separation is tracked separately; both accepted generations are under temporary hold."
   ]
 }

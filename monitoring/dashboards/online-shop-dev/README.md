@@ -42,7 +42,17 @@ labels.release_set_id="RELEASE_SET_ID"
 (jsonPayload.event="request.completed" OR jsonPayload.event="operation.completed")
 ```
 
-## Plan for live acceptance after review
+## Live acceptance on 2026-11-06
+
+[Online Shop dev observability](https://console.cloud.google.com/monitoring/dashboards/builder/63adf6ec-f633-4a9f-9697-71ebf108a051?project=sre-platform-staging-507220) passed live acceptance for Cloud Deploy release `shop-106-849487e-1a9fbe62`, rollout `dev-full-003`. The merged release verifier passed before one HTTPS journey. The journey completed browse, cart and checkout with order confirmation in 14 HTTP requests within the limit of 20.
+
+All six published PromQL queries returned real data. Each application panel showed all ten services with dev, version and release-set attribution. The frontend `POST /cart/checkout` counter increased in the checkout window with zero observed errors for that operation. The quiet control returned no error, p95 or observed success samples, and the absent-release control returned no application series. Health operation selectors excluded probes, and the health-only control returned no transport series. Each application Deployment showed one available and one desired replica.
+
+The HTTP 200 checkout span led to eight downstream services. The complete journey trace contained 326 spans across ten services, with 204 application completion logs joined by native trace/span IDs and checked against the accepted service version, release and component digest. The dashboard aggregates these observations by time and service; the individual checkout is identified through the trace and logs.
+
+Exact Redis cleanup returned `EXISTS=0` and the loopback port-forward closed. One parallel sample-service smoke check confirmed Ready/Available and HTTP 200 in dev, stage and prod after the attempt. The earlier catalog-generation HTTP 404 remains a separate record in the [validation evidence](validation.json).
+
+## Live acceptance procedure
 
 1. Review a full foundation Terraform plan with existing backend/workspace and operator inputs. Preserve `-var=shop_edge_enforce_evaluated_rules=true` as documented in the [endpoint enforcement procedure](../../../deploy/online-shop/endpoint-README.md). Expect one new resource, `google_monitoring_dashboard.online_shop_dev`; stop if the plan changes collection, IAM, workloads, the endpoint, or another dashboard. Apply only after approval and compare the live dashboard definition to the reviewed render.
 2. Record the active dev rollout, accepted release and component digests, and a pre-journey UTC baseline. Check that sample-service is Ready/Available and responds HTTP 200 in dev/stage/prod. Query both the app and readiness charts.
@@ -54,4 +64,4 @@ The dashboard is published. The first live acceptance attempt stopped before any
 
 For the existing `dev-full-003` rollout, verify the release without traffic from merged main before attempting another checkout. Use `complete-acceptance.py verify-release` with the trusted complete candidate, its original producing revision, the actual deployment revision, and the merged verifier revision. For the subsequent authorized `endpoint-journey`, use the same revision arguments. The exact historical signing request still identifies the original generation. The acceptance guard uses the recovered generation for readback and checks the original SHA-256 before using the bytes. See [validation evidence](validation.json) for the observed generations and results.
 
-Fresh checkout and telemetry acceptance remain pending. Alert policies, scheduled synthetic checks and failure exercises are outside this change.
+The live result covers the observed checkout and its telemetry window. Alert policies, scheduled synthetic checks and failure exercises are outside this change.
