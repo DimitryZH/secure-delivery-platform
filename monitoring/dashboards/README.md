@@ -29,3 +29,5 @@ Existing dev samples demonstrated health_check=true ingestion; health_check=fals
 Pod resource labels still contribute ingestion cardinality and cost; chart aggregation does not reduce them. Windows spanning multiple releases mix their operational behavior. Recheck runtime identity after review and keep project-specific evidence private.
 
 Dashboard health is operational evidence only. It establishes neither provenance, verification, attestation validity, Binary Authorization admission, Cloud Deploy release identity, nor promotion authorization. Continue/hold/reject review remains explicit; a healthy dashboard never automatically authorizes promotion. No generic infrastructure views, new metrics, collectors, backend, alerts, SLOs, tracing, or automated decisions are introduced.
+
+The [Online Shop dev observability dashboard](online-shop-dev/README.md) has its own ingestion notes, PromQL queries, and checkout acceptance procedure.

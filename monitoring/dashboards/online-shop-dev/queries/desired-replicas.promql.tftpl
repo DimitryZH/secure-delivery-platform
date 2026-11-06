@@ -1,0 +1,10 @@
+max by (deployment, namespace) (
+  kube_deployment_spec_replicas{
+    project_id="${project_id}",
+    cluster="${cluster}",
+    location="${location}",
+    namespace="dev",
+    job="kube-state-metrics",
+    deployment=~"adservice|cartservice|checkoutservice|currencyservice|emailservice|frontend|paymentservice|productcatalogservice|recommendationservice|shippingservice"
+  }
+)
