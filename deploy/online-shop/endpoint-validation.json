@@ -1,10 +1,10 @@
 {
   "version": 1,
   "issue": 106,
-  "phase": "implementation_review",
-  "observed_date": "2026-11-04",
+  "phase": "final_review",
+  "observed_date": "2026-11-06",
   "base_configuration_revision": "34e423344dee3b059b4e338fe8b52508acf35a57",
-  "decision": "review plan/cost before separately authorized apply, DNS changes and live deployment",
+  "decision": "Review live endpoint acceptance with direct rule 2000 threshold verification recorded as NOT_CONFIRMED",
   "endpoint": {
     "hostname": "shop.runtimeplatforms.dev",
     "delegated_zone": "shop.runtimeplatforms.dev.",
@@ -315,32 +315,187 @@
     "git_diff_check": "passed"
   },
   "live_acceptance": {
-    "status": "pending separate authorization",
-    "checks": [
-      "child delegation/parent service preservation",
-      "ACTIVE certificate and correct hostname/chain/expiry",
-      "actual server render/protected artifacts/fresh READY",
-      "authorized dev rollout and Gateway/HTTPRoute/policy status",
-      "HTTPS frontend and HTTP redirect; weak TLS/unknown Host rejection",
-      "bounded synthetic checkout and exact session cleanup",
-      "normal/WAF/rate preview evidence then reviewed enforcement with 403/429 logs",
-      "running trusted digests/admission and samples dev/stage/prod health"
-    ]
-  },
-  "new_live_operations": {
-    "apply": 0,
-    "dns_mutations": 0,
-    "rollouts": 0,
-    "application_traffic": 0,
-    "build_signing": 0,
-    "iam_grants": 0
+    "status": "READY_FOR_REVIEW",
+    "rollout": {
+      "id": "dev-full-003",
+      "status": "SUCCEEDED",
+      "release": "shop-106-849487e-1a9fbe62",
+      "pipeline": "catalog-dev",
+      "target": "dev",
+      "deployment_revision": "849487e988ec8f67700de183ab4b61e5f65d4966",
+      "preflight": {
+        "decision": "READY",
+        "checks_passed": 40,
+        "gateway_dry_run": "PASS",
+        "completed_at": "2026-11-05T22:05:19.187516Z"
+      },
+      "rendered_documents": 45,
+      "inventory_sha256": "sha256:3a6ff8aa4c7805f47ba4e932b1dfe9b81a1702809f6e723411820fe95e0f186c",
+      "artifact_protection_verified": true,
+      "gateway_current_generation_accepted_programmed": true,
+      "routes_accepted_resolved": true,
+      "frontend_backend_health": "HEALTHY",
+      "trusted_application_and_collector_digests_verified": true,
+      "binary_authorization_enforced": true
+    },
+    "dns_tls_and_routing": {
+      "hostname": "shop.runtimeplatforms.dev",
+      "ipv4": "8.233.86.84",
+      "child_delegation_verified": true,
+      "certificate_authorization_cname_verified": true,
+      "parent_website_mail_dns_preserved": true,
+      "managed_certificate_state": "ACTIVE",
+      "certificate_hostname_and_chain_valid": true,
+      "certificate_expires_utc": "2027-02-03T01:41:57Z",
+      "https_status": 200,
+      "accepted_tls": [
+        "1.2",
+        "1.3"
+      ],
+      "rejected_tls": [
+        "1.0",
+        "1.1"
+      ],
+      "http_redirect_status": 301,
+      "http_redirect_path_and_query_preserved": true,
+      "unknown_host_status": 404,
+      "unknown_host_reached_frontend": false,
+      "frontend_only_exposure": true
+    },
+    "synthetic_checkout_under_enforcement": {
+      "runs": 1,
+      "http_requests_including_redirects": 14,
+      "browse_cart_and_order_confirmation": "PASSED",
+      "scoped_redis_cleanup": "PASSED",
+      "redis_exists": 0,
+      "port_forward_closed": true,
+      "observed_at": "2026-11-06T04:11:28.501451Z",
+      "checkout_http_status": 200,
+      "armor_priority": 2000,
+      "armor_outcome": "ACCEPT",
+      "rate_outcome": "RATE_LIMIT_THRESHOLD_CONFORM",
+      "native_frontend_trace_confirmed": true
+    },
+    "sample_service": {
+      "dev": {
+        "ready": 1,
+        "available": 1,
+        "health_http": 200
+      },
+      "stage": {
+        "ready": 1,
+        "available": 1,
+        "health_http": 200
+      },
+      "prod": {
+        "ready": 1,
+        "available": 1,
+        "health_http": 200
+      }
+    },
+    "armor": {
+      "policy": "shop-dev-edge",
+      "enforcement_input": {
+        "shop_edge_enforce_evaluated_rules": true
+      },
+      "terraform_changes": {
+        "add": 0,
+        "change": 1,
+        "import": 0,
+        "remove": 0,
+        "operation": "apply"
+      },
+      "bootstrap_preflight_requires_preview_for": [
+        1000,
+        2000
+      ],
+      "attachment_probe": {
+        "priority": 100,
+        "http_status": 403,
+        "outcome": "DENY"
+      },
+      "waf": {
+        "priority": 1000,
+        "preview": false,
+        "probes": {
+          "sqli": {
+            "passed": true,
+            "http_status": 403,
+            "logged_http_status": 403,
+            "priority": 1000,
+            "outcome": "DENY",
+            "signatures": [
+              "owasp-crs-v030301-id942190-sqli"
+            ]
+          },
+          "xss": {
+            "passed": true,
+            "http_status": 403,
+            "logged_http_status": 403,
+            "priority": 1000,
+            "outcome": "DENY",
+            "signatures": [
+              "owasp-crs-v030301-id941100-xss"
+            ]
+          }
+        }
+      },
+      "temporary_throttle": {
+        "priority": 1500,
+        "threshold_per_ip": {
+          "count": 3,
+          "interval_seconds": 60
+        },
+        "series_http_statuses": [
+          200,
+          200,
+          200,
+          429
+        ],
+        "series_requests": 4,
+        "total_gets": 7,
+        "http_429_log_outcome": "RATE_LIMIT_THRESHOLD_EXCEED",
+        "result": "PASSED",
+        "cleanup": "PASSED",
+        "rule_removed": true,
+        "policy_restored": true,
+        "recovery_http_status": 200
+      },
+      "live_throttle": {
+        "priority": 2000,
+        "preview": false,
+        "action": "throttle",
+        "count": 1200,
+        "interval_seconds": 60,
+        "key": "IP",
+        "exceed_action": "deny(429)",
+        "direct_429_verification": "NOT_CONFIRMED",
+        "final_bounded_series_requests": 1220,
+        "final_bounded_series_http_200": 1220,
+        "final_bounded_series_enforced_conform": 1220,
+        "confirmed_429_logs": 0,
+        "searched_log_window": {
+          "start": "2026-11-06T02:04:12.305198Z",
+          "end": "2026-11-06T03:29:41.119083Z"
+        }
+      }
+    },
+    "issue_criteria_review": {
+      "hostname_and_valid_https": "PASSED",
+      "http_redirect_and_managed_certificate": "PASSED",
+      "synthetic_journey_and_cleanup": "PASSED",
+      "armor_allowed_denied_and_throttled": "WAF and scoped throttle confirmed; live threshold 429 NOT_CONFIRMED",
+      "frontend_only_trusted_digests_and_admission": "PASSED",
+      "render_inventory_and_bootstrap_preflight": "PASSED",
+      "sample_service_and_parent_domain_baseline": "PASSED",
+      "repeatable_configuration_cost_ownership_and_roadmap": "DOCUMENTED"
+    }
   },
   "limits": [
-    "Local fixtures/native render are not actual server render or live endpoint admission proof.",
-    "Initial WAF/rate rules are preview; deterministic deny probe does not prove WAF/throttle enforcement. Separate reviewed full plan/authorization required after preview evaluation.",
-    "Initial preflight contract is bootstrap-preview phase; future full application rollouts under enforced Armor need a reviewed corresponding phase contract.",
-    "No instantaneous clock, HA, durability, load or production sizing claim; accepted historical telemetry failures/losses retained.",
-    "Certificate/delegation/controller availability, quota and execution-time permissions remain live prerequisites. No fabricated IP/nameserver values."
+    "Live verification is scoped to the recorded dev endpoint and rollout.",
+    "Direct HTTP 429 at the permanent rule 2000 threshold remains NOT_CONFIRMED. The temporary rule 1500 validated the throttle deny path at its scoped test threshold.",
+    "The deployment preflight contract requires bootstrap preview. A future rollout against enforced Armor requires a reviewed phase contract.",
+    "Raw logs, request identifiers, synthetic checkout data and Terraform plans are retained privately."
   ],
   "redirect_recovery": {
     "baseline_deployment_revision": "d1c7db4e4a527d41cc699511ce8945bd840fce6d",
@@ -389,7 +544,7 @@
       "conflict_even_after_kubectl_retry_blocks_ready": true,
       "live_gateway_before_after_exact_match": true,
       "canonical_live_gateway_sha256": "sha256:3408e3c46c5c6a5c677a73daa0944c40e8b8809517bebd4ae3bcb44eb0c261c7",
-      "new_protected_release_preflight": "pending merge and release creation"
+      "new_protected_release_preflight": "READY on dev-full-003 before enforcement"
     },
     "next_endpoint_acceptance": [
       "Gateway Programmed=True for current generation",
@@ -397,8 +552,8 @@
       "HTTPS with valid certificate chain and hostname",
       "Observed HTTP 301 to HTTPS preserving host, path and query"
     ],
-    "new_release_created": false,
-    "new_rollout_created": false
+    "new_release_created_during_fix_review": false,
+    "new_rollout_created_during_fix_review": false
   },
   "implementation_hashes": {
     "deploy/online-shop/complete-README.md": "sha256:e15910623beadd15d4ba79fc59d1e19b5a2458ee8d18ebd9342e2bcb27a2d6ff",
@@ -407,7 +562,15 @@
     "docs/roadmap.md": "sha256:51fcf8d10230efa8bc9021412ad580c6b9e901e052fe008a226a25ce2ee5c18e",
     "scripts/tests/test_complete_shop.py": "sha256:8af25b6573bd8616f6ec936a080c848dc915a6069bf31e1a0d87f848aad2dd99",
     "terraform/foundation/gke.tf": "sha256:ef0aeee981ef6101856a53e3e058c89fc948dc4e559b8a94e79279c8c0fd5372",
-    "deploy/online-shop/endpoint-README.md": "sha256:f98d435c5a07cbf5fe3eddb5cac4c302cca9688c376e9e8e2b80a2b3c479dd71",
+    "deploy/online-shop/endpoint-README.md": "sha256:7fea50d9a12d14599ec2a0bfebb273dfaa3c4d70bb21dd9677b9cfd5842afa94",
     "terraform/foundation/shop-endpoint.tf": "sha256:f04a295db090bf0ab81cc2440ca8e72504eec0ee47d5fd45fd55d24840120b9b"
+  },
+  "implementation_review_live_operations": {
+    "apply": 0,
+    "dns_mutations": 0,
+    "rollouts": 0,
+    "application_traffic": 0,
+    "build_signing": 0,
+    "iam_grants": 0
   }
 }
