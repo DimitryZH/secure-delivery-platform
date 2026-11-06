@@ -1,0 +1,95 @@
+{
+  "issue": 111,
+  "status": "ready_for_dashboard_review",
+  "reviewed_main": "624911d3400e052523b19b2790f3c7a6f9860f2e",
+  "observed_deployment": {
+    "project": "sre-platform-staging-507220",
+    "cluster": "secure-delivery-platform",
+    "location": "us-central1-a",
+    "environment": "dev",
+    "rollout": "dev-full-003",
+    "configuration_revision": "849487e988ec8f67700de183ab4b61e5f65d4966",
+    "service_version": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
+    "release_set_id": "sha256:d3ddfc09ec0f0195d38fadfba8a2c31ce290b41bf4211ac4631a5b20039d3891"
+  },
+  "read_only_ingestion": {
+    "observed_at": "2026-11-06T11:55:32Z",
+    "application_path": "application OTLP -> catalog-collector -> googlecloud -> workload.googleapis.com",
+    "collector_ready_replicas": 2,
+    "collector_service_account": "dev/catalog-collector",
+    "export_identity_name": "catalog-telemetry",
+    "per_application_service_metric_pipelines": 10,
+    "collector_prometheus_path_configured": false,
+    "redis_singleton_path": "shop-redis-metrics -> googlecloud -> workload.googleapis.com",
+    "managed_collection_enabled": true,
+    "dev_pod_monitoring_count": 0,
+    "cluster_pod_monitoring_targets": [
+      "gke-managed-dcgm-exporter",
+      "kube-state-metrics"
+    ],
+    "prometheus_descriptors_inspected": 41,
+    "shop_or_redis_duplicate_descriptors_in_prometheus_namespace": 0,
+    "new_ingestion_path_required": false,
+    "selected_metric_paths": {
+      "workload.googleapis.com/online_shop.transport.requests": "catalog-collector",
+      "workload.googleapis.com/online_shop.transport.duration": "catalog-collector",
+      "prometheus.googleapis.com/kube_deployment_status_replicas_available/gauge": "GKE managed collection of kube-state-metrics",
+      "prometheus.googleapis.com/kube_deployment_spec_replicas/gauge": "GKE managed collection of kube-state-metrics"
+    },
+    "native_24h_series": {
+      "requests": 93,
+      "duration": 93,
+      "sparse_direct_errors": 9
+    }
+  },
+  "promql": {
+    "historical_checkout_instant": "2026-11-06T04:12:30Z",
+    "historical_range": {
+      "start": "2026-11-06T04:11:30Z",
+      "end": "2026-11-06T04:14:30Z",
+      "step_seconds": 60
+    },
+    "attributed_services_per_application_query_at_instant_and_in_range": 10,
+    "grouping_labels": [
+      "service_name",
+      "deployment_environment_name",
+      "service_version",
+      "release_set_id"
+    ],
+    "historical_instant_samples": {
+      "frontend_errors_per_second": 0,
+      "frontend_observed_success_percent": 100,
+      "frontend_p95_seconds": 0.215,
+      "recommendationservice_errors_per_second": 0.007777777777777778,
+      "recommendationservice_observed_success_percent": 0
+    },
+    "quiet_instant": "2026-11-06T11:55:32Z",
+    "quiet_request_rate_series_at_zero": 9,
+    "quiet_error_latency_and_success_series": 0,
+    "missing_release_control_series_per_application_query": 0,
+    "readiness_instant": "2026-11-06T12:00:43Z",
+    "deployment_series_per_readiness_gauge_before_and_after_aggregation": 10,
+    "each_deployment_available_and_desired": 1
+  },
+  "historical_checkout_correlation_readback": {
+    "checked_at": "2026-11-06T12:03:35Z",
+    "trace_spans": 326,
+    "native_linked_log_entries": 452,
+    "services_with_native_linked_entries": 10,
+    "frontend_checkout_span_and_completion_log_joined_by_native_ids": true,
+    "frontend_checkout_http_status": 200
+  },
+  "local_validation": {
+    "terraform_fmt_check": "passed",
+    "terraform_validate": "passed",
+    "dashboard_render_tiles": 7,
+    "dashboard_render_queries_matching_tested_promql": 6,
+    "repository_document_links": "passed",
+    "git_diff_check": "passed"
+  },
+  "pending_review": [
+    "Review the full foundation plan and publish the dashboard after separate approval.",
+    "Run one new bounded checkout, verify the live dashboard and native correlation, and remove only the owned Redis session key.",
+    "Recheck sample-service health in dev, stage and prod during live acceptance."
+  ]
+}

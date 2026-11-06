@@ -1,0 +1,59 @@
+100 * (
+  sum by (service_name, deployment_environment_name, service_version, release_set_id) (
+    rate({
+      __name__="workload.googleapis.com/online_shop.transport.requests",
+      monitored_resource="k8s_cluster",
+      project_id="${project_id}",
+      cluster_name="${cluster}",
+      location="${location}",
+      service_namespace="online-shop",
+      deployment_environment_name="dev",
+      service_name!="",
+      service_version!="",
+      release_set_id!="",
+      kind="server",
+      operation!="",
+      operation!~"(GET|HEAD) /_healthz|/?grpc[.]health[.]v1[.]Health/(Check|Watch|List)",
+      outcome!="",
+      outcome="ok"
+    }[15m])
+  )
+  or on (service_name, deployment_environment_name, service_version, release_set_id)
+  0 * (sum by (service_name, deployment_environment_name, service_version, release_set_id) (
+    rate({
+      __name__="workload.googleapis.com/online_shop.transport.requests",
+      monitored_resource="k8s_cluster",
+      project_id="${project_id}",
+      cluster_name="${cluster}",
+      location="${location}",
+      service_namespace="online-shop",
+      deployment_environment_name="dev",
+      service_name!="",
+      service_version!="",
+      release_set_id!="",
+      kind="server",
+      operation!="",
+      operation!~"(GET|HEAD) /_healthz|/?grpc[.]health[.]v1[.]Health/(Check|Watch|List)",
+      outcome!=""
+    }[15m])
+  ) > 0)
+)
+/ on (service_name, deployment_environment_name, service_version, release_set_id)
+(sum by (service_name, deployment_environment_name, service_version, release_set_id) (
+  rate({
+    __name__="workload.googleapis.com/online_shop.transport.requests",
+    monitored_resource="k8s_cluster",
+    project_id="${project_id}",
+    cluster_name="${cluster}",
+    location="${location}",
+    service_namespace="online-shop",
+    deployment_environment_name="dev",
+    service_name!="",
+    service_version!="",
+    release_set_id!="",
+    kind="server",
+    operation!="",
+    operation!~"(GET|HEAD) /_healthz|/?grpc[.]health[.]v1[.]Health/(Check|Watch|List)",
+    outcome!=""
+  }[15m])
+) > 0)

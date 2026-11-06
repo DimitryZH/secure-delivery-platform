@@ -1,0 +1,159 @@
+{
+  "displayName": "Online Shop dev observability",
+  "mosaicLayout": {
+    "columns": 12,
+    "tiles": [
+      {
+        "xPos": 0,
+        "yPos": 0,
+        "width": 12,
+        "height": 2,
+        "widget": {
+          "title": "How to read these charts",
+          "text": {
+            "format": "MARKDOWN",
+            "content": "Application charts show 15-minute server-operation rates by service, environment, version and release. Health probes are excluded. Error and success charts require observed requests; p95 requires latency observations. A gap means no usable data in that window. The replica charts are a separate Kubernetes readiness signal."
+          }
+        }
+      },
+      {
+        "xPos": 0,
+        "yPos": 2,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Application requests",
+          "xyChart": {
+            "dataSets": [
+              {
+                "plotType": "LINE",
+                "timeSeriesQuery": {
+                  "prometheusQuery": ${jsonencode(queries["request-rate"])}
+                }
+              }
+            ],
+            "yAxis": {
+              "label": "requests/s",
+              "scale": "LINEAR"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 6,
+        "yPos": 2,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Application errors",
+          "xyChart": {
+            "dataSets": [
+              {
+                "plotType": "LINE",
+                "timeSeriesQuery": {
+                  "prometheusQuery": ${jsonencode(queries["error-rate"])}
+                }
+              }
+            ],
+            "yAxis": {
+              "label": "errors/s",
+              "scale": "LINEAR"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 0,
+        "yPos": 6,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Server latency p95",
+          "xyChart": {
+            "dataSets": [
+              {
+                "plotType": "LINE",
+                "timeSeriesQuery": {
+                  "prometheusQuery": ${jsonencode(queries["p95-latency"])}
+                }
+              }
+            ],
+            "yAxis": {
+              "label": "seconds",
+              "scale": "LINEAR"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 6,
+        "yPos": 6,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Observed server success",
+          "xyChart": {
+            "dataSets": [
+              {
+                "plotType": "LINE",
+                "timeSeriesQuery": {
+                  "prometheusQuery": ${jsonencode(queries["observed-availability"])}
+                }
+              }
+            ],
+            "yAxis": {
+              "label": "percent",
+              "scale": "LINEAR"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 0,
+        "yPos": 10,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Kubernetes readiness · available replicas",
+          "xyChart": {
+            "dataSets": [
+              {
+                "plotType": "LINE",
+                "timeSeriesQuery": {
+                  "prometheusQuery": ${jsonencode(queries["available-replicas"])}
+                }
+              }
+            ],
+            "yAxis": {
+              "label": "replicas",
+              "scale": "LINEAR"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 6,
+        "yPos": 10,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Kubernetes readiness · desired replicas",
+          "xyChart": {
+            "dataSets": [
+              {
+                "plotType": "LINE",
+                "timeSeriesQuery": {
+                  "prometheusQuery": ${jsonencode(queries["desired-replicas"])}
+                }
+              }
+            ],
+            "yAxis": {
+              "label": "replicas",
+              "scale": "LINEAR"
+            }
+          }
+        }
+      }
+    ]
+  }
+}
