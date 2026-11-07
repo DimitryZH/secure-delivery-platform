@@ -14,10 +14,14 @@ function sessionForExecution(executionId) {
 }
 
 function getHtml(path, headers, timeout) {
+  const {context, propagation} = require('@opentelemetry/api');
+  // Propagate even when the framework loaded HTTPS before auto-instrumentation.
+  const outboundHeaders = {...headers};
+  propagation.inject(context.active(), outboundHeaders);
   return new Promise((resolve, reject) => {
     const request = https.request(new URL(path, ORIGIN), {
       method: 'GET',
-      headers,
+      headers: outboundHeaders,
       rejectUnauthorized: true,
     }, response => {
       let length = 0;

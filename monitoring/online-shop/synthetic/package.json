@@ -7,7 +7,7 @@
     "node": "22"
   },
   "scripts": {
-    "test": "node --test journey.test.js"
+    "test": "node --test journey.test.js entrypoint.test.js"
   },
   "dependencies": {
     "@google-cloud/functions-framework": "5.0.5",

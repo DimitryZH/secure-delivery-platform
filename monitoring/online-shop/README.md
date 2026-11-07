@@ -1,6 +1,6 @@
 # Online Shop scheduled checks
 
-This #115 proposal adds a public HTTPS uptime check, a Cloud Monitoring synthetic monitor and email alerts for the accepted dev Online Shop. The existing [dashboard and native correlation procedure](../dashboards/online-shop-dev/README.md) supplies diagnosis. Read-only results and validation limits are in [validation.json](validation.json). The [incident runbook](incident-runbook.md) defines the separately authorized failure exercise.
+The #115 configuration provisions a public HTTPS uptime check, a Cloud Monitoring synthetic monitor and email alerts for the accepted dev Online Shop. The existing [dashboard and native correlation procedure](../dashboards/online-shop-dev/README.md) supplies diagnosis. Read-only results and validation limits are in [validation.json](validation.json). The [incident runbook](incident-runbook.md) defines the separately authorized failure exercise.
 
 ## Observations and thresholds
 
@@ -16,11 +16,11 @@ Cloud Armor `shop-dev-edge` enforces priority 100's probe-path denial, SQLi/XSS 
 
 The accepted #111 14-request checkout completed in a few seconds. The request/deadline budgets allow headroom, while deployed cold starts remain unmeasured. These are initial operational thresholds for dev. The [frontend PromQL](frontend-errors.promql.tftpl) preserves service, environment, version and release-set labels and excludes health probes. HTTP responses below 500 are `ok` in the accepted application instrumentation. Cloud Armor rejects and connection failures may never reach the application counter. Synthetic and HTTPS alert filters use `monitoring.googleapis.com/uptime_check/check_passed`, the exact check ID, and respectively `cloud_run_revision` and `uptime_url`. The [official synthetic creation guide](https://docs.cloud.google.com/monitoring/synthetic-monitors/create) documents these filters.
 
-The operator selected email. The address will be supplied through private `TF_VAR_shop_operator_email` before planning and remains sensitive in Terraform. Email delivery is pending a real notification and operator confirmation of receipt. Alerts link to the runbook.
+The operator selected email. The address is supplied through private `TF_VAR_shop_operator_email` and remains sensitive in Terraform. The operator confirmed receipt of the scheduled-failure notification for incident `0.oequ1e89idz7`; exact receipt time is not recorded. Alerts link to the runbook.
 
 ## Synthetic journey and state
 
-The [Node.js function](synthetic/index.js) uses the official Synthetics SDK, Node.js 22 and a committed npm lockfile. Targeted Axios 1.21.0 and Jaeger propagator 2.12.0 overrides remove the high advisories found in the upstream dependency tree. The final npm audit reports zero high/critical and 50 moderate affected dependency entries. Review the remaining advisories before provisioning; the local SDK context test passed with these overrides. Cloud Monitoring records the execution outcome and latency. These service-owned check metrics have their own ingestion path; the application metrics retain the existing Collector path. SDK auto-instrumentation supplies the active trace context and outbound HTTP propagation. Logs retain execution ID, step, dev attribution and application trace ID; function version is the reviewed source ZIP SHA-256. Compare actual app version/release/digest from app spans and native logs to the accepted release, using the #111 procedure.
+The [Node.js function](synthetic/index.js) uses the official Synthetics SDK, Node.js 22 and a committed npm lockfile. Targeted Axios 1.21.0 and Jaeger propagator 2.12.0 overrides remove the high advisories found in the upstream dependency tree. The final npm audit reports zero high/critical and 50 moderate affected dependency entries. Review the remaining advisories before provisioning; the local SDK context test passed with these overrides. Cloud Monitoring records the execution outcome and latency. These service-owned check metrics have their own ingestion path; the application metrics retain the existing Collector path. The HTTP entry point explicitly activates and ends a server span with the SDK-registered provider, extracting W3C trace context from the invocation. The journey requires a recording span with a valid identity. Outbound HTTPS explicitly injects the active W3C context, including when framework startup loaded HTTP modules before auto-instrumentation. `OTEL_PROPAGATORS=tracecontext` keeps baggage disabled. Logs retain execution ID, step, dev attribution and application trace ID; function version is the reviewed source ZIP SHA-256. Compare actual app version/release/digest from app spans and native logs to the accepted release, using the #111 procedure.
 
 Each execution derives a unique in-memory `issue115-` session cookie.
 
@@ -68,8 +68,29 @@ At five-minute frequency there are about 8,640 synthetic runs and at most 25,920
 5. Restore one cartservice replica within the bound. Require application recovery, a subsequent successful scheduled run, incident closure based on success samples.
 6. Check sample-service dev/stage/prod and final app health. Publish sanitized timing/results. Raw responses, session correlation and email stay private.
 
-Provisioning, schedules, notifications and the failure exercise remain pending. Local tests and read-only observations do not complete live acceptance.
+Provisioning and schedule enablement have completed. The HTTPS check passed from five locations. The synthetic check failed before any Shop GET with `synthetic_trace_context_missing`, opened incident `0.oequ1e89idz7`, and delivered the operator-confirmed failure email. The exact derived session key read back `EXISTS=0` and the owned forward was closed. Successful synthetic browsing, application correlation, incident recovery and the separately authorized failure exercise remain pending.
 
 ## Dependency advisory review
 
 The 50 moderate affected entries resolve to three unique advisory IDs, rather than 50 independent defects. See [advisories](dependency-review.md). The pinned provider schema lacks notification_prompts, so successful scheduled results and incident closure establish recovery. Recovery-email delivery is optional evidence.
+
+## Scheduled trace-context fix and redeploy review
+
+Read-only inspection confirmed deployed revision `shop-dev-browse-00001-xix`, build `e4b7aa94-09ce-465b-8c5a-e229c369c0da`, and the original source ZIP SHA-256 `11cfa200fdc3a7434230588b0fad5a230ed8e00f214b7e14ac245e5b917fb7b6`. The incident remains OPEN; scheduling remains enabled. The notification screenshot identifies the expected check/condition and displays the alert start minute (19:55 UTC), not an exact email receipt time.
+
+Functions Framework 5.0.5's CLI imports its server (HTTP/Express) before loading the user module. SDK 0.7.0 registers instrumentation/provider in that user module; its `runSyntheticHandler` awaits its logger and invokes the callback without creating an active span. An incoming Cloud Run trace field does not itself establish OpenTelemetry active context. The original direct SDK fixture supplied a span manually, masking the real startup order. A real framework CLI invocation reproduced the deployed error before the first GET. As a diagnostic control, preloading SDK initialization before that CLI made the old handler pass through real HTTP/TLS without a manually supplied span, isolating the startup-order dependency.
+
+A fresh install of the deployed lockfile resolves API 1.6.0, NodeTracerProvider 1.17.0 and AsyncLocalStorageContextManager 1.17.0. Application, SDK and provider share the same API instance. The new HTTP-entry-point regression validates recording context across async boundaries, root and remote-parent invocation, native log trace/span fields, exactly three real TLS GETs, disabled baggage, and partial-failure cleanup. It also passes with HTTP auto-instrumentation disabled. Only remote trace export and the network destination are replaced: TLS is validated against a test-only certificate on loopback. The test certificate/key under `synthetic/test/` are public fixture material, never deployed. Deployed module-cache state is not exposed by these read-only APIs; dependency compatibility is established by the source lockfile, SDK execution metadata and fresh-install HTTP reproduction, not a live runtime diagnostic injection.
+
+Run local checks from an ignored copy of the source with `npm ci --ignore-scripts` and `npm test`; the HTTP tests need loopback listeners and Node.js 22. The source archive intentionally excludes tests, fixture certificates and node_modules.
+
+After merge, package the **merged** source and review a fresh full foundation plan before any apply:
+
+```powershell
+python monitoring/online-shop/synthetic/package-source.py <new-private-absolute-zip-path>
+# Verify the printed SHA-256; set private TF_VAR_shop_synthetic_source_zip to that path.
+# Keep existing backend, default workspace, private inputs/email, and all three flags true:
+terraform -chdir=terraform/foundation plan -var=shop_edge_enforce_evaluated_rules=true -var=shop_observability_enabled=true -var=shop_observability_schedule_enabled=true -out=<private-saved-plan>
+```
+
+The new ZIP/hash is recorded in [validation.json](validation.json). Expect a new content-addressed source object and an update of the existing function's pinned source generation and `MONITOR_VERSION` (and any independently reviewed API normalization). Require no changes to IAM, checks/schedules, alert policies, Cloud Armor, workloads or dashboard behavior. Keep the existing source generation available for rollback. Inspect all plan actions and drift; apply is a separate approval. Then verify build/revision/source hash and wait for a scheduled run, without manually generating traffic. Require three GETs, native application correlation, Armor verdicts, exact derived-session `EXISTS=0`, incident recovery and operator evidence before approving the failure exercise. No redeploy or failure exercise was performed for this fix.

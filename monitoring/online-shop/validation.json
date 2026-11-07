@@ -1,7 +1,7 @@
 {
   "issue": 115,
-  "status": "proposal_for_review",
-  "reviewed_main": "a3d8eca596dfbf59245f11c32893f2c8a6bff47f",
+  "status": "synthetic_http_trace_fix_for_review",
+  "reviewed_main": "15ba94be68ee8b8d0a488a51c3e8c84fd0e8b6d1",
   "read_only_at": "2026-11-07T15:35:29.166065Z",
   "existing_monitoring": {
     "uptime_check_configs": 0,
@@ -20,7 +20,7 @@
   "operator_channel_decision": {
     "type": "email",
     "confirmed_by_operator": true,
-    "private_address": "pending_before_plan"
+    "private_address": "supplied_privately_not_published"
   },
   "network": {
     "armor_rules": [
@@ -113,7 +113,7 @@
     "concurrency": 1,
     "redis_state": "GetCart on a unique absent session does not create a key",
     "partial_failure_cleanup": "local cookie discarded in finally",
-    "live_exact_session_exists_readback": "pending"
+    "live_exact_session_exists_readback": "passed_for_initial_failed_scheduled_execution"
   },
   "accepted_aml_revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
   "read_only_contract_hashes": {
@@ -123,19 +123,20 @@
   "local_validation": {
     "full_python_suite": {
       "tests": 240,
-      "result": "passed"
+      "result": "passed",
+      "skipped": 6
     },
     "node_synthetic_tests": {
-      "tests": 4,
+      "tests": 6,
       "result": "passed"
     },
-    "terraform_fmt_check": "passed",
-    "terraform_validate": "passed",
+    "terraform_fmt_check": "not_rerun_no_terraform_changes",
+    "terraform_validate": "not_rerun_no_terraform_changes",
     "promql_api_parser": "passed",
     "npm_ci": "passed_with_upstream_peer_and_deprecation_warnings",
-    "native_sdk_context": "passed_locally_with_remote_exporter_replaced",
-    "source_zip_sha256": "pending_repackage_before_plan",
-    "links": "passed",
+    "native_sdk_context": "passed_real_functions_framework_cli_http_and_validated_loopback_https",
+    "source_zip_sha256": "a84b3c430f8be229057d88ebac1e3b1fb2f15146def6d9feca43eb9590b3ffb4",
+    "links": "relative_links_passed; existing external reference locations retained",
     "git_diff_check": "passed"
   },
   "dependency_audit": {
@@ -147,28 +148,34 @@
     "total": 50
   },
   "implementation_hashes": {
-    "terraform/foundation/shop-observability.tf": "sha256:38b5dddd58a4d9df3afb63da725a60dab736ce10697b06b79bcbcacade9b71fb",
-    "terraform/foundation/versions.tf": "sha256:b63414d5382e8eec138778891056c48d8357ea7b93d0cdfb89ba2f6a7f7a9c5e",
-    "monitoring/online-shop/frontend-errors.promql.tftpl": "sha256:2ed50d6bb71d0fdc0d4e8d12cc0ba4385aeec514ee22878ee80b2713741aa511",
-    "monitoring/online-shop/synthetic/index.js": "sha256:32de365e635fff6d7d84bdbfe0654f7e8e99ca5cc900dde10622bea8e201d694",
-    "monitoring/online-shop/synthetic/journey.js": "sha256:bba6b8d6554442e494395bd9a999fcd067898e4d9747799c36c163e76b08c2f5",
-    "monitoring/online-shop/synthetic/package.json": "sha256:ad6e34bfa4d9bd55a82ba88f36983367aedcc777320e7e28455b26dc8f3e8b96",
-    "monitoring/online-shop/synthetic/package-lock.json": "sha256:563da04bca6cfa1588704cb1231cfc91d76e774b732340e0b507579e3bf7ee03",
-    "monitoring/online-shop/synthetic/package-source.py": "sha256:c42f7e9a93ada0dfc1b6b01c03f579b1d32282608963edc1e047a93571ab3e41"
+    "terraform/foundation/shop-observability.tf": "sha256:af17e7c1f3ed06a499953c6bd8a6c7247aabe1d794f03f02c6115b39110ae937",
+    "terraform/foundation/versions.tf": "sha256:531fe6faa84322102dff3bc3b52c4bcf137d2414c679e9d88d3ecc4dbdc3bcff",
+    "monitoring/online-shop/frontend-errors.promql.tftpl": "sha256:11e9351687a97d6d0f28173ab61257e389afcf8994610345df7484eee660bc6c",
+    "monitoring/online-shop/synthetic/index.js": "sha256:f628160e3b2ab4b46f94fc2898dad69ecff893ab68476314c76d23ca37122b57",
+    "monitoring/online-shop/synthetic/journey.js": "sha256:1d37a6e92aa50d8cb97a813766dfd69d410092b6e91ccff0f7f07cf94c000c4a",
+    "monitoring/online-shop/synthetic/package.json": "sha256:8534e8f0d22c5474d3eebb1d17823f70cd4cc83a045d8139ba7439ec91bf0580",
+    "monitoring/online-shop/synthetic/package-lock.json": "sha256:86ba98c695d2839494139fb1603811120edbb365fdbd4438c039d47286ed98b0",
+    "monitoring/online-shop/synthetic/package-source.py": "sha256:25f6a408c19dceb6d14f80c0a20e4ed96f692b3bacff8a265616aaeda08acd40",
+    "monitoring/online-shop/synthetic/entrypoint.test.js": "sha256:7ac3106efaa4b27d5c55e443e0c86fbd11aca9b770f64267a495ea4a38a634bb",
+    "monitoring/online-shop/synthetic/test/entrypoint-preload.cjs": "sha256:f2e2936ce92830982141faee7b284ad38658671b803adc5fcd57dd7f192c114e",
+    "monitoring/online-shop/synthetic/test/tls-cert.pem": "sha256:41fd80c23bea4a42cca87c09de0fe422b5ef7273c83d5c7e52391765307923ef",
+    "monitoring/online-shop/synthetic/test/tls-key.pem": "sha256:e7903cdc9d0134250edf63dd31df5c922e410d1ad1a9ea5eba805010143aa5e5",
+    "monitoring/online-shop/synthetic/journey.test.js": "sha256:ef1573352195bb64dd584c9b866c1f99ce15e96d29ed23da75fd078b1314e5b7"
   },
   "live_operations": {
-    "provisioning": false,
-    "schedule_enablement": false,
+    "provisioning": true,
+    "schedule_enablement": true,
     "failure_exercise": false,
-    "notifications_sent": false,
+    "notifications_sent": true,
     "storefront_requests": 1,
     "request_description": "read-only HTTPS health GET"
   },
   "validation_limits": [
-    "Full provisioning plan pending private operator email and reviewed source ZIP.",
-    "Review the remaining moderate SDK dependency advisories before provisioning.",
-    "IAM/function build, cold start, authenticated Monitoring invocation and real scheduled traffic remain unverified.",
-    "Email delivery, opened/closed incidents and bounded dependency failure remain pending live acceptance.",
+    "Fix is local/reviewed implementation only; no function redeploy or scheduled success on the new source yet.",
+    "Synthetic application trace/log correlation and Cloud Armor acceptance require a successful scheduled run after separately approved redeploy.",
+    "Incident remains OPEN and scheduling remains enabled; exact email receipt time is not recorded.",
+    "Moderate SDK advisories and unchanged dependency overrides retain the reviewed residual risks.",
+    "Incident recovery/closure and the controlled dependency failure exercise remain pending; the bootstrap monitor failure is not the controlled application-failure acceptance.",
     "Initial diagnostic thresholds are not a measured SLO."
   ],
   "review_followup": {
@@ -183,7 +190,67 @@
       "GHSA-qqmp-wf37-98f9",
       "GHSA-w5hq-g745-h8pq"
     ],
-    "sdk_context_and_loopback_http_propagation": "passed",
+    "sdk_context_and_loopback_http_propagation": "historical manually activated fixture; superseded by trace_fix.real_http_entrypoint_regressions",
     "baggage_propagator": "disabled"
+  },
+  "initial_observations_scope": "existing_monitoring, api_prerequisites and function_inventory retain the historical pre-provisioning read-only snapshot.",
+  "scheduled_failure_history": {
+    "configuration_revision": "15ba94be68ee8b8d0a488a51c3e8c84fd0e8b6d1",
+    "deployed_revision": "projects/sre-platform-staging-507220/locations/us-central1/services/shop-dev-browse/revisions/shop-dev-browse-00001-xix",
+    "build": "projects/465837787797/locations/us-central1/builds/e4b7aa94-09ce-465b-8c5a-e229c369c0da",
+    "source_sha256": "11cfa200fdc3a7434230588b0fad5a230ed8e00f214b7e14ac245e5b917fb7b6",
+    "source_generation": "1794075142831134",
+    "image": "us-central1-docker.pkg.dev/sre-platform-staging-507220/shop-monitoring-functions/sre--platform--staging--507220__us--central1__shop--dev--browse@sha256:4c68c21ecdba6cd54a4f58de883e5cddfac1c95cebd7761730872efad7b03ab3",
+    "https_check_id": "online-shop-dev-https-tXyvYCy3ESs",
+    "https_success_locations": 5,
+    "synthetic_check_id": "online-shop-dev-browse-journey-KSMl8B8EFnA",
+    "execution_id": "ef782d177bc30bcd1103d60262f9b167",
+    "result": "SYNTHETIC_SUITE_FAILURE",
+    "error": "synthetic_trace_context_missing",
+    "requests_sent": 0,
+    "redis_exists": 0,
+    "owned_port_forward_closed": true,
+    "incident": "0.oequ1e89idz7",
+    "incident_open_time": "2026-11-07T19:55:37Z",
+    "incident_readback_state": "OPEN",
+    "operator_failure_email_received": true,
+    "receipt_confirmation_source": "operator reply and notification screenshot; no email address published",
+    "exact_email_receipt_time": null,
+    "email_displayed_alert_start_minute": "2026-11-07T19:55:00Z",
+    "schedule_changed_for_fix": false
+  },
+  "trace_fix": {
+    "diagnosed_at": "2026-11-07T20:15:16.216583+00:00",
+    "root_cause": "Functions Framework CLI loads HTTP/Express before SDK instrumentation in the user module; runSyntheticHandler creates no active span. The previous local fixture manually activated a span.",
+    "unchanged_lockfile_runtime_reproduction": {
+      "@google-cloud/functions-framework": "5.0.5",
+      "@google-cloud/synthetics-sdk-api": "0.7.0",
+      "@opentelemetry/api": "1.6.0",
+      "@opentelemetry/sdk-trace-node": "1.17.0",
+      "@opentelemetry/context-async-hooks": "1.17.0",
+      "api_shared_with_sdk": true,
+      "api_shared_with_provider": true,
+      "node": "v22.11.0"
+    },
+    "read_only_runtime_limit": "Live module-cache objects are not exposed. Versions and shared API/context behavior are reproduced from the deployed lockfile; live SDK version 0.7.0 is recorded in execution metadata.",
+    "before_http_entrypoint": "reproduced synthetic_trace_context_missing before first Shop GET",
+    "change": "Explicit SDK-provider server span around the real handler, W3C extraction and explicit outbound HTTPS context injection; baggage disabled; recording/valid-span guard retained.",
+    "real_http_entrypoint_regressions": {
+      "framework_cli": true,
+      "sdk_provider_and_context_unmocked": true,
+      "root_and_remote_parent": true,
+      "real_validated_tls_gets": 3,
+      "same_trace_and_native_log_span_correlation": true,
+      "baggage_absent": true,
+      "http_instrumentation_disabled_case": "passed",
+      "partial_failure_requests": 2,
+      "partial_failure_cleanup": "passed",
+      "network": "loopback only",
+      "remote_exporter": "replaced locally"
+    },
+    "redeploy_performed": false,
+    "source_zip_sha256": "a84b3c430f8be229057d88ebac1e3b1fb2f15146def6d9feca43eb9590b3ffb4",
+    "redeploy_plan": "After merge, repackage merged source, review full plan with all three existing flags true and private inputs; expect content-addressed source object + function generation/version update. No apply in this PR.",
+    "startup_order_control": "Old handler passes real CLI HTTP/TLS when SDK initialization is preloaded before Framework, without manual startActiveSpan; not used as the deployment fix."
   }
 }
