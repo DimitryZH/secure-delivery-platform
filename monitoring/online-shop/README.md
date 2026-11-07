@@ -65,7 +65,11 @@ At five-minute frequency there are about 8,640 synthetic runs and at most 25,920
 2. Record a successful scheduled run, three-request maximum, runtime/config hash, exact check IDs and current dev release. Confirm step logs and native app trace links, zero Redis state for the derived exact execution session and closure of the owned forward, including partial failure. Inspect real Cloud Armor verdicts.
 3. Confirm delivery to the designated email. Follow the bounded [cart dependency failure](incident-runbook.md) after exercise authorization.
 4. Record policy condition, incident ID, detection delay and operator receipt time. Diagnose the affected frontend operation and cart dependency through dashboard, traces and logs.
-5. Restore one cartservice replica within the bound. Require application recovery, a subsequent successful scheduled run, recovery notification and incident closure based on success samples.
+5. Restore one cartservice replica within the bound. Require application recovery, a subsequent successful scheduled run, incident closure based on success samples.
 6. Check sample-service dev/stage/prod and final app health. Publish sanitized timing/results. Raw responses, session correlation and email stay private.
 
 Provisioning, schedules, notifications and the failure exercise remain pending. Local tests and read-only observations do not complete live acceptance.
+
+## Dependency advisory review
+
+The 50 moderate affected entries resolve to three unique advisory IDs, rather than 50 independent defects. See [advisories](dependency-review.md). The pinned provider schema lacks notification_prompts, so successful scheduled results and incident closure establish recovery. Recovery-email delivery is optional evidence.

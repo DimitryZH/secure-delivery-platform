@@ -1,6 +1,8 @@
 'use strict';
 
 const {instantiateAutoInstrumentation, runSyntheticHandler} = require('@google-cloud/synthetics-sdk-api');
+// This monitor propagates trace context only; it does not accept baggage.
+process.env.OTEL_PROPAGATORS = 'tracecontext';
 instantiateAutoInstrumentation();
 
 const functions = require('@google-cloud/functions-framework');

@@ -134,7 +134,7 @@
     "promql_api_parser": "passed",
     "npm_ci": "passed_with_upstream_peer_and_deprecation_warnings",
     "native_sdk_context": "passed_locally_with_remote_exporter_replaced",
-    "source_zip_sha256": "e562a90923c6820906d9fb87647b94fb4a1d490b240257cb8642a8a90660e1fd",
+    "source_zip_sha256": "pending_repackage_before_plan",
     "links": "passed",
     "git_diff_check": "passed"
   },
@@ -150,7 +150,7 @@
     "terraform/foundation/shop-observability.tf": "sha256:38b5dddd58a4d9df3afb63da725a60dab736ce10697b06b79bcbcacade9b71fb",
     "terraform/foundation/versions.tf": "sha256:b63414d5382e8eec138778891056c48d8357ea7b93d0cdfb89ba2f6a7f7a9c5e",
     "monitoring/online-shop/frontend-errors.promql.tftpl": "sha256:2ed50d6bb71d0fdc0d4e8d12cc0ba4385aeec514ee22878ee80b2713741aa511",
-    "monitoring/online-shop/synthetic/index.js": "sha256:7f2bc789dda20e30f1198780bd100d7ce25bef7f73e51293be67f29653953aea",
+    "monitoring/online-shop/synthetic/index.js": "sha256:32de365e635fff6d7d84bdbfe0654f7e8e99ca5cc900dde10622bea8e201d694",
     "monitoring/online-shop/synthetic/journey.js": "sha256:bba6b8d6554442e494395bd9a999fcd067898e4d9747799c36c163e76b08c2f5",
     "monitoring/online-shop/synthetic/package.json": "sha256:ad6e34bfa4d9bd55a82ba88f36983367aedcc777320e7e28455b26dc8f3e8b96",
     "monitoring/online-shop/synthetic/package-lock.json": "sha256:563da04bca6cfa1588704cb1231cfc91d76e774b732340e0b507579e3bf7ee03",
@@ -170,5 +170,20 @@
     "IAM/function build, cold start, authenticated Monitoring invocation and real scheduled traffic remain unverified.",
     "Email delivery, opened/closed incidents and bounded dependency failure remain pending live acceptance.",
     "Initial diagnostic thresholds are not a measured SLO."
-  ]
+  ],
+  "review_followup": {
+    "recovery_attempts": 3,
+    "recovery_readback_per_attempt": true,
+    "mutation_window_seconds": 240,
+    "exercise_bound_seconds": 480,
+    "provider_close_notification_field": false,
+    "recovery_criterion": "successful scheduled run and incident closure",
+    "unique_moderate_advisories": [
+      "GHSA-8988-4f7v-96qf",
+      "GHSA-qqmp-wf37-98f9",
+      "GHSA-w5hq-g745-h8pq"
+    ],
+    "sdk_context_and_loopback_http_propagation": "passed",
+    "baggage_propagator": "disabled"
+  }
 }

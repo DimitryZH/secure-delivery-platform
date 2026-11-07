@@ -6,13 +6,13 @@ This runbook is for one separately authorized #115 exercise on `catalog-dev -> d
 
 Temporarily scale only `dev/Deployment/cartservice` from one replica to zero. Frontend catalog/cart handlers depend on GetCart and should return HTTP 500 when it is unavailable. The scheduled browse journey should fail at its catalog step, opening the synthetic failure incident. An observed non-health frontend error should also open the warning policy after its 60-second retest. Frontend's `/_healthz` can remain HTTP 200, so the HTTPS check is expected to stay healthy. Confirm the actual condition rather than expecting every policy to fire.
 
-This interrupts dev cart browsing for all visitors. Use an agreed dev window and retain the original template, UID and replica count privately. Start immediately before a known scheduled run, with its next run due within 60 seconds. Restore immediately after the expected incident and operator notification are recorded. Start restoration by five minutes, reserving API and readiness time within the eight-minute exercise bound. Never extend the outage to obtain a notification.
+This interrupts dev cart browsing for all visitors. Use an agreed dev window and retain the original template, UID and replica count privately. Start immediately before a known scheduled run, with its next run due within 60 seconds. Restore immediately after the expected incident and operator notification are recorded. Start restoration by four minutes, reserving API and readiness time within the eight-minute exercise bound. Never extend the outage to obtain a notification.
 
 Before starting, have a second operator/session able to run the same guarded recovery commands if the main shell disconnects. Without that recovery owner, defer the exercise. This covers failures outside a PowerShell `finally` block, such as host termination.
 
 Stop and recover immediately on any of these observations.
 
-- The expected synthetic condition/notification is not observed within the five-minute mutation window.
+- The expected synthetic condition/notification is not observed within the four-minute mutation window.
 - Either node becomes NotReady, or sample-service in dev/stage/prod loses Ready/Available or HTTP 200.
 - Another rollout, HPA, workload-template change or concurrent replica mutation appears.
 - Unexpected admission, resource-pressure, monitoring-authentication or Cloud Armor denial prevents attribution to the cart dependency.
@@ -46,7 +46,7 @@ The mutation uses both replica and resourceVersion preconditions. Keep the obser
 
 ```powershell
 try {
-    $deadline = [DateTimeOffset]::UtcNow.AddMinutes(5)
+    $deadline = [DateTimeOffset]::UtcNow.AddMinutes(4)
     kubectl --context=$context -n dev scale deployment/cartservice --replicas=0 --current-replicas=1 --resource-version=$rv --request-timeout=10s
     if ($LASTEXITCODE -ne 0) { throw 'Guarded failure injection failed' }
 
@@ -58,22 +58,28 @@ try {
     }
 }
 finally {
-    $raw = kubectl --context=$context -n dev get deployment/cartservice -o json --request-timeout=10s
-    if ($LASTEXITCODE -ne 0) { throw 'Recovery readback failed; recovery owner must act' }
-    $current = $raw | ConvertFrom-Json
-    if ($current.metadata.uid -ne $uid -or
-        ($current.spec.template | ConvertTo-Json -Depth 100 -Compress) -ne $template) {
-        throw 'Concurrent replacement/template change; recovery owner must assess'
-    }
-    if ($current.spec.replicas -eq 0) {
+    $recovered = $false
+    for ($attempt = 1; $attempt -le 3; $attempt++) {
+        $raw = kubectl --context=$context -n dev get deployment/cartservice -o json --request-timeout=5s
+        if ($LASTEXITCODE -ne 0) { throw 'Recovery readback failed; recovery owner must act' }
+        $current = $raw | ConvertFrom-Json
+        if ($current.metadata.uid -ne $uid -or
+            ($current.spec.template | ConvertTo-Json -Depth 100 -Compress) -ne $template) {
+            throw 'Concurrent replacement/template change; recovery owner must assess'
+        }
+        if ($current.spec.replicas -eq 1) { $recovered = $true; break }
+        if ($current.spec.replicas -ne 0) { throw 'Unexpected replicas; recovery owner must assess' }
         $currentVersion = $current.metadata.resourceVersion
-        kubectl --context=$context -n dev scale deployment/cartservice --replicas=1 --current-replicas=0 --resource-version=$currentVersion --request-timeout=10s
-        if ($LASTEXITCODE -ne 0) { throw 'Recovery scale failed; recovery owner must act' }
+        $errorFile = "$privateDir/recovery-scale-$attempt.private.txt"
+        kubectl --context=$context -n dev scale deployment/cartservice --replicas=1 --current-replicas=0 --resource-version=$currentVersion --request-timeout=5s 2> $errorFile
+        if ($LASTEXITCODE -eq 0) { $recovered = $true; break }
+        if ((Get-Content $errorFile -Raw) -notmatch '(?i)conflict|object has been modified') {
+            throw 'Uncertain scale result; recovery owner must read actual state'
+        }
+        # Only an explicit conflict permits another guarded attempt.
     }
-    elseif ($current.spec.replicas -ne 1) {
-        throw 'Unexpected replica count; recovery owner must assess'
-    }
-    kubectl --context=$context -n dev rollout status deployment/cartservice --timeout=120s --request-timeout=130s
+    if (-not $recovered) { throw 'Three recovery conflicts; recovery owner must act immediately' }
+    kubectl --context=$context -n dev rollout status deployment/cartservice --timeout=120s --request-timeout=120s
     if ($LASTEXITCODE -ne 0) { throw 'Cartservice readiness not recovered within bound' }
 }
 ```
@@ -92,6 +98,8 @@ Record UTC for baseline success, scale0, failed execution, incident opening, ema
 
 ## Recovery acceptance
 
-Require one Ready/Available cart replica with the original template/digests and healthy endpoint browsing. Wait for the next scheduled browse run to pass, its state/cleanup evidence, and recovery notifications. The five-minute application rate window can delay the warning's closure after service recovery. Capture that behavior without extending the outage.
+Require one Ready/Available cart replica with the original template/digests and healthy endpoint browsing. Wait for the next scheduled browse run to pass, its state/cleanup evidence, and incident closure. The five-minute application rate window can delay the warning's closure after service recovery. Capture that behavior without extending the outage.
 
 Confirm incident closure from actual successful results and the absence of new errors in the following window. Missing samples or an automatically closed incident do not establish recovery. Finally verify sample-service Ready/Available and HTTP 200 in dev/stage/prod, nodes Ready, original app digests, no unexpected rollout, and no owned port-forward remaining. Leave the issue open until review of the sanitized timeline.
+
+Recovery reserves four minutes after the mutation window. Three attempts each bound GET and scale to five seconds, followed by readiness up to 120 seconds. Conflicts trigger fresh UID/template/replica checks. All other errors and exhausted conflicts transfer immediately to the recovery owner. The pinned Google 5.45.2 provider has no notification_prompts field. Recovery acceptance requires successful scheduled results and observed incident closure; a recovery email is recorded if delivered but is not required.
