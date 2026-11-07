@@ -1,0 +1,174 @@
+{
+  "issue": 115,
+  "status": "proposal_for_review",
+  "reviewed_main": "a3d8eca596dfbf59245f11c32893f2c8a6bff47f",
+  "read_only_at": "2026-11-07T15:35:29.166065Z",
+  "existing_monitoring": {
+    "uptime_check_configs": 0,
+    "synthetic_configs": 0,
+    "notification_channels": 0,
+    "policies": [
+      {
+        "name": "projects/sre-platform-staging-507220/alertPolicies/13839995169879605180",
+        "display": "Sample service deployment availability review",
+        "enabled": true,
+        "channels": 0,
+        "conditions": 1
+      }
+    ]
+  },
+  "operator_channel_decision": {
+    "type": "email",
+    "confirmed_by_operator": true,
+    "private_address": "pending_before_plan"
+  },
+  "network": {
+    "armor_rules": [
+      {
+        "priority": 100,
+        "action": "deny(403)",
+        "preview": false
+      },
+      {
+        "priority": 1000,
+        "action": "deny(403)",
+        "preview": false
+      },
+      {
+        "priority": 2000,
+        "action": "throttle",
+        "preview": false
+      },
+      {
+        "priority": 2147483647,
+        "action": "allow",
+        "preview": false
+      }
+    ],
+    "throttle_requests": 1200,
+    "throttle_interval_seconds": 60,
+    "public_checker_ip_records": 54,
+    "final_promql_parser": "passed",
+    "alert_vector_series": 0,
+    "backend_health": [
+      "HEALTHY"
+    ],
+    "read_only_health_armor_verdicts": [
+      {
+        "http": 200,
+        "priority": 2000,
+        "outcome": "ACCEPT",
+        "rate_outcome": "RATE_LIMIT_THRESHOLD_CONFORM"
+      }
+    ]
+  },
+  "api_prerequisites": {
+    "monitoring.googleapis.com": true,
+    "logging.googleapis.com": true,
+    "cloudtrace.googleapis.com": true,
+    "cloudfunctions.googleapis.com": false,
+    "run.googleapis.com": true,
+    "cloudbuild.googleapis.com": true,
+    "artifactregistry.googleapis.com": true,
+    "pubsub.googleapis.com": true
+  },
+  "function_inventory": {
+    "http_status": 403,
+    "limit": "Functions API is disabled; inventory was not observable."
+  },
+  "monitoring_invoker_identity": {
+    "principal_type": "monitoring-notification service agent",
+    "existing_project_roles": [],
+    "invocation_permissions": [
+      "cloudfunctions.functions.get",
+      "run.routes.invoke"
+    ]
+  },
+  "observed_frontend_nonzero_error_series_24h": 0,
+  "failure_baseline": {
+    "cart_desired": 1,
+    "cart_ready": 1,
+    "cart_hpa_targets": [],
+    "cart_cluster_ip_only": true,
+    "cart_port": [
+      7070
+    ],
+    "frontend_cart_address": [
+      "cartservice:7070"
+    ]
+  },
+  "proposed_synthetic": {
+    "steps": [
+      "GET /",
+      "GET /product/<selected-id>",
+      "GET /cart"
+    ],
+    "period_seconds": 300,
+    "request_budget": 3,
+    "request_timeout_seconds": 8,
+    "journey_deadline_seconds": 30,
+    "function_timeout_seconds": 45,
+    "check_timeout_seconds": 60,
+    "max_instances": 1,
+    "concurrency": 1,
+    "redis_state": "GetCart on a unique absent session does not create a key",
+    "partial_failure_cleanup": "local cookie discarded in finally",
+    "live_exact_session_exists_readback": "pending"
+  },
+  "accepted_aml_revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
+  "read_only_contract_hashes": {
+    "workloads/online-shop/src/cartservice/src/cartstore/RedisCartStore.cs": "sha256:c59d8f401250d892663f26d5670d9b51fb5e4c6703f02c07bb94e3b50ebc0b1e",
+    "workloads/online-shop/src/frontend/handlers.go": "sha256:bb6980c63715a25d824e4c0981f946f047094aa63e352312cfa4e9d11580386b"
+  },
+  "local_validation": {
+    "full_python_suite": {
+      "tests": 240,
+      "result": "passed"
+    },
+    "node_synthetic_tests": {
+      "tests": 4,
+      "result": "passed"
+    },
+    "terraform_fmt_check": "passed",
+    "terraform_validate": "passed",
+    "promql_api_parser": "passed",
+    "npm_ci": "passed_with_upstream_peer_and_deprecation_warnings",
+    "native_sdk_context": "passed_locally_with_remote_exporter_replaced",
+    "source_zip_sha256": "e562a90923c6820906d9fb87647b94fb4a1d490b240257cb8642a8a90660e1fd",
+    "links": "passed",
+    "git_diff_check": "passed"
+  },
+  "dependency_audit": {
+    "info": 0,
+    "low": 0,
+    "moderate": 50,
+    "high": 0,
+    "critical": 0,
+    "total": 50
+  },
+  "implementation_hashes": {
+    "terraform/foundation/shop-observability.tf": "sha256:38b5dddd58a4d9df3afb63da725a60dab736ce10697b06b79bcbcacade9b71fb",
+    "terraform/foundation/versions.tf": "sha256:b63414d5382e8eec138778891056c48d8357ea7b93d0cdfb89ba2f6a7f7a9c5e",
+    "monitoring/online-shop/frontend-errors.promql.tftpl": "sha256:2ed50d6bb71d0fdc0d4e8d12cc0ba4385aeec514ee22878ee80b2713741aa511",
+    "monitoring/online-shop/synthetic/index.js": "sha256:7f2bc789dda20e30f1198780bd100d7ce25bef7f73e51293be67f29653953aea",
+    "monitoring/online-shop/synthetic/journey.js": "sha256:bba6b8d6554442e494395bd9a999fcd067898e4d9747799c36c163e76b08c2f5",
+    "monitoring/online-shop/synthetic/package.json": "sha256:ad6e34bfa4d9bd55a82ba88f36983367aedcc777320e7e28455b26dc8f3e8b96",
+    "monitoring/online-shop/synthetic/package-lock.json": "sha256:563da04bca6cfa1588704cb1231cfc91d76e774b732340e0b507579e3bf7ee03",
+    "monitoring/online-shop/synthetic/package-source.py": "sha256:c42f7e9a93ada0dfc1b6b01c03f579b1d32282608963edc1e047a93571ab3e41"
+  },
+  "live_operations": {
+    "provisioning": false,
+    "schedule_enablement": false,
+    "failure_exercise": false,
+    "notifications_sent": false,
+    "storefront_requests": 1,
+    "request_description": "read-only HTTPS health GET"
+  },
+  "validation_limits": [
+    "Full provisioning plan pending private operator email and reviewed source ZIP.",
+    "Review the remaining moderate SDK dependency advisories before provisioning.",
+    "IAM/function build, cold start, authenticated Monitoring invocation and real scheduled traffic remain unverified.",
+    "Email delivery, opened/closed incidents and bounded dependency failure remain pending live acceptance.",
+    "Initial diagnostic thresholds are not a measured SLO."
+  ]
+}
