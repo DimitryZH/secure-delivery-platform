@@ -1,0 +1,21 @@
+{
+  "name": "sdp-online-shop-synthetic",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "test": "node --test journey.test.js"
+  },
+  "dependencies": {
+    "@google-cloud/functions-framework": "5.0.5",
+    "@google-cloud/synthetics-sdk-api": "0.7.0",
+    "@opentelemetry/api": "1.6.0"
+  },
+  "overrides": {
+    "axios": "1.21.0",
+    "@opentelemetry/propagator-jaeger": "2.12.0"
+  }
+}
