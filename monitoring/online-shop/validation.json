@@ -1,7 +1,7 @@
 {
   "issue": 115,
-  "status": "synthetic_http_trace_fix_for_review",
-  "reviewed_main": "15ba94be68ee8b8d0a488a51c3e8c84fd0e8b6d1",
+  "status": "recorded_scheduled_acceptance_for_review",
+  "reviewed_main": "f2bfcb188752a3b9e3c80374be01f89952f596d3",
   "read_only_at": "2026-11-07T15:35:29.166065Z",
   "existing_monitoring": {
     "uptime_check_configs": 0,
@@ -122,7 +122,7 @@
   },
   "local_validation": {
     "full_python_suite": {
-      "tests": 240,
+      "tests": 246,
       "result": "passed",
       "skipped": 6
     },
@@ -136,8 +136,22 @@
     "npm_ci": "passed_with_upstream_peer_and_deprecation_warnings",
     "native_sdk_context": "passed_real_functions_framework_cli_http_and_validated_loopback_https",
     "source_zip_sha256": "a84b3c430f8be229057d88ebac1e3b1fb2f15146def6d9feca43eb9590b3ffb4",
-    "links": "relative_links_passed; existing external reference locations retained",
-    "git_diff_check": "passed"
+    "links": "relative links passed; official Google Cloud references read",
+    "git_diff_check": "passed",
+    "scheduled_correlation_regressions": {
+      "tests": 6,
+      "result": "passed",
+      "negative_cases": [
+        "ambiguous/extra/missing edge candidates",
+        "incomplete pages or sampling",
+        "wrong time/URL/method/marker/IP/backend/Armor verdict",
+        "wrong native trace/log/span parent",
+        "wrong release/component digest",
+        "changed or recomputed candidate identity",
+        "foreign execution CLI"
+      ]
+    },
+    "runtime_source_changed": false
   },
   "dependency_audit": {
     "info": 0,
@@ -160,7 +174,11 @@
     "monitoring/online-shop/synthetic/test/entrypoint-preload.cjs": "sha256:f2e2936ce92830982141faee7b284ad38658671b803adc5fcd57dd7f192c114e",
     "monitoring/online-shop/synthetic/test/tls-cert.pem": "sha256:41fd80c23bea4a42cca87c09de0fe422b5ef7273c83d5c7e52391765307923ef",
     "monitoring/online-shop/synthetic/test/tls-key.pem": "sha256:e7903cdc9d0134250edf63dd31df5c922e410d1ad1a9ea5eba805010143aa5e5",
-    "monitoring/online-shop/synthetic/journey.test.js": "sha256:ef1573352195bb64dd584c9b866c1f99ce15e96d29ed23da75fd078b1314e5b7"
+    "monitoring/online-shop/synthetic/journey.test.js": "sha256:ef1573352195bb64dd584c9b866c1f99ce15e96d29ed23da75fd078b1314e5b7",
+    "monitoring/online-shop/diagnose-scheduled.py": "sha256:4b0e003ef2e4a758341172f667ae4b95d7d7f9713694cbe7e7d7eb1dd634ade0",
+    "monitoring/online-shop/scheduled-correlation.md": "sha256:53e33a41466a7bfd77c624f3850497191f2b5c8d77c6139737e46c20b3d0f347",
+    "monitoring/online-shop/README.md": "sha256:f6dd565bec23726afe98b1fd9bab963c631242b2e1348d863a995f6759693b1f",
+    "scripts/tests/test_scheduled_correlation.py": "sha256:cbca9819a28eab3416c239df1a1361a9b26840b62ecbe292f00e2068dd4948a5"
   },
   "live_operations": {
     "provisioning": true,
@@ -168,15 +186,16 @@
     "failure_exercise": false,
     "notifications_sent": true,
     "storefront_requests": 1,
-    "request_description": "read-only HTTPS health GET"
+    "request_description": "read-only HTTPS health GET",
+    "synthetic_source_redeploy": true
   },
   "validation_limits": [
-    "Fix is local/reviewed implementation only; no function redeploy or scheduled success on the new source yet.",
-    "Synthetic application trace/log correlation and Cloud Armor acceptance require a successful scheduled run after separately approved redeploy.",
-    "Incident remains OPEN and scheduling remains enabled; exact email receipt time is not recorded.",
-    "Moderate SDK advisories and unchanged dependency overrides retain the reviewed residual risks.",
-    "Incident recovery/closure and the controlled dependency failure exercise remain pending; the bootstrap monitor failure is not the controlled application-failure acceptance.",
-    "Initial diagnostic thresholds are not a measured SLO."
+    "Decision applies to recorded execution bfe368073e0ea55ab311d6afb9615cea, not fresh application health.",
+    "Edge binding is operationally unique within exhausted retained pages, not authenticated execution identity; custom marker header/cookie and raw wire trace headers were not retained.",
+    "Source IPv4 consistency is edge-observed; independent function-egress/NAT proof is unavailable.",
+    "TelemetryPolicy inventory returns 403 / SERVICE_DISABLED; live/historical policy absence cannot be claimed.",
+    "Existing moderate dependency risks are unchanged; runtime/source ZIP/IAM/infrastructure/schedules were not modified by this diagnostic review.",
+    "Controlled cartservice failure, its notification, subsequent recovery and final issue review remain pending."
   ],
   "review_followup": {
     "recovery_attempts": 3,
@@ -248,9 +267,99 @@
       "network": "loopback only",
       "remote_exporter": "replaced locally"
     },
-    "redeploy_performed": false,
+    "redeploy_performed": true,
     "source_zip_sha256": "a84b3c430f8be229057d88ebac1e3b1fb2f15146def6d9feca43eb9590b3ffb4",
     "redeploy_plan": "After merge, repackage merged source, review full plan with all three existing flags true and private inputs; expect content-addressed source object + function generation/version update. No apply in this PR.",
     "startup_order_control": "Old handler passes real CLI HTTP/TLS when SDK initialization is preloaded before Framework, without manual startActiveSpan; not used as the deployment fix."
+  },
+  "recorded_scheduled_acceptance": {
+    "selected_execution": "bfe368073e0ea55ab311d6afb9615cea",
+    "configuration_sha": "f2bfcb188752a3b9e3c80374be01f89952f596d3",
+    "revision": "shop-dev-browse-00002-ril",
+    "build": "projects/465837787797/locations/us-central1/builds/2587f0ad-ea1a-4036-9e58-b4a94e586209",
+    "build_status": "SUCCESS",
+    "source_sha256": "a84b3c430f8be229057d88ebac1e3b1fb2f15146def6d9feca43eb9590b3ffb4",
+    "successful_scheduled_executions_observed": 2,
+    "requests": 3,
+    "duration_ms": 529,
+    "native_w3c_correlation": "passed",
+    "client_frontend_parent_chain": "passed",
+    "native_application_logs": 111,
+    "application_spans": 80,
+    "services": [
+      "adservice",
+      "cartservice",
+      "currencyservice",
+      "frontend",
+      "productcatalogservice",
+      "recommendationservice",
+      "shippingservice"
+    ],
+    "candidate_identity_and_policy_reconstruction": "passed_for_explicit_reviewed_release_set",
+    "release_set_id": "sha256:d3ddfc09ec0f0195d38fadfba8a2c31ce290b41bf4211ac4631a5b20039d3891",
+    "component_digest_version_environment_attribution": "passed",
+    "edge_matches": [
+      {
+        "client_end": "2026-11-08T15:09:20.309081524Z",
+        "client_start": "2026-11-08T15:09:19.888Z",
+        "edge_timestamp": "2026-11-08T15:09:19.967548Z",
+        "method": "GET",
+        "path": "/",
+        "status": 200
+      },
+      {
+        "client_end": "2026-11-08T15:09:20.368025994Z",
+        "client_start": "2026-11-08T15:09:20.311Z",
+        "edge_timestamp": "2026-11-08T15:09:20.313783Z",
+        "method": "GET",
+        "path": "/product/OLJCESPC7Z",
+        "status": 200
+      },
+      {
+        "client_end": "2026-11-08T15:09:20.411008267Z",
+        "client_start": "2026-11-08T15:09:20.370Z",
+        "edge_timestamp": "2026-11-08T15:09:20.370640Z",
+        "method": "GET",
+        "path": "/cart",
+        "status": 200
+      }
+    ],
+    "edge_binding": "unique within complete retained candidate set: exact URL/method, client interval including edge latency, marker, same source IPv4/Armor key, independently reviewed LB resources and Ready frontend Pod IP/name",
+    "edge_native_trace_id_matches_application": false,
+    "lb_equality_requirement_origin": "operator-local diagnostic assertion; not an established runtime/SDK contract",
+    "prior_diagnostic": "armor_trace_mismatch retained as history",
+    "diagnostic_cli_exit_code": 0,
+    "diagnostic_result": "passed",
+    "session_exists": 0,
+    "owned_forward_closed": true,
+    "cleanup_scope": "recorded exact selected session; no fresh Redis access during this review",
+    "incident": {
+      "name": "projects/sre-platform-staging-507220/alerts/0.oequ1e89idz7",
+      "state": "CLOSED",
+      "close_time": "2026-11-08T15:12:03Z"
+    },
+    "failure_email_operator_confirmed": true,
+    "controlled_failure_exercise": false
+  },
+  "edge_context_review": {
+    "read_only_at": "2026-11-08T16:06:18.986371+00:00",
+    "lb_type": "global external Application Load Balancer",
+    "scheme": "EXTERNAL_MANAGED",
+    "ip": "8.233.86.84",
+    "logging_sample_rate": 1,
+    "edge_backend_matches_ready_frontend_pod": true,
+    "source_headers": "reviewed source injects W3C trace context with baggage disabled; no explicit X-Cloud-Trace-Context",
+    "actual_wire_headers_captured": false,
+    "explanation": "distinct native LB IDs are consistent with separately generated legacy context; precise header transformation is not proven",
+    "telemetry_policy_in_terraform": false,
+    "networkservices_api_state": "DISABLED",
+    "telemetry_inventory_http_status": 403,
+    "telemetry_inventory_error_reason": "SERVICE_DISABLED",
+    "telemetry_policy_absence_confirmed": false,
+    "policy_inventory_limit": "current API access cannot establish live or historical absence",
+    "references": [
+      "https://docs.cloud.google.com/load-balancing/docs/https#target-proxies",
+      "https://docs.cloud.google.com/load-balancing/docs/distributed-tracing-overview"
+    ]
   }
 }
