@@ -73,7 +73,6 @@ resource "google_clouddeploy_target" "environment" {
     google_project_service.clouddeploy,
     google_project_iam_member.deploy_clouddeploy_job_runner,
     google_project_iam_member.deploy_gke_developer,
-    kubernetes_namespace.environment,
   ]
 }
 

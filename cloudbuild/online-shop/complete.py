@@ -117,6 +117,7 @@ def materialize(source, identity, expected, destination):
 def build_request(identity, revision, plan):
     require(identity in APPS and identity != "productcatalogservice", "catalog_must_reuse_accepted_artifact")
     require(re.fullmatch(r.SHA, revision or ""), "invalid_configuration_revision")
+    legacy.accepted_catalog()
     item = plan["components"][0]
     require(item["id"] == identity, "component_plan_mismatch")
     tag = r.policy()["registry"] + "/online-shop-" + identity + ":" + revision + "-" + r.REVISION
@@ -184,7 +185,7 @@ def validate_candidate(record, revision, refs):
         identity = row["id"]
         require(type(row.get("build")) is dict and re.fullmatch(r.UUID, row["build"].get("id", "")), "invalid_component_build")
         require(all(re.fullmatch(r.DIGEST, row.get(k, "")) for k in ("digest", "config_digest")), "invalid_component_digest")
-        accepted = legacy.policy()["accepted_release"]
+        accepted = legacy.accepted_catalog()
         config = accepted["configuration_revision"] if identity == "productcatalogservice" else revision
         if identity == "productcatalogservice":
             require(row["build"]["id"] == accepted["build_id"] and row["digest"] == accepted["manifest_digest"], "unaccepted_catalog_reuse")
@@ -192,14 +193,10 @@ def validate_candidate(record, revision, refs):
     require(r.canonical(record) == r.canonical(candidate(revision, expected)), "complete_candidate_policy_mismatch")
 
 def catalog_candidate(cloud):
-    q = legacy.policy()["accepted_release"]
-    name = "online-shop/catalog-v1/" + q["configuration_revision"] + "/" + q["build_id"] + "/candidate.json"
-    raw = cloud.request("https://storage.googleapis.com/storage/v1/b/" + r.policy()["project"] + "-attestation-source/o/"
-                        + urllib.parse.quote(name, safe="") + "?alt=media&generation=" + q["candidate_generation"])
-    require("sha256:" + r.sha(raw) == q["candidate_transport_sha256"], "catalog_transport_mismatch")
+    q = legacy.accepted_catalog()
+    raw = legacy.catalog_bytes(cloud)
     record = r.decode(raw)
-    # The occurrence reference is fixed accepted evidence, not an operator claim.
-    legacy.verify_application(record, "projects/" + r.policy()["project"] + "/occurrences/c274dea4-483a-43d6-b241-ed4d593e617e", cloud)
+    legacy.verify_application(record, q["occurrence"], cloud)
     return record
 
 def observe_candidate(revision, build_ids, value, refs, cloud):
@@ -296,7 +293,7 @@ def signing_request(revision, uri, digest):
     require(re.fullmatch(r.DIGEST, digest or ""), "invalid_candidate_transport_hash")
     return {"source": {"gitSource": {"url": r.SDP + ".git", "revision": revision}}, "serviceAccount": r.policy()["signer"],
         "timeout": "1800s", "options": {"logging": "CLOUD_LOGGING_ONLY"}, "tags": ["complete-shop-sign-v1", revision, digest[7:]],
-        "steps": [{"id": "independent-complete-verification-and-signing", "name": "gcr.io/google.com/cloudsdktool/cloud-sdk:slim", "entrypoint": "bash", "dir": "/workspace",
+        "steps": [{"env": ["CLOUDSDK_CORE_PROJECT=" + r.policy()["project"], "CLOUDSDK_CORE_ACCOUNT=" + r.policy()["signer"].split("/serviceAccounts/")[1]], "id": "independent-complete-verification-and-signing", "name": "gcr.io/google.com/cloudsdktool/cloud-sdk:slim", "entrypoint": "bash", "dir": "/workspace",
             "args": ["-ceu", "apt-get update -qq && apt-get install -y -qq git >/dev/null\n"
                 "gcloud storage cp '" + uri + "' /workspace/complete-candidate.json\n"
                 "echo '" + digest[7:] + "  /workspace/complete-candidate.json' | sha256sum -c -\n"

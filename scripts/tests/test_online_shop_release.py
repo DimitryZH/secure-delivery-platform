@@ -374,11 +374,12 @@ class AuthenticationLauncherTest(unittest.TestCase):
                 return b"offline-test-token\n"
 
             with self.subTest(launcher=launcher), patch("shutil.which", return_value=launcher) as resolve, \
-                    patch.object(r, "command", side_effect=execute) as command:
+                    patch.object(r, "command", side_effect=execute) as command, \
+                    patch.dict(os.environ, {"CLOUDSDK_CORE_ACCOUNT":"operator@example.invalid", "CLOUDSDK_CORE_PROJECT":r.policy()["project"]}):
                 cloud = r.Cloud()
                 self.assertEqual(cloud.token, "offline-test-token")
                 resolve.assert_called_once_with("gcloud")
-                command.assert_called_once_with([launcher, "auth", "print-access-token", "--quiet"])
+                command.assert_called_once_with([launcher, "--account=operator@example.invalid", "--project=" + r.policy()["project"], "auth", "print-access-token", "--quiet"])
 
     def test_missing_sdk_launcher_stops_before_authentication(self):
         with patch("shutil.which", return_value=None), patch.object(r, "command") as command:

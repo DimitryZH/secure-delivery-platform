@@ -118,7 +118,7 @@ class CollectorTests(unittest.TestCase):
         policy = c.policy()
         self.assertEqual(policy["manifest_digest"], "sha256:ac0bb9cdc844b55d2fd2655d03e596243787d6a8c52dd408b1dc96dd1bd372ee")
         accepted = c.r.read(ROOT / "deploy/online-shop/policy.json")["accepted_release"]
-        self.assertEqual(accepted["release_set_id"], "sha256:b9750798a71f543d0f75d0f48b1086f7c33427804eb07a795dd289faddaa3160")
+        self.assertIsNone(accepted)  # No historical acceptance is promoted into the active binding.
 
     def test_policy_rejects_alternate_repository_mirror_publisher_and_version_types(self):
         original = c.r.read

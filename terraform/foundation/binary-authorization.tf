@@ -19,9 +19,13 @@ resource "google_binary_authorization_policy" "application" {
   # Applies to every namespace, including dev, stage, and prod. System images
   # are handled by Google's maintained global policy, not namespace bypasses.
   cluster_admission_rules {
-    cluster                 = "${var.gke_location}.${var.gke_cluster_name}"
-    evaluation_mode         = "REQUIRE_ATTESTATION"
-    enforcement_mode        = "ENFORCED_BLOCK_AND_AUDIT_LOG"
-    require_attestations_by = [google_binary_authorization_attestor.verification.id]
+    cluster          = "${var.gke_location}.${var.gke_cluster_name}"
+    evaluation_mode  = "REQUIRE_ATTESTATION"
+    enforcement_mode = "ENFORCED_BLOCK_AND_AUDIT_LOG"
+    # Keep this name known during planning: legacy nested-set handling can
+    # collapse an unknown computed attestor ID to an empty set.
+    require_attestations_by = ["projects/${var.project_id}/attestors/${google_binary_authorization_attestor.verification.name}"]
   }
+  # The API requires the attestor to exist before referencing it in policy.
+  depends_on = [google_binary_authorization_attestor.verification]
 }

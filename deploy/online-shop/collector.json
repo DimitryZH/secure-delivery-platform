@@ -102,12 +102,12 @@
         },
         {
           "key": "release_set_id",
-          "value": "sha256:b9750798a71f543d0f75d0f48b1086f7c33427804eb07a795dd289faddaa3160",
+          "value": "${RELEASE_SET_ID}",
           "action": "upsert"
         },
         {
           "key": "component_digest",
-          "value": "sha256:03b4d18587152a9c28a6aba743edbfffc6762234189c885a1b2e535ce4a81ee2",
+          "value": "${COMPONENT_DIGEST}",
           "action": "upsert"
         },
         {
@@ -122,7 +122,7 @@
         },
         {
           "key": "cloud.account.id",
-          "value": "sre-platform-staging-507220",
+          "value": "sdp-gcp",
           "action": "upsert"
         },
         {
@@ -150,7 +150,7 @@
   },
   "exporters": {
     "googlecloud": {
-      "project": "sre-platform-staging-507220",
+      "project": "sdp-gcp",
       "log": {
         "default_log_name": "online-shop/catalog",
         "resource_filters": [

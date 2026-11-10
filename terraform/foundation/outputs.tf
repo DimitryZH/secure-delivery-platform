@@ -47,3 +47,14 @@ output "reviewer_service_account_email" {
   description = "Release reviewer service account email."
   value       = google_service_account.reviewer.email
 }
+
+output "kubernetes_connection" {
+  description = "Explicit input for the separately owned greenfield Kubernetes root; keep output transport private."
+  sensitive   = true
+  value = {
+    project_id             = var.project_id
+    endpoint               = google_container_cluster.platform.endpoint
+    cluster_ca_certificate = google_container_cluster.platform.master_auth[0].cluster_ca_certificate
+    environment_namespaces = sort(tolist(var.environment_namespaces))
+  }
+}

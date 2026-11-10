@@ -107,3 +107,9 @@ variable "deployment_operator_principal" {
     error_message = "Use a specific user:email or group:email operator principal; public principals and service accounts are not accepted."
   }
 }
+
+variable "gke_create_separate_default_pool" {
+  description = "Greenfield only: remove the temporary cluster-created pool before creating the explicitly managed default-pool. Historical roots retain false."
+  type        = bool
+  default     = false
+}

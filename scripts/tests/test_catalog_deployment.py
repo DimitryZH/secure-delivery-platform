@@ -11,6 +11,7 @@ import subprocess
 import sys
 import unittest
 from unittest.mock import Mock, patch
+from release_fixtures import accepted_policy
 
 ROOT = Path(__file__).resolve().parents[2]
 def load(name, path):
@@ -31,7 +32,7 @@ def stamp(minutes=0): return (NOW + timedelta(minutes=minutes)).isoformat().repl
 
 class DeploymentTests(unittest.TestCase):
     def setUp(self):
-        self.policy = copy.deepcopy(w.policy())
+        self.policy = accepted_policy(w.r)
         self.ref = {"sha256": "sha256:" + "a" * 64, "inputs_sha256": "sha256:" + "b" * 64,
                     "planner_sha256": "sha256:" + "c" * 64, "contract_sha256": "sha256:" + "e" * 64,
                     "uri": "git+" + w.r.AML + "@" + w.r.REVISION + "#" + w.r.WORKLOAD + "/build_plan.py"}
@@ -277,6 +278,16 @@ class DeploymentTests(unittest.TestCase):
         text = json.dumps(w.render(self.record, REV))
         for forbidden in ("hostNetwork", "hostPID", "GOOGLE_APPLICATION_CREDENTIALS", "service-account-key", "LoadBalancer"):
             self.assertNotIn(forbidden, text)
+
+    def test_collector_attribution_and_commitment_use_rendered_candidate_bytes(self):
+        documents=w.render(self.record, REV)
+        config=next(doc for doc in documents if doc["kind"] == "ConfigMap")
+        text=config["data"]["config.json"]
+        attributes={x["key"]:x["value"] for x in json.loads(text)["processors"]["resource/catalog"]["attributes"]}
+        self.assertEqual(attributes["release_set_id"],self.record["release_set_id"])
+        self.assertEqual(attributes["component_digest"],self.record["components"][0]["digest"])
+        self.assertEqual(config["metadata"]["annotations"]["release.secure-delivery.dev/collector-config-sha256"],w.r.sha(text.encode()))
+        self.assertNotIn("${",text)
         collector = w.render(self.record, REV)[4]["spec"]["template"]["spec"]
         self.assertEqual(collector["nodeSelector"]["iam.gke.io/gke-metadata-server-enabled"], "true")
 
@@ -322,14 +333,14 @@ class DeploymentTests(unittest.TestCase):
         cloud.build.return_value = signing; cloud.request.return_value = raw
         with patch.object(w.r, "fetched"), patch.object(w.r, "plan_reference", return_value=self.ref), \
                 patch.object(w.r, "verify", return_value={"status": "passed"}), patch.object(w, "trust"):
-            self.assertEqual(w.verify_application(self.record, "app", cloud)["status"], "passed")
+            self.assertEqual(w.verify_application(self.record, accepted["occurrence"], cloud)["status"], "passed")
             cloud.request.return_value = b"tampered"
             with self.assertRaisesRegex(ValueError, "transport_unavailable"):
-                w.verify_application(self.record, "app", cloud)
+                w.verify_application(self.record, accepted["occurrence"], cloud)
             cloud.request.return_value = raw
             signing["id"] = "wrong-build"
             with self.assertRaisesRegex(ValueError, "signing_build_unavailable"):
-                w.verify_application(self.record, "app", cloud)
+                w.verify_application(self.record, accepted["occurrence"], cloud)
 
     def runtime_pods(self, record=None):
         record = record or self.record
@@ -363,7 +374,7 @@ class DeploymentTests(unittest.TestCase):
             trace, span = "1" * 32, "2" * 16
             logs.write_text(stamp() + " stdout F " + json.dumps({"timestamp": stamp(), "severity": "INFO", "trace_id": trace,
                 "span_id": span, "trace_flags": 1, "event": "request.completed"}) + "\n", encoding="utf-8")
-            config = w.r.read(w.HERE / "collector.json")
+            config = json.loads(next(doc for doc in w.render(self.record, REV) if doc["kind"] == "ConfigMap")["data"]["config.json"])
             receiver = config["receivers"]["file_log/catalog"]
             receiver.update(include=[str(logs)], start_at="beginning")
             # CRI parsing is real; Linux filepath metadata/permissions require GKE.

@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 import hashlib
 import importlib.util
 import json
+import os
 from pathlib import Path
 import re
 import shutil
@@ -27,7 +28,7 @@ WORKLOAD = "workloads/online-shop"
 CONTEXT = "src/" + COMPONENT
 SCRIPT = "cloudbuild/online-shop/release.py"
 TRUSTED_FILES = (SCRIPT, "cloudbuild/online-shop/catalog-v1.json",
-                 "deploy/environments.json", "cloudbuild/scripts/attest-release.py")
+                 "cloudbuild/online-shop/candidate-v1.schema.json", "deploy/environments.json", "deploy/release-binding.json", "cloudbuild/scripts/attest-release.py")
 PROFILE = {"version": 1, "id": "catalog-v1", "application": "online-shop",
            "repository": AML, "revision": REVISION, "platform": "linux/amd64",
            "required_components": [COMPONENT]}
@@ -120,13 +121,41 @@ def fetched(repository, revision):
         yield Source(directory, revision)
 
 
+def binding():
+    """Immutable reviewed resources; never selected by candidate/runtime input."""
+    b = read(ROOT / "deploy/release-binding.json")
+    require(type(b.get("version")) is int and b["version"] == 1, "invalid_binding_version")
+    project = b.get("project", "")
+    require(type(project) is str and re.fullmatch(r"[a-z][a-z0-9-]{4,28}[a-z0-9]", project), "invalid_binding_project")
+    require(type(b.get("project_number")) is str and re.fullmatch(r"[1-9][0-9]*", b["project_number"]), "invalid_binding_number")
+    prefix = "projects/" + project
+    expected = {"version": 1, "id": b.get("id"), "project": project, "project_number": b["project_number"],
+        "region": "us-central1", "cluster": "secure-delivery-platform", "location": "us-central1-a",
+        "registry": "us-central1-docker.pkg.dev/" + project + "/secure-delivery",
+        "producer": prefix + "/serviceAccounts/secure-delivery-build@" + project + ".iam.gserviceaccount.com",
+        "signer": prefix + "/serviceAccounts/secure-delivery-attestation@" + project + ".iam.gserviceaccount.com",
+        "deployer": "secure-delivery-deploy@" + project + ".iam.gserviceaccount.com",
+        "key_version": prefix + "/locations/us-central1/keyRings/secure-delivery-attestation/cryptoKeys/verification/cryptoKeyVersions/1",
+        "attestor": prefix + "/attestors/secure-delivery-verification", "note": prefix + "/notes/secure-delivery-verification",
+        "candidate_bucket": project + "-attestation-source", "clouddeploy_bucket": project + "-clouddeploy"}
+    require(type(b.get("id")) is str and re.fullmatch(r"[a-z][a-z0-9-]+", b["id"]) and b == expected, "mixed_release_binding")
+    return b
+
+
 def policy():
     require(read(HERE / "catalog-v1.json") == PROFILE, "unapproved_profile")
     env = read(ROOT / "deploy/environments.json")
+    number = env.get("project_number")
+    require(type(number) is str and re.fullmatch(r"[1-9][0-9]*", number), "invalid_project_number")
+    b = binding()
+    require(env.get("release_binding") == b["id"] and env.get("project") == b["project"]
+            and env.get("project_number") == b["project_number"] and env.get("approved_registry") == b["registry"]
+            and "projects/" + b["project"] + "/serviceAccounts/" + env.get("build_service_account", "") == b["producer"]
+            and env.get("deployment_service_account") == b["deployer"]
+            and env.get("cluster") == b["cluster"] and env.get("location") == b["location"], "environment_binding_mismatch")
+    require(type(env.get("endpoint_enabled")) is bool, "explicit_endpoint_mode_required")
     project, registry, producer = env["project"], env["approved_registry"], env["build_service_account"]
     require(re.fullmatch(r"[a-z][a-z0-9-]{4,28}[a-z0-9]", project), "invalid_project")
-    number = env.get("project_number")
-    require(isinstance(number, str) and re.fullmatch(r"[1-9][0-9]*", number), "invalid_project_number")
     require(registry == "us-central1-docker.pkg.dev/" + project + "/secure-delivery",
             "registry_policy_mismatch")
     require(producer == "secure-delivery-build@" + project + ".iam.gserviceaccount.com",
@@ -296,7 +325,10 @@ class Cloud:
     def __init__(self):
         gcloud = shutil.which("gcloud")
         require(gcloud is not None, "gcloud_executable_unavailable")
-        self.token = command([gcloud, "auth", "print-access-token", "--quiet"]).decode().strip()
+        account = os.environ.get("CLOUDSDK_CORE_ACCOUNT", "")
+        require(bool(account) and os.environ.get("CLOUDSDK_CORE_PROJECT") == policy()["project"], "explicit_cloud_identity_required")
+        self.token = command([gcloud, "--account=" + account, "--project=" + policy()["project"],
+                              "auth", "print-access-token", "--quiet"]).decode().strip()
         require(bool(self.token), "credentials_unavailable")
 
     def request(self, url, body=None, registry=False):
@@ -403,6 +435,7 @@ def signing_request(p, config, object_uri, candidate_sha):
             "options": {"logging": "CLOUD_LOGGING_ONLY"},
             "steps": [{"id": "independent-verification-and-attestation",
                        "name": "gcr.io/google.com/cloudsdktool/cloud-sdk:slim", "entrypoint": "bash",
+                       "env": ["CLOUDSDK_CORE_PROJECT=" + p["project"], "CLOUDSDK_CORE_ACCOUNT=" + p["signer"].split("/serviceAccounts/")[1]],
                        "dir": "/workspace", "args": ["-ceu",
                            "apt-get update -qq && apt-get install -y -qq git >/dev/null\n"
                            "gcloud storage cp '" + object_uri + "' /workspace/catalog-candidate.json\n"

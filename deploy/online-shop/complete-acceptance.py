@@ -17,9 +17,17 @@ HERE=Path(__file__).resolve().parent
 spec=importlib.util.spec_from_file_location("shop_workflow",HERE/"complete.py")
 w=importlib.util.module_from_spec(spec);spec.loader.exec_module(w)
 c=w.c;require=c.require
-CLEANUP_TARGET="projects/sre-platform-staging-507220/locations/us-central1-a/clusters/secure-delivery-platform/namespaces/dev/services/redis-cart"
+def cleanup_scope(environment):
+    """Local approved target only; cleanup never requires renewed cloud proof."""
+    project = environment.get("project", "")
+    require(type(project) is str and re.fullmatch(r"[a-z][a-z0-9-]{4,28}[a-z0-9]", project), "invalid_cleanup_project")
+    require(environment.get("cluster") == "secure-delivery-platform"
+            and environment.get("location") == "us-central1-a", "unapproved_cleanup_cluster")
+    return "projects/" + project + "/locations/" + environment["location"] + "/clusters/" + environment["cluster"] + "/namespaces/dev/services/redis-cart"
+
+
+CLEANUP_TARGET=cleanup_scope(c.r.read(c.r.ROOT / "deploy/environments.json"))
 CLEANUP_ENDPOINT="127.0.0.1:16379"
-CATALOG_READBACK_GENERATION = "1793972241618167"
 ACCEPTANCE_SCRIPT = "deploy/online-shop/complete-acceptance.py"
 RPC_COMPLETIONS = {
     "cartservice": {"/hipstershop.CartService/" + name for name in ("AddItem","GetCart","EmptyCart")},
@@ -48,38 +56,6 @@ def server_completion(identity, body, sid, spans):
         _, span = spans[parent]
     return span.get("kind") == "RPC_SERVER" and span.get("name") == operation
 
-class CatalogReadback:
-    """Supply the recovered bytes to the unchanged accepted catalog verifier."""
-
-    def __init__(self, cloud):
-        self.cloud = cloud
-        self.token = cloud.token
-        accepted = w.legacy.policy()["accepted_release"]
-        generation = CATALOG_READBACK_GENERATION
-        require(re.fullmatch(r"[1-9][0-9]*", generation) and generation != accepted["candidate_generation"],
-                "invalid_catalog_readback_generation")
-        object_name = ("online-shop/catalog-v1/" + accepted["configuration_revision"] + "/"
-                       + accepted["build_id"] + "/candidate.json")
-        media_url = ("https://storage.googleapis.com/storage/v1/b/" + c.r.policy()["project"]
-                     + "-attestation-source/o/" + urllib.parse.quote(object_name, safe="") + "?alt=media")
-        self.historical_url = media_url + "&generation=" + accepted["candidate_generation"]
-        self.readback_url = media_url + "&generation=" + generation + "&ifGenerationMatch=" + generation
-        self.digest = accepted["candidate_transport_sha256"]
-
-    def request(self, url, body=None, registry=False):
-        if url == self.historical_url and body is None and not registry:
-            raw = self.cloud.request(self.readback_url)
-            require("sha256:" + c.r.sha(raw) == self.digest, "recovered_catalog_transport_hash_mismatch")
-            return raw
-        return self.cloud.request(url, body, registry)
-
-    def build(self, policy, build_id):
-        return self.cloud.build(policy, build_id)
-
-    def image(self, repository, digest):
-        return self.cloud.image(repository, digest)
-
-
 def review_deployed_configuration(revision):
     """Match deployed trust files while allowing this separately reviewed validator."""
     require(re.fullmatch(c.r.SHA, revision or ""), "deployment_revision_required")
@@ -93,12 +69,11 @@ def review_deployed_configuration(revision):
 
 
 def guard(record, value, refs, cloud):
-    cloud = CatalogReadback(cloud)
     proof=c.verify(record,record["configuration_revision"],value,refs,cloud)
     require(proof["status"]=="passed" and len(proof["components"])==11,"incomplete_independent_proof")
     found=c.existing_occurrences(cloud,[x["artifact"] for x in proof["components"]])
     require(all(found[x["artifact"]] for x in proof["components"]),"complete_admission_proof_missing")
-    w.legacy.verify_support(cloud,"projects/"+c.r.policy()["project"]+"/occurrences/2b1c6135-42d3-453a-9942-f473dea60444")
+    w.legacy.verify_support(cloud,w.legacy.collector_occurrence())
 
 def runtime(snapshot,record,revision,value,refs,cloud):
     guard(record,value,refs,cloud)  # Supplied Pod readbacks never define trusted expected state.
@@ -202,6 +177,7 @@ def signals(snapshot,record,since,value,refs,cloud):
     return {"signals":"passed","application_components":sorted(services),"cross_service_edges":len(edges),"native_component_logs":sorted(logged),"redis_native_metrics":True}
 
 def journey(base, output, *, endpoint=False):
+    require(not endpoint or w.endpoint_enabled(),"endpoint_disabled")
     expected="https://shop.runtimeplatforms.dev" if endpoint else "http://127.0.0.1:8080"
     require(base==expected,"frontend_origin_not_approved")
     origin=urllib.parse.urlsplit(expected)
@@ -308,7 +284,7 @@ def main():
             guard(record,value,refs,cloud)
             if args.action=="verify-release":
                 result={"release_verification":"passed","release_set_id":record["release_set_id"],
-                        "catalog_readback_generation":CATALOG_READBACK_GENERATION}
+                        "catalog_readback_generation":w.legacy.accepted_catalog().get("readback_generation") or w.legacy.accepted_catalog()["candidate_generation"]}
             else:
                 result=journey(args.frontend,args.output_dir,endpoint=args.action=="endpoint-journey")
         print(json.dumps(result,sort_keys=True));return 3 if result.get("capacity_ready") is False else 0
