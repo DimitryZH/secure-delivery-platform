@@ -3,8 +3,14 @@
 steps:
   - id: 'verify-and-attest'
     name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
-    entrypoint: 'python3'
+    entrypoint: 'bash'
     args:
+      - '-ceu'
+      - |
+        apt-get update -qq && apt-get install -y -qq python3 >/dev/null
+        command -v gcloud >/dev/null
+        exec python3 "$$@"
+      - '--'
       - 'cloudbuild/scripts/attest-release.py'
       - '--metadata'
       - '${_METADATA_FILE}'

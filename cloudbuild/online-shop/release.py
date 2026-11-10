@@ -236,7 +236,8 @@ def build_request(p, configuration_revision, plan=None, plan_hash=None):
         "steps": [
             {"id": "materialize-verified-inputs", "name": "gcr.io/google.com/cloudsdktool/cloud-sdk:slim",
              "entrypoint": "bash", "args": ["-ceu",
-                 "apt-get update -qq && apt-get install -y -qq git >/dev/null\n"
+                 "apt-get update -qq && apt-get install -y -qq git python3 >/dev/null\n"
+                 "command -v git >/dev/null && command -v python3 >/dev/null\n"
                  "python3 " + SCRIPT + " materialize --expected-plan " + (plan_hash or fingerprint(plan))
                  + " --destination /workspace/catalog-context"], "dir": "/workspace"},
             {"id": "build-catalog", "name": "gcr.io/cloud-builders/docker", "dir": "/workspace",
@@ -437,7 +438,8 @@ def signing_request(p, config, object_uri, candidate_sha):
                        "name": "gcr.io/google.com/cloudsdktool/cloud-sdk:slim", "entrypoint": "bash",
                        "env": ["CLOUDSDK_CORE_PROJECT=" + p["project"], "CLOUDSDK_CORE_ACCOUNT=" + p["signer"].split("/serviceAccounts/")[1]],
                        "dir": "/workspace", "args": ["-ceu",
-                           "apt-get update -qq && apt-get install -y -qq git >/dev/null\n"
+                           "apt-get update -qq && apt-get install -y -qq git python3 >/dev/null\n"
+                           "command -v git >/dev/null && command -v python3 >/dev/null && command -v gcloud >/dev/null && command -v sha256sum >/dev/null\n"
                            "gcloud storage cp '" + object_uri + "' /workspace/catalog-candidate.json\n"
                            "echo '" + candidate_sha.removeprefix("sha256:")
                            + "  /workspace/catalog-candidate.json' | sha256sum -c -\n"
