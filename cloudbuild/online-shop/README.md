@@ -71,8 +71,9 @@ The candidate records:
 
 `release.py` generates a small Cloud Build REST request, rather than extending the
 sample trigger or introducing another infrastructure resource. The request uses
-`source.gitSource` to fetch an exact SDP commit. It installs Git in the preparation
-step, obtains AML objects from the canonical repository at the pinned SHA, loads
+`source.gitSource` to fetch an exact SDP commit. It explicitly installs Git and
+Python 3 in the preparation step, obtains AML objects from the canonical repository
+at the pinned SHA, loads
 the planner from those same objects, validates its full contract, and checks its
 canonical plan against the independently computed expected hash.
 
@@ -256,3 +257,9 @@ Cloud Build API source/result semantics:
 [Build REST reference](https://docs.cloud.google.com/build/docs/api/reference/rest/v1/projects.builds).
 Registry authentication:
 [Artifact Registry access tokens](https://docs.cloud.google.com/artifact-registry/docs/docker/authentication).
+
+## Execution dependencies
+
+The SDK slim image is not assumed to expose `python3`. Catalog/full-shop materializers and SDK-based signers explicitly install Python 3 before invoking their reviewed scripts; Git is installed where immutable source review/materialization uses it. The SDK supplies `gcloud`, Bash runs the bootstrap, and catalog/full signing uses `sha256sum` for candidate transport. Collector tools remain checksum-pinned downloads handled by the existing Python verifier; no additional system tar/curl/OpenSSL executable is required.
+
+Offline regressions check package bootstrap ordering and preserve request identities, source references and bounded timeouts. These request checks do not establish that a container image runs successfully. Local runtime verification requires a working Linux container engine; no new Cloud Build/signing execution is part of this fix.

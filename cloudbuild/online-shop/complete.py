@@ -127,7 +127,8 @@ def build_request(identity, revision, plan):
     return {"source": {"gitSource": {"url": r.SDP + ".git", "revision": revision}}, "serviceAccount": r.policy()["producer"],
         "timeout": "1800s", "options": {"logging": "CLOUD_LOGGING_ONLY"}, "tags": ["complete-shop-v1", identity, revision],
         "steps": [{"id": "materialize-verified-" + identity, "name": "gcr.io/google.com/cloudsdktool/cloud-sdk:slim",
-            "entrypoint": "bash", "dir": "/workspace", "args": ["-ceu", "apt-get update -qq && apt-get install -y -qq git >/dev/null\n"
+            "entrypoint": "bash", "dir": "/workspace", "args": ["-ceu", "apt-get update -qq && apt-get install -y -qq git python3 >/dev/null\n"
+                "command -v git >/dev/null && command -v python3 >/dev/null\n"
                 "python3 " + SCRIPT + " materialize --component " + identity + " --expected-plan " + r.fingerprint(plan)
                 + " --destination /workspace/component-context"]},
             {"id": "build-" + identity, "name": "gcr.io/cloud-builders/docker", "dir": "/workspace", "env": ["DOCKER_BUILDKIT=1"], "args": args}],
@@ -294,7 +295,8 @@ def signing_request(revision, uri, digest):
     return {"source": {"gitSource": {"url": r.SDP + ".git", "revision": revision}}, "serviceAccount": r.policy()["signer"],
         "timeout": "1800s", "options": {"logging": "CLOUD_LOGGING_ONLY"}, "tags": ["complete-shop-sign-v1", revision, digest[7:]],
         "steps": [{"env": ["CLOUDSDK_CORE_PROJECT=" + r.policy()["project"], "CLOUDSDK_CORE_ACCOUNT=" + r.policy()["signer"].split("/serviceAccounts/")[1]], "id": "independent-complete-verification-and-signing", "name": "gcr.io/google.com/cloudsdktool/cloud-sdk:slim", "entrypoint": "bash", "dir": "/workspace",
-            "args": ["-ceu", "apt-get update -qq && apt-get install -y -qq git >/dev/null\n"
+            "args": ["-ceu", "apt-get update -qq && apt-get install -y -qq git python3 >/dev/null\n"
+                "command -v git >/dev/null && command -v python3 >/dev/null && command -v gcloud >/dev/null && command -v sha256sum >/dev/null\n"
                 "gcloud storage cp '" + uri + "' /workspace/complete-candidate.json\n"
                 "echo '" + digest[7:] + "  /workspace/complete-candidate.json' | sha256sum -c -\n"
                 "python3 " + SCRIPT + " attest --configuration-revision " + revision + " --candidate /workspace/complete-candidate.json"]}]}

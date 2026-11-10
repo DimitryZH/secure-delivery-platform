@@ -347,7 +347,8 @@ def signing_request(revision):
             "timeout": "900s", "options": {"logging": "CLOUD_LOGGING_ONLY"},
             "tags": ["collector-support-v1", revision],
             "steps": [{"id": "verify-collector-publisher-content-mirror-and-attest", "name": "gcr.io/google.com/cloudsdktool/cloud-sdk:slim",
-                       "env": ["CLOUDSDK_CORE_PROJECT=" + r.policy()["project"], "CLOUDSDK_CORE_ACCOUNT=" + r.policy()["signer"].split("/serviceAccounts/")[1]], "entrypoint": "bash", "dir": "/workspace", "args": ["-ceu", "apt-get update -qq && apt-get install -y -qq git >/dev/null\n"
+                       "env": ["CLOUDSDK_CORE_PROJECT=" + r.policy()["project"], "CLOUDSDK_CORE_ACCOUNT=" + r.policy()["signer"].split("/serviceAccounts/")[1]], "entrypoint": "bash", "dir": "/workspace", "args": ["-ceu", "apt-get update -qq && apt-get install -y -qq git python3 >/dev/null\n"
+                       "command -v git >/dev/null && command -v python3 >/dev/null && command -v gcloud >/dev/null\n"
                        "python3 " + SCRIPT + " attest --configuration-revision " + revision]}]}
 
 
