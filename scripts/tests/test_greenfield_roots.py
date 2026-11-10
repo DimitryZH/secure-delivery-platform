@@ -25,16 +25,18 @@ class GreenfieldRootsTests(unittest.TestCase):
         self.assertFalse(any(k.endswith((".tfvars", ".tfplan", ".tfstate")) or "/.terraform/" in k for k in files))
         self.assertNotIn("terraform/foundation/shop-endpoint.tf", files)
         self.assertNotIn("terraform/foundation/shop-observability.tf", files)
+        self.assertEqual(files["terraform/foundation/gke-capacity.tf"], (g.REPO / "terraform/foundation/gke-capacity.tf").read_bytes())
 
     def test_freshness_and_unexpected_files_fail_closed(self):
         with tempfile.TemporaryDirectory(dir=g.REPO / ".local-validation") as d, patch.object(g, "ENV", Path(d)):
             g.materialize()
             g.materialize(check=True)
             root = Path(d) / "roots"
-            f = root / "terraform/bootstrap/main.tf"
-            f.write_text("stale")
-            with self.assertRaises(SystemExit): g.materialize(check=True)
-            g.materialize()
+            for source in ["terraform/bootstrap/main.tf", "terraform/foundation/gke-capacity.tf"]:
+                f = root / source
+                f.write_text("stale")
+                with self.assertRaises(SystemExit): g.materialize(check=True)
+                g.materialize()
             (root / "terraform/foundation/terraform.tfvars").write_text("unexpected")
             with self.assertRaises(SystemExit): g.materialize()
 

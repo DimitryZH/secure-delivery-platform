@@ -8,6 +8,7 @@ This directory manages the shared Google Cloud/GKE infrastructure with explicit 
 - `service-accounts.tf`: build/deploy/node/reviewer accounts and scoped bindings.
 - `cloudbuild.tf`: sample image-build trigger.
 - `gke.tf`: cluster and explicitly managed node pools.
+- `gke-capacity.tf`: explicit manual running/paused mode for separately managed pools.
 - `kubernetes.tf`: namespaces/provider retained in the existing combined root.
 - `legacy-default-pool-import.tf`: adoption of an existing default pool in the combined root.
 - `attestation.tf`: separate signer, KMS key, note/attestor, signing IAM, and attestation source bucket.
@@ -33,6 +34,10 @@ terraform validate
 The configured backend is GCS. For an existing reviewed backend, use an ignored `backend.hcl` based on `backend.hcl.example`, with `<TF_STATE_BUCKET>` and the existing `secure-delivery-platform/foundation` prefix. Backend initialization and any initial migration are separately authorized operations; never migrate an established backend as validation.
 
 Use fresh locked plans and explicit apply authorization as described in [Operator Runbook](../../docs/operator-runbook.md#infrastructure-and-credential-safety). State and binary/JSON plans can contain private inputs; never commit them. [Bootstrap](../bootstrap/README.md) owns initial state-bucket setup.
+
+For daily worker downtime, follow [manual GKE pause/resume](../../docs/gke-pause-resume.md).
+Persist the selected `gke_capacity_mode` in the approved private foundation inputs;
+separate-pool roots reject an omitted mode. The cluster and persistent resources remain.
 
 ## Provider quota requirement
 

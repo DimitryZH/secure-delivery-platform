@@ -10,7 +10,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 ENV = REPO / ".local-validation/environments/sdp-gcp"
-FOUNDATION = "main.tf variables.tf versions.tf service-accounts.tf outputs.tf gke.tf complete-shop.tf clouddeploy.tf cloudbuild.tf catalog-verification-iam.tf catalog-runtime.tf binary-authorization.tf attestation.tf dashboard.tf alert-policy.tf.json logging-metrics.tf.json .terraform.lock.hcl".split()
+FOUNDATION = "main.tf variables.tf versions.tf service-accounts.tf outputs.tf gke.tf gke-capacity.tf complete-shop.tf clouddeploy.tf cloudbuild.tf catalog-verification-iam.tf catalog-runtime.tf binary-authorization.tf attestation.tf dashboard.tf alert-policy.tf.json logging-metrics.tf.json .terraform.lock.hcl".split()
 BOOTSTRAP = "main.tf variables.tf versions.tf outputs.tf .terraform.lock.hcl".split()
 QUERIES = "request-rate error-rate p95-latency observed-availability available-replicas desired-replicas".split()
 
