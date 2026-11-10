@@ -14,6 +14,9 @@ import unittest
 REPO = Path(__file__).resolve().parents[2]
 
 class PolicyPlanTest(unittest.TestCase):
+    def setUp(self):
+        (REPO / ".local-validation").mkdir(parents=True, exist_ok=True)
+
     def test_imported_policy_requires_known_attestor_before_creation(self):
         cache = REPO / "terraform/bootstrap/.terraform/providers"
         if not shutil.which("terraform") or not cache.is_dir():

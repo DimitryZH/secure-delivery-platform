@@ -12,6 +12,9 @@ g = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(g)
 
 class GreenfieldRootsTests(unittest.TestCase):
+    def setUp(self):
+        (g.REPO / ".local-validation").mkdir(parents=True, exist_ok=True)
+
     def test_no_legacy_inputs_or_kubernetes_in_cloud(self):
         files = g.expected()
         cloud = b"\n".join(v for k, v in files.items() if k.startswith("terraform/foundation/") and k.endswith(".tf"))

@@ -12,6 +12,9 @@ import unittest
 REPO = Path(__file__).resolve().parents[2]
 
 class WorkloadIdentityOrderingTest(unittest.TestCase):
+    def setUp(self):
+        (REPO / ".local-validation").mkdir(parents=True, exist_ok=True)
+
     def test_binding_waits_for_pool_creating_cluster(self):
         cache = REPO / "terraform/bootstrap/.terraform/providers"
         if not shutil.which("terraform") or not cache.is_dir():
