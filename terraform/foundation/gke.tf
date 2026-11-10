@@ -53,7 +53,7 @@ resource "google_container_node_pool" "existing_default" {
   location   = var.gke_location
   cluster    = google_container_cluster.platform.name
   name       = "default-pool"
-  node_count = var.gke_create_separate_default_pool ? 1 : null
+  node_count = var.gke_create_separate_default_pool ? local.gke_managed_pool_node_count : null
 
   upgrade_settings {
     max_surge       = 1
@@ -71,6 +71,10 @@ resource "google_container_node_pool" "existing_default" {
 
   lifecycle {
     prevent_destroy = true
+    precondition {
+      condition     = var.gke_create_separate_default_pool ? var.gke_capacity_mode != null : var.gke_capacity_mode != "paused"
+      error_message = "Separate-pool roots require explicit gke_capacity_mode in private inputs; paused is unsupported for historical default-pool adoption."
+    }
   }
 
   depends_on = [google_container_cluster.platform]

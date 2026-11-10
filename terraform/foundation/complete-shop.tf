@@ -5,7 +5,7 @@ resource "google_container_node_pool" "complete_shop" {
   location   = var.gke_location
   cluster    = google_container_cluster.platform.name
   name       = "shop-dev-capacity"
-  node_count = 1
+  node_count = local.gke_managed_pool_node_count
 
   upgrade_settings {
     max_surge       = 1
