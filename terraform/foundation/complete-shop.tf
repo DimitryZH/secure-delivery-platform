@@ -7,6 +7,11 @@ resource "google_container_node_pool" "complete_shop" {
   name       = "shop-dev-capacity"
   node_count = 1
 
+  upgrade_settings {
+    max_surge       = 1
+    max_unavailable = 0
+  }
+
   node_config {
     machine_type    = "e2-standard-4"
     disk_size_gb    = 50

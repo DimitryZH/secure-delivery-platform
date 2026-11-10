@@ -1,5 +1,7 @@
 # Catalog deployment in dev
 
+The active target and accepted catalog are governed by the [reviewed binding and stage gates](../../cloudbuild/online-shop/README.md#reviewed-environment-binding-and-stage-gates). Recorded live results below belong to their original immutable configuration; they do not establish acceptance for another binding.
+
 [Complete application implementation (#100)](complete-README.md) has a separate versioned profile, Redis decision and review-only validation.
 
 Implements the first stage of [#93](https://github.com/DimitryZH/secure-delivery-platform/issues/93).

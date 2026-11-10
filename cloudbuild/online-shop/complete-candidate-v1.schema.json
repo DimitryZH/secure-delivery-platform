@@ -46,7 +46,7 @@
                   "const": "adservice"
                 },
                 "repository": {
-                  "const": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-adservice"
+                  "const": "us-central1-docker.pkg.dev/sdp-gcp/secure-delivery/online-shop-adservice"
                 },
                 "configuration": {
                   "properties": {
@@ -70,7 +70,7 @@
                   "const": "cartservice"
                 },
                 "repository": {
-                  "const": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-cartservice"
+                  "const": "us-central1-docker.pkg.dev/sdp-gcp/secure-delivery/online-shop-cartservice"
                 },
                 "configuration": {
                   "properties": {
@@ -94,7 +94,7 @@
                   "const": "checkoutservice"
                 },
                 "repository": {
-                  "const": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-checkoutservice"
+                  "const": "us-central1-docker.pkg.dev/sdp-gcp/secure-delivery/online-shop-checkoutservice"
                 },
                 "configuration": {
                   "properties": {
@@ -118,7 +118,7 @@
                   "const": "currencyservice"
                 },
                 "repository": {
-                  "const": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-currencyservice"
+                  "const": "us-central1-docker.pkg.dev/sdp-gcp/secure-delivery/online-shop-currencyservice"
                 },
                 "configuration": {
                   "properties": {
@@ -142,7 +142,7 @@
                   "const": "emailservice"
                 },
                 "repository": {
-                  "const": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-emailservice"
+                  "const": "us-central1-docker.pkg.dev/sdp-gcp/secure-delivery/online-shop-emailservice"
                 },
                 "configuration": {
                   "properties": {
@@ -166,7 +166,7 @@
                   "const": "frontend"
                 },
                 "repository": {
-                  "const": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-frontend"
+                  "const": "us-central1-docker.pkg.dev/sdp-gcp/secure-delivery/online-shop-frontend"
                 },
                 "configuration": {
                   "properties": {
@@ -190,7 +190,7 @@
                   "const": "paymentservice"
                 },
                 "repository": {
-                  "const": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-paymentservice"
+                  "const": "us-central1-docker.pkg.dev/sdp-gcp/secure-delivery/online-shop-paymentservice"
                 },
                 "configuration": {
                   "properties": {
@@ -214,7 +214,7 @@
                   "const": "productcatalogservice"
                 },
                 "repository": {
-                  "const": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-productcatalogservice"
+                  "const": "us-central1-docker.pkg.dev/sdp-gcp/secure-delivery/online-shop-productcatalogservice"
                 },
                 "configuration": {
                   "properties": {
@@ -238,7 +238,7 @@
                   "const": "recommendationservice"
                 },
                 "repository": {
-                  "const": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-recommendationservice"
+                  "const": "us-central1-docker.pkg.dev/sdp-gcp/secure-delivery/online-shop-recommendationservice"
                 },
                 "configuration": {
                   "properties": {
@@ -262,7 +262,7 @@
                   "const": "shippingservice"
                 },
                 "repository": {
-                  "const": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/online-shop-shippingservice"
+                  "const": "us-central1-docker.pkg.dev/sdp-gcp/secure-delivery/online-shop-shippingservice"
                 },
                 "configuration": {
                   "properties": {
@@ -279,7 +279,7 @@
           "const": {
             "id": "redis-cart",
             "role": "dependency",
-            "repository": "us-central1-docker.pkg.dev/sre-platform-staging-507220/secure-delivery/redis-cart",
+            "repository": "us-central1-docker.pkg.dev/sdp-gcp/secure-delivery/redis-cart",
             "digest": "sha256:1cf73a2f04808e55a8bd2f5706c2aa0ebb0f71938f93deb7af79f48311cd5cb9",
             "config_digest": "sha256:98c6ca8f397f86e469be752c3e7ed5eb8b17f2479840cb69a2e413037038e9f4",
             "platform": "linux/amd64",
@@ -394,7 +394,7 @@
           "type": "string"
         },
         "producer": {
-          "const": "projects/sre-platform-staging-507220/serviceAccounts/secure-delivery-build@sre-platform-staging-507220.iam.gserviceaccount.com"
+          "const": "projects/sdp-gcp/serviceAccounts/secure-delivery-build@sdp-gcp.iam.gserviceaccount.com"
         }
       }
     },

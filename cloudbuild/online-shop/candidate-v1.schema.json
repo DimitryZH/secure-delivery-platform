@@ -5,7 +5,7 @@
   "additionalProperties": false,
   "required": ["version", "application", "profile", "profile_sha256", "source", "configuration", "plan", "build", "components", "release_set_id"],
   "properties": {
-    "version": {"const": 1},
+    "version": {"type": "integer", "const": 1},
     "application": {"const": "online-shop"},
     "profile": {"const": "catalog-v1"},
     "profile_sha256": {"$ref": "#/$defs/digest"},
@@ -43,9 +43,9 @@
       "type": "object", "additionalProperties": false,
       "required": ["name", "id", "producer"],
       "properties": {
-        "name": {"type": "string", "pattern": "^projects/[a-z0-9-]+/locations/us-central1/builds/[0-9a-f-]+$"},
+        "name": {"type": "string", "pattern": "^projects/sdp-gcp/locations/us-central1/builds/[0-9a-f-]+$"},
         "id": {"type": "string", "pattern": "^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$"},
-        "producer": {"type": "string", "pattern": "^projects/[a-z0-9-]+/serviceAccounts/secure-delivery-build@[a-z0-9-]+[.]iam[.]gserviceaccount[.]com$"}
+        "producer": {"const": "projects/sdp-gcp/serviceAccounts/secure-delivery-build@sdp-gcp.iam.gserviceaccount.com"}
       }
     },
     "components": {
@@ -55,7 +55,7 @@
         "required": ["id", "repository", "digest", "platform", "config_digest"],
         "properties": {
           "id": {"const": "productcatalogservice"},
-          "repository": {"type": "string", "pattern": "^us-central1-docker[.]pkg[.]dev/[a-z0-9-]+/secure-delivery/online-shop-productcatalogservice$"},
+          "repository": {"const": "us-central1-docker.pkg.dev/sdp-gcp/secure-delivery/online-shop-productcatalogservice"},
           "digest": {"$ref": "#/$defs/digest"},
           "platform": {"const": "linux/amd64"},
           "config_digest": {"$ref": "#/$defs/digest"}

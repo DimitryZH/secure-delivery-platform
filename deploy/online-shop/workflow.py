@@ -32,7 +32,59 @@ TRUST_FILES = (*r.TRUSTED_FILES, "deploy/online-shop/workflow.py", "deploy/onlin
 
 
 def policy():
-    return r.read(HERE / "policy.json")
+    q = r.read(HERE / "policy.json")
+    require(type(q.get("version")) is int and q["version"] == 1, "invalid_deployment_policy_version")
+    require(q.get("binding") == r.binding()["id"], "deployment_binding_mismatch")
+    require(q.get("target") == "dev" and q.get("pipeline") == "catalog-dev", "deployment_target_mismatch")
+    return q
+
+
+def accepted_catalog():
+    """Full delivery needs reviewed evidence; catalog production does not."""
+    q = policy().get("accepted_release")
+    require(type(q) is dict, "accepted_catalog_pending")
+    require(q.get("binding") == r.binding()["id"] and q.get("project") == r.policy()["project"], "accepted_catalog_binding_mismatch")
+    for name, pattern in (("configuration_revision", r.SHA), ("build_id", r.UUID),
+                          ("signing_build_id", r.UUID), ("release_set_id", r.DIGEST),
+                          ("manifest_digest", r.DIGEST), ("candidate_transport_sha256", r.DIGEST),
+                          ("candidate_generation", r"[1-9][0-9]*")):
+        require(type(q.get(name)) is str and re.fullmatch(pattern, q[name]), "accepted_catalog_evidence_missing")
+    require(type(q.get("occurrence")) is str and re.fullmatch("projects/" + re.escape(r.policy()["project"]) + r"/occurrences/[A-Za-z0-9_-]+", q["occurrence"]), "accepted_catalog_occurrence_mismatch")
+    generation = q.get("readback_generation", q["candidate_generation"])
+    require(type(generation) is str and re.fullmatch(r"[1-9][0-9]*", generation), "invalid_catalog_readback_generation")
+    return q
+
+
+def collector_occurrence():
+    occurrence = policy().get("collector_occurrence")
+    require(type(occurrence) is str and re.fullmatch("projects/" + re.escape(r.policy()["project"])
+            + r"/occurrences/[A-Za-z0-9_-]+", occurrence), "accepted_collector_pending")
+    return occurrence
+
+
+def collector_configuration():
+    q = r.read(HERE / "collector.json")
+    attributes = q["processors"]["resource/catalog"]["attributes"]
+    accounts = [x["value"] for x in attributes if x["key"] == "cloud.account.id"]
+    require(accounts == [r.policy()["project"]] and q["exporters"]["googlecloud"]["project"] == r.policy()["project"],
+            "collector_export_binding_mismatch")
+    return q
+
+
+def collector_text(record):
+    collector_configuration()
+    text = (HERE / "collector.json").read_text(encoding="utf-8").replace("\r\n", "\n")
+    return text.replace("${RELEASE_SET_ID}", record["release_set_id"]).replace("${COMPONENT_DIGEST}", record["components"][0]["digest"])
+
+
+def catalog_bytes(cloud):
+    q = accepted_catalog()
+    name = "online-shop/catalog-v1/" + q["configuration_revision"] + "/" + q["build_id"] + "/candidate.json"
+    generation = q.get("readback_generation", q["candidate_generation"])
+    raw = cloud.request("https://storage.googleapis.com/storage/v1/b/" + r.binding()["candidate_bucket"] + "/o/"
+        + urllib.parse.quote(name, safe="") + "?alt=media&generation=" + generation + "&ifGenerationMatch=" + generation)
+    require("sha256:" + r.sha(raw) == q["candidate_transport_sha256"], "accepted_candidate_transport_unavailable")
+    return raw
 
 
 def reviewed(revision):
@@ -54,8 +106,8 @@ def candidate_policy(record, plan_ref=None):
         # The accepted identity freezes the full original plan as well. Live
         # preparation additionally supplies its independently reconstructed ref.
         plan_ref = record["plan"]
-    p, q = r.policy(), policy()
-    accepted = q["accepted_release"]
+    p = r.policy()
+    accepted = accepted_catalog()
     r.validate_candidate(record, p, accepted["configuration_revision"], plan_ref)
     require(record["release_set_id"] == accepted["release_set_id"]
             and record["build"]["id"] == accepted["build_id"]
@@ -75,7 +127,8 @@ def trust(cloud, artifact, occurrence):
 
 
 def verify_application(record, occurrence, cloud):
-    accepted = policy()["accepted_release"]
+    accepted = accepted_catalog()
+    require(occurrence == accepted["occurrence"], "unaccepted_catalog_occurrence")
     with r.fetched(r.AML, r.REVISION) as source:
         plan = source.plan()
         ref = r.plan_reference(source, plan)
@@ -101,9 +154,7 @@ def verify_application(record, occurrence, cloud):
     require(signer.get("options") in (expected["options"], {**expected["options"], "pool": {}, "workerRelease": "legacy"})
             and not any(signer.get(k) for k in ("images", "artifacts", "substitutions", "secrets", "availableSecrets", "dependencies", "gitConfig")),
             "accepted_signing_configuration_mismatch")
-    transported = cloud.request("https://storage.googleapis.com/storage/v1/b/" + r.policy()["project"] + "-attestation-source/o/"
-        + urllib.parse.quote(uri.split("-attestation-source/", 1)[1].split("#")[0], safe="")
-        + "?alt=media&generation=" + accepted["candidate_generation"])
+    transported = catalog_bytes(cloud)
     require("sha256:" + r.sha(transported) == accepted["candidate_transport_sha256"] and r.decode(transported) == record,
             "accepted_candidate_transport_unavailable")
     return result
@@ -121,15 +172,16 @@ def annotations(record, revision):
         "release-set-id": record["release_set_id"], "application-revision": record["source"]["revision"],
         "producing-configuration": record["configuration"]["revision"], "deployment-configuration": revision,
         "build-id": record["build"]["id"], "image-digest": record["components"][0]["digest"],
-        "environment": "dev", "collector-config-sha256": r.sha((HERE / "collector.json").read_bytes().replace(b"\r\n", b"\n"))}.items()}
+        "environment": "dev", "collector-config-sha256": r.sha(collector_text(record).encode())}.items()}
 
 
 def render(record, revision):
+    collector_configuration()
     require(re.fullmatch(r.SHA, revision or ""), "invalid_deployment_revision")
     candidate_policy(record, record["plan"])
     p = r.policy()
     meta = annotations(record, revision)
-    config_text = (HERE / "collector.json").read_text(encoding="utf-8").replace("\r\n", "\n")
+    config_text = collector_text(record)
     # Only reviewed constants, never candidate-supplied executable configuration.
     config_name = "catalog-collector-" + r.sha(config_text.encode())[:12]
     security = {"allowPrivilegeEscalation": False, "readOnlyRootFilesystem": True,

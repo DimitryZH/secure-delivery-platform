@@ -9,6 +9,29 @@ in [`validation.json`](validation.json) awaits review; its scope and limits appl
 The existing sample-service build, metadata, verifier, signer and trigger are unchanged.
 No deployment, rendering, preflight, Redis, Collector or telemetry infrastructure is included.
 
+## Reviewed environment binding and stage gates
+
+[release-binding.json](../../deploy/release-binding.json) is the reviewed target contract. The executable policy cross-checks it against [environments.json](../../deploy/environments.json), including project number, registry, distinct build/signing identities, deployment identity and fixed KMS/attestor/note/storage names. Both files and the candidate schema participate in immutable main-ancestry/trust-file checks. There is no candidate-selected environment or private policy override. Local CLI execution must explicitly set `CLOUDSDK_CORE_ACCOUNT`, `CLOUDSDK_CORE_PROJECT` and the approved `CLOUDSDK_ACTIVE_CONFIG_NAME`; select the intended installed SDK configuration without changing another configuration. Signing requests explicitly select the attestation account and project inside their reviewed step. Never rely on an unrelated active CLI configuration.
+
+Catalog production is the bootstrap release path: request/build, authoritative candidate creation, independent verification and separate signing do not require a previously accepted catalog. In contrast, complete-shop builds and verification require a reviewed `accepted_release` in [deployment policy](../../deploy/online-shop/policy.json). It is initially `null`. After successful independent verification/signature readback, review the actual binding/project, producing configuration, build/signing IDs, release-set ID, manifest digest, original candidate generation/hash and exact occurrence before filling it. Do not invent missing evidence. Collector deployment similarly requires its independently verified `collector_occurrence`; it is initially `null`. These fields are acceptance decisions, not runtime CLI inputs.
+
+Historical validation remains evidence for its recorded project, URI and source revisions only. To interpret an older release, use its original immutable configuration and contract from Git; do not substitute active project names into a historical candidate, generation, signing request or attestation. The current validator rejects such mixtures even if candidate identity is recomputed. Historical successful runs below do not establish health or trust in the active binding.
+
+### Protect candidate evidence before signing
+
+After independent verification, publish the exact UTF-8 bytes create-only. Record the returned generation and SHA-256, then protect **that generation before submitting signing or recording acceptance**. Under the explicitly selected account/configuration/project, use:
+
+```sh
+gcloud storage cp <PRIVATE_CANDIDATE_JSON> gs://<CANDIDATE_BUCKET>/<EXACT_OBJECT_NAME> --if-generation-match=0
+gcloud storage objects update 'gs://<CANDIDATE_BUCKET>/<EXACT_OBJECT_NAME>#<GENERATION>' --temporary-hold --if-generation-match=<GENERATION>
+gcloud storage objects describe 'gs://<CANDIDATE_BUCKET>/<EXACT_OBJECT_NAME>#<GENERATION>' --format=json
+gcloud storage cat 'gs://<CANDIDATE_BUCKET>/<EXACT_OBJECT_NAME>#<GENERATION>'
+```
+
+Capture metadata/media privately; require `temporaryHold=true`, matching generation, size and SHA-256 of readback bytes before signing with the generation-pinned URI. A `412` or uncertain mutation requires read-only recovery, never overwrite/retry blindly. An object hold prevents lifecycle deletion while held; see [object holds](https://docs.cloud.google.com/storage/docs/holding-objects) and [generation preconditions](https://docs.cloud.google.com/sdk/gcloud/reference/storage/objects/update). No bucket lifecycle change or hold is performed by rendering/verification. The operator needs existing object update permission; missing permission is a blocker, not authorization to broaden IAM.
+
+Retain accepted candidates for current and rollback releases. Release a hold only after an explicit retirement review confirms no retained release/signing/readback depends on the generation; unaccepted temporary objects remain eligible for normal lifecycle cleanup. Keep original signing generation immutable. If recovery is ever needed, a separately reviewed `readback_generation` may select restored bytes with the **original** transport SHA-256, while the signing build continues to be checked against its original URI/generation.
+
 ## Contract and identity
 
 [`catalog-v1.json`](catalog-v1.json) is the environment-independent allowed profile:

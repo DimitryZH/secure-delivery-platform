@@ -9,6 +9,8 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
+from release_fixtures import accepted_policy
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "monitoring/online-shop/diagnose-scheduled.py"
@@ -21,7 +23,7 @@ VERSION = "a" * 64
 
 def fixture():
     c = d.c
-    accepted = c.legacy.policy()["accepted_release"]
+    accepted = accepted_policy(c.r)["accepted_release"]
     rows = []
     for i, identity in enumerate(c.APPS):
         catalog = identity == "productcatalogservice"
@@ -46,7 +48,7 @@ def fixture():
         {"labels": {"execution_id": EXECUTION}, "jsonPayload": {"google.monitoring.v3.UptimeCheckResult": {
             "syntheticResult": {"syntheticGenericResultV1": {"ok": True},
                 "runtimeMetadata": {"K_REVISION": "test-revision", "K_SERVICE": "shop-dev-browse"}}}}}]
-    context = {"project_id": project, "project_number": "465837787797", "scheme": "EXTERNAL_MANAGED",
+    context = {"project_id": project, "project_number": c.r.policy()["project_number"], "scheme": "EXTERNAL_MANAGED",
         "zone": "global", "hostname": "shop.runtimeplatforms.dev", "address": "8.233.86.84",
         "source_ip": "192.0.2.1", "server_ip": "10.0.0.2", "backend_pod_name": "frontend-test-pod", "backend_service_name": "frontend-backend",
         "forwarding_rule_name": "edge-443", "target_proxy_name": "edge-proxy", "url_map_name": "edge-map"}
@@ -74,7 +76,7 @@ def fixture():
                 "userAgent": d.MARKER, "remoteIp": context["source_ip"], "serverIp": context["server_ip"]},
             "resource": {"type": "http_load_balancer", "labels": {k:context[k] for k in
                 ("project_id", "zone", "backend_service_name", "forwarding_rule_name", "target_proxy_name", "url_map_name")}},
-            "jsonPayload": {"backendTargetProjectNumber": "projects/465837787797",
+            "jsonPayload": {"backendTargetProjectNumber": "projects/" + c.r.policy()["project_number"],
                 "statusDetails": "response_sent_by_backend", "enforcedSecurityPolicy": {"name": "shop-dev-edge",
                     "priority": 2000, "outcome": "ACCEPT", "configuredAction": "THROTTLE",
                     "rateLimitAction": {"outcome": "RATE_LIMIT_THRESHOLD_CONFORM", "key": context["source_ip"]}}}})
@@ -91,6 +93,10 @@ def fixture():
 
 
 class CorrelationTests(unittest.TestCase):
+    def setUp(self):
+        guard=patch.object(d.c.legacy,"policy",return_value=accepted_policy(d.c.r))
+        guard.start();self.addCleanup(guard.stop)
+
     def run_diagnostic(self, value):
         return d.diagnose(value, EXECUTION, VERSION, value["candidate"]["release_set_id"])
 
@@ -150,9 +156,11 @@ class CorrelationTests(unittest.TestCase):
             snapshot = Path(directory)/"snapshot.json";snapshot.write_text(json.dumps(data), encoding="utf-8")
             args = [sys.executable, str(SCRIPT), "--snapshot", str(snapshot), "--execution-id", EXECUTION,
                     "--monitor-version", VERSION, "--release-set-id", data["candidate"]["release_set_id"]]
+            # The real CLI must not reinterpret fixture evidence as accepted state.
             result = subprocess.run(args, capture_output=True, timeout=20)
-            self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
+            self.assertEqual(result.returncode, 1)
             self.assertNotIn(b"192.0.2.1", result.stdout)
+            self.assertEqual(self.run_diagnostic(data)["recorded_execution_acceptance"], "passed")
             args[args.index(EXECUTION)] = "other-execution"
             result = subprocess.run(args, capture_output=True, timeout=20)
             self.assertEqual(result.returncode, 1)

@@ -32,6 +32,7 @@ ACCEPT = ", ".join(("application/vnd.oci.image.index.v1+json", "application/vnd.
 def policy():
     document = r.read(ROOT / "deploy/online-shop/policy.json")
     require(type(document.get("version")) is int and document["version"] == 1, "invalid_support_policy_version")
+    require(document.get("binding") == r.binding()["id"], "collector_binding_mismatch")
     c = document["collector"]
     require(set(c) == {"version", "upstream_repository", "index_digest", "manifest_digest", "config_digest", "platform",
                        "mirror_image", "certificate_identity", "certificate_oidc_issuer"}, "invalid_collector_policy")
@@ -346,7 +347,7 @@ def signing_request(revision):
             "timeout": "900s", "options": {"logging": "CLOUD_LOGGING_ONLY"},
             "tags": ["collector-support-v1", revision],
             "steps": [{"id": "verify-collector-publisher-content-mirror-and-attest", "name": "gcr.io/google.com/cloudsdktool/cloud-sdk:slim",
-                       "entrypoint": "bash", "dir": "/workspace", "args": ["-ceu", "apt-get update -qq && apt-get install -y -qq git >/dev/null\n"
+                       "env": ["CLOUDSDK_CORE_PROJECT=" + r.policy()["project"], "CLOUDSDK_CORE_ACCOUNT=" + r.policy()["signer"].split("/serviceAccounts/")[1]], "entrypoint": "bash", "dir": "/workspace", "args": ["-ceu", "apt-get update -qq && apt-get install -y -qq git >/dev/null\n"
                        "python3 " + SCRIPT + " attest --configuration-revision " + revision]}]}
 
 

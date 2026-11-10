@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "id": "sdp-dev-v1",
+  "project": "sdp-gcp",
+  "project_number": "738317279206",
+  "region": "us-central1",
+  "registry": "us-central1-docker.pkg.dev/sdp-gcp/secure-delivery",
+  "producer": "projects/sdp-gcp/serviceAccounts/secure-delivery-build@sdp-gcp.iam.gserviceaccount.com",
+  "signer": "projects/sdp-gcp/serviceAccounts/secure-delivery-attestation@sdp-gcp.iam.gserviceaccount.com",
+  "deployer": "secure-delivery-deploy@sdp-gcp.iam.gserviceaccount.com",
+  "key_version": "projects/sdp-gcp/locations/us-central1/keyRings/secure-delivery-attestation/cryptoKeys/verification/cryptoKeyVersions/1",
+  "attestor": "projects/sdp-gcp/attestors/secure-delivery-verification",
+  "note": "projects/sdp-gcp/notes/secure-delivery-verification",
+  "candidate_bucket": "sdp-gcp-attestation-source",
+  "clouddeploy_bucket": "sdp-gcp-clouddeploy",
+  "cluster": "secure-delivery-platform",
+  "location": "us-central1-a"
+}

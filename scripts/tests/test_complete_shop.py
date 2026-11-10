@@ -17,6 +17,7 @@ import time
 import unittest
 import urllib.request
 from unittest.mock import Mock,patch
+from release_fixtures import accepted_policy
 
 ROOT=Path(__file__).resolve().parents[2]
 def load(name,path):
@@ -28,8 +29,24 @@ REV='d'*40
 RESOURCE='projects/'+c.r.policy()['project']+'/locations/us-central1/deliveryPipelines/catalog-dev/releases/complete-review-1'
 CONTEXT={'release_resource':RESOURCE,'target_resource':'projects/'+c.r.policy()['project']+'/locations/us-central1/targets/dev'}
 
+class CleanupScopeTests(unittest.TestCase):
+    def test_scope_uses_approved_environment_without_historical_project_literal(self):
+        environment={"project":"fixture-project","location":"us-central1-a","cluster":"secure-delivery-platform"}
+        self.assertEqual(a.cleanup_scope(environment),"projects/fixture-project/locations/us-central1-a/clusters/secure-delivery-platform/namespaces/dev/services/redis-cart")
+        self.assertEqual(a.CLEANUP_TARGET,a.cleanup_scope(c.r.read(c.r.ROOT/"deploy/environments.json")))
+        for overrides in ({"project":""},{"project":True},{"project":"../foreign"},{"location":"us-east1-b"},{"cluster":"foreign-cluster"}):
+            with self.subTest(overrides=overrides), self.assertRaises(ValueError):
+                a.cleanup_scope({**environment,**overrides})
+
+
 class CompleteTests(unittest.TestCase):
     def setUp(self):
+        for legacy in (c.legacy, w.legacy, a.w.legacy):
+            gate=patch.object(legacy,'policy',return_value=accepted_policy(legacy.r))
+            gate.start();self.addCleanup(gate.stop)
+        for workflow in (w,a.w):
+            gate=patch.object(workflow,'endpoint_enabled',return_value=True)
+            gate.start();self.addCleanup(gate.stop)
         self.plans={};self.refs={};rows=[]
         accepted=c.legacy.policy()['accepted_release']
         for i,identity in enumerate(c.APPS):
@@ -48,6 +65,25 @@ class CompleteTests(unittest.TestCase):
         for release in (c,w.c,a.c):
             gate=patch.object(release.redis,'verify_chain',side_effect=ValueError('redis_publication_chain_pending'))
             gate.start();self.addCleanup(gate.stop)
+
+    def test_explicit_endpoint_off_inventory_and_preflight_keep_non_edge_guards(self):
+        with patch.object(w, 'endpoint_enabled', return_value=False):
+            docs=w.render(self.record,REV,self.refs)
+            self.assertEqual(len(docs),39)
+            self.assertFalse(any(d['kind'] in ('Gateway','HTTPRoute','GCPBackendPolicy','GCPGatewayPolicy','HealthCheckPolicy') for d in docs))
+            now,snapshot=self.preflight_fixture(REV)
+            snapshot.pop('endpoint')
+            for key in ('gateway_api_ready','endpoint_infrastructure_reviewed','dns_delegation_reviewed',
+                        'certificate_active','armor_preview_policy_ready','frontend_only_exposure'):
+                snapshot['target'].pop(key)
+            with patch.object(w,'gateway_dry_run') as dry_run:
+                self.assertEqual(w.preflight(snapshot,self.record,REV,self.refs,RESOURCE,Mock())['decision'],'READY')
+                dry_run.assert_not_called()
+            snapshot['rendered_documents'] += w.endpoint_resources(self.record,REV)
+            self.assertEqual(w.evaluate(snapshot,self.record,REV,self.refs,RESOURCE,now)['decision'],'BLOCKED')
+            snapshot['rendered_documents']=w.rendered(self.record,REV,self.refs,CONTEXT)
+            snapshot['admission']['exact_attestor_required']=False
+            self.assertEqual(w.evaluate(snapshot,self.record,REV,self.refs,RESOURCE,now)['decision'],'BLOCKED')
 
     def signal_fixture(self):
         stamp=datetime.now(timezone.utc).isoformat().replace('+00:00','Z');trace='a'*32
@@ -469,7 +505,7 @@ class CompleteTests(unittest.TestCase):
             for overrides in ({'session':'foreign-session'},{'session':'issue100-'+'b'*32},
                 {'session':record['session']+'\r\nFLUSHALL'},{'redis':'redis-cart:6379'},
                 {'redis':'127.0.0.1:6379'},{'redis-target':a.CLEANUP_TARGET.replace('/dev/','/prod/')},
-                {'redis-target':a.CLEANUP_TARGET.replace('sre-platform-staging-507220','other-project')},
+                {'redis-target':a.CLEANUP_TARGET.replace(c.r.policy()['project'],'other-project')},
                 {'redis-target':a.CLEANUP_TARGET.replace('/redis-cart','/other-redis')},
                 {'redis-target':None},{'session-record':str(Path(tmp)/'missing.json')}):
                 with self.subTest(overrides=overrides),patch.object(a.socket,'create_connection') as connection:
@@ -684,40 +720,23 @@ class CompleteTests(unittest.TestCase):
                      patch.object(a.c,'plans',return_value=self.plans),patch.object(a.c,'references',return_value=self.refs),patch.object(a.c.r,'Cloud') as cloud:
                     self.assertEqual(a.main(),3);cloud.assert_not_called()
 
-    def test_catalog_recovery_readback_uses_only_new_generation_and_original_hash(self):
-        policy=copy.deepcopy(a.w.legacy.policy())
-        accepted=policy['accepted_release']
+    def test_catalog_recovery_readback_pins_new_generation_preserves_signing_identity(self):
+        policy=copy.deepcopy(a.w.legacy.policy());accepted=policy['accepted_release']
+        original=accepted['candidate_generation'];accepted['readback_generation']='987654321'
         raw=c.r.canonical({'release_set_id':accepted['release_set_id']})
         accepted['candidate_transport_sha256']='sha256:'+c.r.sha(raw)
-        original=accepted['candidate_generation']
-        self.assertEqual(original,'1793303013750824')
-        cloud=Mock(token='offline-only')
-        with patch.object(a.w.legacy,'policy',return_value=policy), \
-                patch.object(a.w.legacy,'verify_application') as verify:
-            transport=a.CatalogReadback(cloud)
-            cloud.request.return_value=raw
-            self.assertEqual(a.c.catalog_candidate(transport),json.loads(raw))
-            self.assertIn('&generation='+a.CATALOG_READBACK_GENERATION+'&ifGenerationMatch='+a.CATALOG_READBACK_GENERATION,
-                          cloud.request.call_args.args[0])
-            self.assertNotIn(original,cloud.request.call_args.args[0])
-            verify.assert_called_once()
-            self.assertEqual(policy['accepted_release']['candidate_generation'],original)
-            verify.reset_mock()
-            for generation,data,reason in (
-                ('99999',OSError('generation_missing'),'generation_missing'),
-                (a.CATALOG_READBACK_GENERATION,b'tampered','recovered_catalog_transport_hash_mismatch'),
-            ):
-                with self.subTest(generation=generation),patch.object(a,'CATALOG_READBACK_GENERATION',generation):
-                    cloud.request.reset_mock()
-                    cloud.request.side_effect=data if isinstance(data,Exception) else None
-                    cloud.request.return_value=data
-                    with self.assertRaisesRegex((OSError,ValueError),reason):
-                        a.c.catalog_candidate(a.CatalogReadback(cloud))
-                    cloud.request.assert_called_once()
-                    verify.assert_not_called()
-            with patch.object(a,'CATALOG_READBACK_GENERATION',original):
-                with self.assertRaisesRegex(ValueError,'invalid_catalog_readback_generation'):
-                    a.CatalogReadback(cloud)
+        cloud=Mock(token='offline-only');cloud.request.return_value=raw
+        with patch.object(a.w.legacy,'policy',return_value=policy), patch.object(a.w.legacy,'verify_application') as verify:
+            self.assertEqual(a.c.catalog_candidate(cloud),json.loads(raw))
+            self.assertIn('&generation=987654321&ifGenerationMatch=987654321',cloud.request.call_args.args[0])
+            self.assertEqual(accepted['candidate_generation'],original)
+            verify.assert_called_once_with(json.loads(raw),accepted['occurrence'],cloud)
+            cloud.request.return_value=b'tampered';verify.reset_mock()
+            with self.assertRaisesRegex(ValueError,'accepted_candidate_transport_unavailable'):a.c.catalog_candidate(cloud)
+            verify.assert_not_called()
+            accepted['readback_generation']='invalid';cloud.reset_mock()
+            with self.assertRaisesRegex(ValueError,'invalid_catalog_readback_generation'):a.c.catalog_candidate(cloud)
+            cloud.request.assert_not_called()
 
     def test_separate_validator_still_requires_compatible_deployed_trust_files(self):
         source=Mock()

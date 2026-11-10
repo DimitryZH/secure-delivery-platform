@@ -20,6 +20,10 @@ resource "google_service_account_iam_member" "catalog_collector_identity" {
   service_account_id = google_service_account.catalog_telemetry.name
   role               = "roles/iam.workloadIdentityUser"
   member             = "serviceAccount:${var.project_id}.svc.id.goog[dev/catalog-collector]"
+
+  # GKE creates the managed workload pool; the principal string alone has no
+  # dependency on cluster creation in a new project.
+  depends_on = [google_container_cluster.platform]
 }
 
 # Already enabled in the inspected project; declare lifecycle without disabling it.

@@ -54,7 +54,7 @@ def meta(record, revision, identity, digest):
         "application-revision":c.r.REVISION}.items()}
 
 def collector_config(record):
-    q = copy.deepcopy(c.r.read(HERE / "collector.json"))
+    q = copy.deepcopy(legacy.collector_configuration())
     q["receivers"] = {"otlp": q["receivers"]["otlp"]}
     q["processors"] = {"memory_limiter":{"check_interval":"1s","limit_mib":512,"spike_limit_mib":64}, "batch":{"timeout":"1s","send_batch_size":128}}
     # pdata's inactive numeric oneof getter returns zero. Checking value_int
@@ -75,11 +75,11 @@ def collector_config(record):
         attributes = [{"key":k,"value":v,"action":"upsert"} for k,v in {
             "service.name":identity,"service.namespace":"online-shop","service.version":c.r.REVISION if row["role"] == "application" else c.redis_policy()["redis_version"],
             "deployment.environment.name":"dev","release_set_id":record["release_set_id"],"component_digest":row["digest"]}.items()]
-        attributes += [a for a in c.r.read(HERE / "collector.json")["processors"]["resource/catalog"]["attributes"]
+        attributes += [a for a in legacy.collector_configuration()["processors"]["resource/catalog"]["attributes"]
                        if a["key"].startswith(("cloud.","k8s."))]
         q["processors"]["resource/" + identity] = {"attributes":attributes}
         container = "catalog" if identity == "productcatalogservice" else "redis" if identity == "redis-cart" else "server"
-        receiver = copy.deepcopy(c.r.read(HERE / "collector.json")["receivers"]["file_log/catalog"])
+        receiver = copy.deepcopy(legacy.collector_configuration()["receivers"]["file_log/catalog"])
         receiver["include"] = ["/var/log/pods/dev_" + identity + "-*/" + container + "/*.log"]
         receiver["operators"].insert(1, {"type":"filter","expr":'attributes["log.iostream"] != "stdout"'})
         if identity == "redis-cart":
@@ -117,6 +117,11 @@ def redis_metrics_config(record):
 
 ENDPOINT_HOST = "shop.runtimeplatforms.dev"
 ENDPOINT_NAME = "shop-dev-edge"
+
+
+def endpoint_enabled():
+    c.r.policy()  # Includes strict reviewed binding and exact boolean validation.
+    return c.r.read(ROOT / "deploy/environments.json")["endpoint_enabled"]
 
 
 def endpoint_resources(record, revision):
@@ -232,7 +237,8 @@ def render(record, revision, refs):
     app["resources"]={"requests":{"cpu":"100m","memory":"192Mi"},"limits":{"cpu":"300m","memory":"256Mi"}}
     documents += [agent,{"apiVersion":"v1","kind":"ConfigMap","metadata":{"name":metrics_name,"namespace":"dev","annotations":metrics_meta},
                          "immutable":True,"data":{"config.json":metrics_raw}}]
-    documents += endpoint_resources(record,revision)
+    if endpoint_enabled():
+        documents += endpoint_resources(record,revision)
     return sorted(documents,key=lambda d:(d["kind"],d["metadata"]["name"]))
 
 def rendered(record, revision, refs, context):
@@ -298,7 +304,7 @@ def prepare(record, revision, refs, value, release, output, cloud):
     c.verify(record,record["configuration_revision"],value,refs,cloud)
     trusted=c.attest(record,record["configuration_revision"],value,refs,cloud,inspect=True)
     require(trusted["status"]=="trusted","incomplete_trust")
-    legacy.verify_support(cloud,"projects/"+c.r.policy()["project"]+"/occurrences/2b1c6135-42d3-453a-9942-f473dea60444")
+    legacy.verify_support(cloud,legacy.collector_occurrence())
     docs=render(record,revision,refs);inventory(docs,record,revision,refs)
     output=Path(output);require(not output.exists(),"output_directory_must_not_exist")
     (output/"rendered/dev").mkdir(parents=True)
@@ -358,17 +364,22 @@ def evaluate(snapshot, record, revision, refs, release, now=None):
         "admission":["cluster_enforced","exact_attestor_required","no_bypass"],
         "target":["snapshot_matches_current","capacity_bin_packing_passed","metadata_and_wif_ready","all_stdout_exclusions_ready","no_duplicate_sinks","no_rollout_conflict","sample_baseline_preserved","gateway_api_ready","endpoint_infrastructure_reviewed","dns_delegation_reviewed","certificate_active","armor_preview_policy_ready","frontend_only_exposure"],
         "caller":["rollout_create","deployment_act_as"],"review":["continue"]}
+    if not endpoint_enabled():
+        required["target"] = [x for x in required["target"] if x not in (
+            "gateway_api_ready", "endpoint_infrastructure_reviewed", "dns_delegation_reviewed",
+            "certificate_active", "armor_preview_policy_ready", "frontend_only_exposure")]
     for section,fields in required.items():
         value=snapshot.get(section,{})
         try:fresh=now-timedelta(minutes=5)<=legacy.sample.utc(value.get("observed_at"))<=now+timedelta(seconds=30)
         except (ValueError,TypeError):fresh=False
         check(section+"_fresh_bound",fresh and bool(value.get("evidence_ref")) and value.get("release_set_id")==record["release_set_id"] and value.get("deployment_revision")==revision)
         for field in fields:check(section+"_"+field,value.get(field) is True)
-    try:
-        edge=snapshot.get("endpoint",{})
-        require(edge.get("release_set_id")==record["release_set_id"] and edge.get("deployment_revision")==revision,"endpoint_release_binding")
-        check("endpoint_readbacks",endpoint_evidence(edge,now))
-    except (ValueError,KeyError,TypeError,AttributeError):check("endpoint_readbacks",False)
+    if endpoint_enabled():
+        try:
+            edge=snapshot.get("endpoint",{})
+            require(edge.get("release_set_id")==record["release_set_id"] and edge.get("deployment_revision")==revision,"endpoint_release_binding")
+            check("endpoint_readbacks",endpoint_evidence(edge,now))
+        except (ValueError,KeyError,TypeError,AttributeError):check("endpoint_readbacks",False)
     try:c.redis_admission();approved=True
     except ValueError:approved=False
     check("reviewed_redis_admission",approved)
@@ -382,9 +393,9 @@ def evaluate(snapshot, record, revision, refs, release, now=None):
             and doc["metadata"]["name"] == "shop-http-redirect"
             and doc["metadata"]["namespace"] == "dev"), None)
         # GKE rejects explicit redirect ports during reconciliation, after Kubernetes admission.
-        check("gke_redirect_implicit_port", redirect is not None and all(
+        check("gke_redirect_implicit_port", not endpoint_enabled() or (redirect is not None and all(
             "port" not in entry.get("requestRedirect", {})
-            for rule in redirect["spec"]["rules"] for entry in rule.get("filters", [])))
+            for rule in redirect["spec"]["rules"] for entry in rule.get("filters", []))))
         inventory(actual,record,revision,refs,context)
         check("exact_complete_inventory",True)
         expected=c.r.sha(c.r.canonical(rendered(record,revision,refs,context)))
@@ -475,6 +486,8 @@ def preflight(snapshot, record, revision, refs, release, cloud):
     result = evaluate(snapshot, record, revision, refs, release)
     if result["decision"] != "READY":
         return result
+    if not endpoint_enabled():
+        return result  # Exact inventory above also rejects unexpected edge resources.
     gateway = next(doc for doc in snapshot["rendered_documents"] if doc["kind"] == "Gateway")
     try:
         gateway_dry_run(gateway, cloud)
