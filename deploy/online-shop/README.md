@@ -2,6 +2,8 @@
 
 The active target and accepted catalog are governed by the [reviewed binding and stage gates](../../cloudbuild/online-shop/README.md#reviewed-environment-binding-and-stage-gates). Recorded live results below belong to their original immutable configuration; they do not establish acceptance for another binding.
 
+The proposed active catalog acceptance records the independently verified build and separate signer in [policy.json](policy.json), bound to `sdp-dev-v1`. Its original producing configuration and held candidate generation are preserved; no historical candidate or attestation is retargeted. Collector acceptance remains pending (`collector_occurrence: null`), so this declaration does not establish full-release or deployment readiness. The new deployment-policy trust-file gate and live accepted-chain verification must run from the actual merged main revision after review; feature-branch checks do not bypass that gate.
+
 [Complete application implementation (#100)](complete-README.md) has a separate versioned profile, Redis decision and review-only validation.
 
 Implements the first stage of [#93](https://github.com/DimitryZH/secure-delivery-platform/issues/93).
