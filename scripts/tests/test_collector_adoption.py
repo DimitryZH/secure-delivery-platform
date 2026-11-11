@@ -114,11 +114,12 @@ class CollectorTests(unittest.TestCase):
         with patch.object(c, "publisher", return_value={"status": "publisher_verified"}):
             return c.attest(self.policy, self.cloud, self.helper, **kwargs)
 
-    def test_live_policy_is_exact_and_application_acceptance_is_unchanged(self):
+    def test_support_selection_remains_exact_with_accepted_catalog(self):
         policy = c.policy()
         self.assertEqual(policy["manifest_digest"], "sha256:ac0bb9cdc844b55d2fd2655d03e596243787d6a8c52dd408b1dc96dd1bd372ee")
         accepted = c.r.read(ROOT / "deploy/online-shop/policy.json")["accepted_release"]
-        self.assertIsNone(accepted)  # No historical acceptance is promoted into the active binding.
+        self.assertEqual((accepted["binding"], accepted["project"]), (c.r.binding()["id"], c.r.policy()["project"]))
+        self.assertIsNone(c.r.read(ROOT / "deploy/online-shop/policy.json")["collector_occurrence"])
 
     def test_policy_rejects_alternate_repository_mirror_publisher_and_version_types(self):
         original = c.r.read

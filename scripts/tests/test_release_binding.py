@@ -29,7 +29,8 @@ class BindingTests(unittest.TestCase):
         b, p = r.binding(), r.policy()
         self.assertEqual((b["project"], b["project_number"]), ("sdp-gcp", "738317279206"))
         self.assertNotEqual(p["producer"], p["signer"])
-        self.assertIsNone(w.policy()["accepted_release"])
+        accepted = w.accepted_catalog()
+        self.assertEqual((accepted["binding"], accepted["project"]), (b["id"], b["project"]))
         self.assertIsNone(w.policy()["collector_occurrence"])
         request = r.build_request(p, "c" * 40, {"components": [{"inputs": []}]})
         self.assertEqual(request["serviceAccount"], p["producer"])
@@ -57,10 +58,12 @@ class BindingTests(unittest.TestCase):
 
     def test_pending_and_foreign_acceptance_stop_before_cloud(self):
         cloud = Mock()
-        with self.assertRaisesRegex(ValueError, "accepted_catalog_pending"): c.catalog_candidate(cloud)
-        cloud.request.assert_not_called()
-        with self.assertRaisesRegex(ValueError, "accepted_catalog_pending"):
-            c.build_request("frontend", "c" * 40, {"components": [{"id": "frontend"}]})
+        pending = copy.deepcopy(c.legacy.policy()); pending["accepted_release"] = None
+        with patch.object(c.legacy, "policy", return_value=pending):
+            with self.assertRaisesRegex(ValueError, "accepted_catalog_pending"): c.catalog_candidate(cloud)
+            cloud.request.assert_not_called()
+            with self.assertRaisesRegex(ValueError, "accepted_catalog_pending"):
+                c.build_request("frontend", "c" * 40, {"components": [{"id": "frontend"}]})
         with self.assertRaisesRegex(ValueError, "accepted_collector_pending"): w.collector_occurrence()
         for field, value in (("project", "historical-project"), ("binding", "old-binding"), ("build_id", None),
                              ("candidate_generation", None), ("readback_generation", ""), ("readback_generation", None), ("candidate_transport_sha256", None),

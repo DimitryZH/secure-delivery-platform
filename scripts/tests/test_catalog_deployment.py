@@ -334,6 +334,12 @@ class DeploymentTests(unittest.TestCase):
         with patch.object(w.r, "fetched"), patch.object(w.r, "plan_reference", return_value=self.ref), \
                 patch.object(w.r, "verify", return_value={"status": "passed"}), patch.object(w, "trust"):
             self.assertEqual(w.verify_application(self.record, accepted["occurrence"], cloud)["status"], "passed")
+            self.assertIn("&generation=" + accepted["candidate_generation"] + "&ifGenerationMatch=" + accepted["candidate_generation"], cloud.request.call_args.args[0])
+            self.assertIn("candidate.json#" + accepted["candidate_generation"], signing["steps"][0]["args"][1])
+            cloud.build.reset_mock()
+            with self.assertRaisesRegex(ValueError, "unaccepted_catalog_occurrence"):
+                w.verify_application(self.record, accepted["occurrence"] + "-foreign", cloud)
+            cloud.build.assert_not_called()
             cloud.request.return_value = b"tampered"
             with self.assertRaisesRegex(ValueError, "transport_unavailable"):
                 w.verify_application(self.record, accepted["occurrence"], cloud)
