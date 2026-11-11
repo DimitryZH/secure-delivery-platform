@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "reviewed_live_revision": "4fa7dbba2df6249debe00d063b8eced52c68947a",
+  "binding": "sdp-dev-v1",
+  "application_source_revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
+  "decision": "pending_merge_before_complete_release_execution",
+  "limits_seconds": {
+    "component_build": 1200,
+    "complete_signing_build": 900,
+    "redis_mirror_external_timeout": 1200
+  },
+  "catalog": {
+    "status": "independently_verified_accepted",
+    "producing_revision": "a488afee4577ba4387ebad35d6e947140bc186e1",
+    "build_id": "33d43d79-254f-4846-b4e5-231f6ef7aed2",
+    "release_set_id": "sha256:e10107ec7053d03f9938ba615f0db7bb020ba5888405441346cbe669e089677d",
+    "manifest_digest": "sha256:95563e44e82ccf7252363f5ee4e38f4e820da226794c87ecb3293477d9d5d265",
+    "acceptance_unchanged": true
+  },
+  "collector": {
+    "status": "independently_trusted",
+    "artifact": "us-central1-docker.pkg.dev/sdp-gcp/secure-delivery/otelcol-contrib@sha256:ac0bb9cdc844b55d2fd2655d03e596243787d6a8c52dd408b1dc96dd1bd372ee",
+    "signing_build_id": "6bc46145-3530-4d38-89b7-76ab62263689",
+    "signing_build_status": "SUCCESS",
+    "occurrence": "projects/sdp-gcp/occurrences/9a8dedba-fd25-467a-b90f-4d6069bc41d0",
+    "signature_verified": true,
+    "publisher_and_all_layers_verified": true,
+    "signer_logs": "Prior build-ID queries returned zero entries; trusted signer log output not confirmed."
+  },
+  "this_stage_operations": {
+    "cloud_mutations": 0,
+    "build_submissions": 0,
+    "mirror_invocations": 0,
+    "candidate_uploads": 0,
+    "signing_submissions": 0,
+    "deployments": 0
+  },
+  "local_validation": {
+    "tests": 171,
+    "passed": 167,
+    "skipped": 4,
+    "failures": 0,
+    "errors": 0,
+    "skips": [
+      "native Collector optional integration",
+      "native Collector optional validation",
+      "native Collector optional validation",
+      "optional actual public registry/source byte fixture"
+    ]
+  },
+  "pending": [
+    "Actual merged-main trust-file gate and newly recorded Collector acceptance recheck.",
+    "Fresh Redis official/canonical/destination verification and any required separately bounded mirror; no current-chain claim.",
+    "Nine absent non-catalog application builds, each at most one new submission with exact reviewed request.",
+    "Full eleven-member candidate verification, create-only publication, exact generation/hash readback and temporary hold before signing.",
+    "One bounded full-set signing flow and independent signatures for all eleven members; accepted catalog occurrence reused.",
+    "Deployment and runtime/telemetry acceptance remain separate."
+  ],
+  "implementation_sha256": {
+    "cloudbuild/online-shop/complete.py": "sha256:6642d1939c5fa803cdafa5bbcddfa82abce882d4f65741c3241b0a849c41c7fd",
+    "deploy/online-shop/policy.json": "sha256:cbafc39133fee00da321b52f485c4612a1b6588da8e52464d15fee1a24dbfac1",
+    "scripts/tests/test_complete_shop.py": "sha256:16e4f6e2e4b63d05c190a90d2ce5a7cba78c15cd6e976ac310d0dec7681d34d7",
+    "scripts/tests/test_release_binding.py": "sha256:d7bc3fb36065f5bd242b34354581bd68466c816948db282b86196e43a8ddfbd9",
+    "scripts/tests/test_collector_adoption.py": "sha256:90ed871627ee027a65cdee30af42862b6bba4d573825ebdd380185d66aed2092"
+  }
+}

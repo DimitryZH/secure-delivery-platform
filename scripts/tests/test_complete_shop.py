@@ -337,6 +337,29 @@ class CompleteTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'catalog_reuse'):c.validate_candidate(altered,REV,self.refs)
         self.assertEqual(c.r.PROFILE['id'] if 'id' in c.r.PROFILE else c.r.PROFILE.get('profile'),'catalog-v1')
 
+    def test_producing_timeout_is_exact_and_verifier_rejects_longer_build(self):
+        for identity in c.APPS:
+            if identity == 'productcatalogservice':
+                continue
+            with self.subTest(component=identity):
+                build = self.build(identity)
+                self.assertEqual(build['timeout'], '1200s')
+                self.assertEqual(c.check_build(build, identity, REV, self.plans[identity], build['id']),
+                                 build['results']['images'][0]['digest'])
+                build['timeout'] = '1800s'
+                with self.assertRaisesRegex(ValueError, 'component_build_configuration_timeout'):
+                    c.check_build(build, identity, REV, self.plans[identity], build['id'])
+
+    def test_existing_signing_build_with_longer_timeout_blocks_submission(self):
+        uri = 'gs://' + c.r.policy()['project'] + '-attestation-source/complete-shop-v1/review/candidate.json#12'
+        request = c.signing_request(REV, uri, 'sha256:' + 'a' * 64)
+        self.assertEqual(request['timeout'], '900s')
+        previous = copy.deepcopy(request); previous.update(id='existing', status='SUCCESS', timeout='1800s')
+        cloud = Mock(); cloud.request.return_value = c.r.canonical({'builds': [previous]})
+        with self.assertRaisesRegex(ValueError, 'unexpected_matching_complete_build'):
+            c.submit_once(cloud, request)
+        self.assertTrue(all(len(call.args) == 1 for call in cloud.request.call_args_list))
+
     def test_signing_transport_and_exact_separate_identity(self):
         uri='gs://'+c.r.policy()['project']+'-attestation-source/complete-shop-v1/review/candidate.json#12'
         request=c.signing_request(REV,uri,'sha256:'+'a'*64)
