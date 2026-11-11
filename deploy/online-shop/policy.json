@@ -26,5 +26,5 @@
     "certificate_oidc_issuer": "https://token.actions.githubusercontent.com"
   },
   "binding": "sdp-dev-v1",
-  "collector_occurrence": null
+  "collector_occurrence": "projects/sdp-gcp/occurrences/9a8dedba-fd25-467a-b90f-4d6069bc41d0"
 }

@@ -125,7 +125,7 @@ def build_request(identity, revision, plan):
     for key, value in sorted(item["buildArguments"].items()): args += ["--build-arg", key + "=" + value]
     args += ["-t", tag, "-f", "component-context/Dockerfile", "component-context"]
     return {"source": {"gitSource": {"url": r.SDP + ".git", "revision": revision}}, "serviceAccount": r.policy()["producer"],
-        "timeout": "1800s", "options": {"logging": "CLOUD_LOGGING_ONLY"}, "tags": ["complete-shop-v1", identity, revision],
+        "timeout": "1200s", "options": {"logging": "CLOUD_LOGGING_ONLY"}, "tags": ["complete-shop-v1", identity, revision],
         "steps": [{"id": "materialize-verified-" + identity, "name": "gcr.io/google.com/cloudsdktool/cloud-sdk:slim",
             "entrypoint": "bash", "dir": "/workspace", "args": ["-ceu", "apt-get update -qq && apt-get install -y -qq git python3 >/dev/null\n"
                 "command -v git >/dev/null && command -v python3 >/dev/null\n"
@@ -293,7 +293,7 @@ def signing_request(revision, uri, digest):
     require(re.fullmatch(r"gs://" + re.escape(r.policy()["project"] + "-attestation-source") + r"/complete-shop-v1/[A-Za-z0-9_/-]+\.json#[1-9][0-9]*", uri or ""), "invalid_complete_candidate_object")
     require(re.fullmatch(r.DIGEST, digest or ""), "invalid_candidate_transport_hash")
     return {"source": {"gitSource": {"url": r.SDP + ".git", "revision": revision}}, "serviceAccount": r.policy()["signer"],
-        "timeout": "1800s", "options": {"logging": "CLOUD_LOGGING_ONLY"}, "tags": ["complete-shop-sign-v1", revision, digest[7:]],
+        "timeout": "900s", "options": {"logging": "CLOUD_LOGGING_ONLY"}, "tags": ["complete-shop-sign-v1", revision, digest[7:]],
         "steps": [{"env": ["CLOUDSDK_CORE_PROJECT=" + r.policy()["project"], "CLOUDSDK_CORE_ACCOUNT=" + r.policy()["signer"].split("/serviceAccounts/")[1]], "id": "independent-complete-verification-and-signing", "name": "gcr.io/google.com/cloudsdktool/cloud-sdk:slim", "entrypoint": "bash", "dir": "/workspace",
             "args": ["-ceu", "apt-get update -qq && apt-get install -y -qq git python3 >/dev/null\n"
                 "command -v git >/dev/null && command -v python3 >/dev/null && command -v gcloud >/dev/null && command -v sha256sum >/dev/null\n"

@@ -31,7 +31,7 @@ class BindingTests(unittest.TestCase):
         self.assertNotEqual(p["producer"], p["signer"])
         accepted = w.accepted_catalog()
         self.assertEqual((accepted["binding"], accepted["project"]), (b["id"], b["project"]))
-        self.assertIsNone(w.policy()["collector_occurrence"])
+        self.assertEqual(w.collector_occurrence(), "projects/" + p["project"] + "/occurrences/9a8dedba-fd25-467a-b90f-4d6069bc41d0")
         request = r.build_request(p, "c" * 40, {"components": [{"inputs": []}]})
         self.assertEqual(request["serviceAccount"], p["producer"])
         schema = r.read(ROOT / "cloudbuild/online-shop/candidate-v1.schema.json")
@@ -64,7 +64,12 @@ class BindingTests(unittest.TestCase):
             cloud.request.assert_not_called()
             with self.assertRaisesRegex(ValueError, "accepted_catalog_pending"):
                 c.build_request("frontend", "c" * 40, {"components": [{"id": "frontend"}]})
-        with self.assertRaisesRegex(ValueError, "accepted_collector_pending"): w.collector_occurrence()
+        pending_collector = copy.deepcopy(w.policy()); pending_collector["collector_occurrence"] = None
+        with patch.object(w, "policy", return_value=pending_collector):
+            with self.assertRaisesRegex(ValueError, "accepted_collector_pending"): w.collector_occurrence()
+        foreign_collector = copy.deepcopy(w.policy()); foreign_collector["collector_occurrence"] = "projects/foreign/occurrences/foreign"
+        with patch.object(w, "policy", return_value=foreign_collector):
+            with self.assertRaisesRegex(ValueError, "accepted_collector_pending"): w.collector_occurrence()
         for field, value in (("project", "historical-project"), ("binding", "old-binding"), ("build_id", None),
                              ("candidate_generation", None), ("readback_generation", ""), ("readback_generation", None), ("candidate_transport_sha256", None),
                              ("signing_build_id", None), ("occurrence", "projects/historical-project/occurrences/old")):

@@ -12,6 +12,29 @@ Use the [reviewed environment binding and staged catalog acceptance procedure](.
 
 Collector exporter project/resource attribution must match the active binding. Catalog release/digest attributes are filled from the validated candidate during rendering. Redis cleanup derives its dev target from the same environment, retains exact session ownership and DEL/EXISTS scope, and remains independent of renewed cloud verification.
 
+## Bounded complete-release execution
+
+The complete producer requests use a 1200-second timeout per non-catalog application;
+the separate complete-set signing request uses 900 seconds. Independent verification
+requires those exact reviewed request values. Matching builds with a different timeout
+fail closed, including terminal builds; an uncertain or failed operation does not authorize
+resubmission. These executable changes require merge before any corresponding live run.
+
+The active policy records the independently verified Collector supporting-image occurrence.
+Its separate build `6bc46145-3530-4d38-89b7-76ab62263689` completed successfully and stock
+inspection verified the exact mirror content and occurrence signature. Additional build-ID
+Cloud Logging queries returned no entries; signer trusted-output logs are not claimed.
+The accepted catalog retains its original producing configuration, candidate generation and
+signature. This acceptance is not a complete application release or deployment decision.
+See [bounded execution validation](../../cloudbuild/online-shop/complete-execution-validation.json).
+
+After merge, repeat reviewed-main, active binding, catalog and Collector verification,
+then verify the pinned Redis upstream/canonical/destination chain. Only then proceed with
+missing component builds, a fully verified eleven-member candidate, create-only publication,
+generation/hash readback and a generation-specific temporary hold before separate signing.
+All eleven occurrence/signature readbacks remain mandatory. No complete candidate, build ID,
+generation or digest may be inferred from the accepted catalog or supporting image.
+
 ## Membership and trust
 
 [complete-shop-v1](../../cloudbuild/online-shop/complete-v1.json) has exactly ten application members, sorted by ID: adservice, cartservice, checkoutservice, currencyservice, emailservice, frontend, paymentservice, productcatalogservice, recommendationservice and shippingservice; plus the required `redis-cart` dependency. Collector is a separately trusted supporting image. Loadgenerator is excluded; any future load Job needs its own bounded, reviewed and trusted image. Assistant and packaging backends are disabled.

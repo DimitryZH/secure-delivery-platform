@@ -119,7 +119,7 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(policy["manifest_digest"], "sha256:ac0bb9cdc844b55d2fd2655d03e596243787d6a8c52dd408b1dc96dd1bd372ee")
         accepted = c.r.read(ROOT / "deploy/online-shop/policy.json")["accepted_release"]
         self.assertEqual((accepted["binding"], accepted["project"]), (c.r.binding()["id"], c.r.policy()["project"]))
-        self.assertIsNone(c.r.read(ROOT / "deploy/online-shop/policy.json")["collector_occurrence"])
+        self.assertEqual(c.r.read(ROOT / "deploy/online-shop/policy.json")["collector_occurrence"], "projects/" + c.r.policy()["project"] + "/occurrences/9a8dedba-fd25-467a-b90f-4d6069bc41d0")
 
     def test_policy_rejects_alternate_repository_mirror_publisher_and_version_types(self):
         original = c.r.read
