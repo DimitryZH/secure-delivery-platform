@@ -1,5 +1,10 @@
 # Online Shop protected dev endpoint (#106)
 
+For active-environment preparation, follow the [baseline recovery gates](../../docs/platform-baseline-recovery.md).
+Historical IDs/results below are not operational defaults or current acceptance.
+Use the isolated execution roots and reviewed private inputs; never reuse a cached
+historical backend to provision these resources.
+
 The dev endpoint reuses accepted application release set `sha256:d3ddfc09ec0f0195d38fadfba8a2c31ce290b41bf4211ac4631a5b20039d3891`, producing configuration `00e925e724808ac80f1313fb85da1c6b3ec19f3f` and the separately trusted Collector. Apply, parent DNS changes and Cloud Deploy mutations require separate authorization. See [sanitized validation](endpoint-validation.json), [full workload](complete-README.md) and [approved roadmap](../../docs/roadmap.md).
 
 ## Architecture and ownership

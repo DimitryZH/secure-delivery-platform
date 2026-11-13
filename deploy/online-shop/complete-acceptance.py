@@ -75,6 +75,42 @@ def guard(record, value, refs, cloud):
     require(all(found[x["artifact"]] for x in proof["components"]),"complete_admission_proof_missing")
     w.legacy.verify_support(cloud,w.legacy.collector_occurrence())
 
+AUTOSCALER_DIAGNOSTICS = (
+    "cloud.google.com/cluster_autoscaler_unhelpable_since",
+    "cloud.google.com/cluster_autoscaler_unhelpable_until",
+)
+
+
+def runtime_annotations(pod, expected):
+    """Closed live-Pod exception; diagnostic metadata never defines release trust."""
+    metadata = pod["metadata"]
+    observed = metadata.get("annotations")
+    require(type(observed) is dict and all(observed.get(k) == v for k, v in expected.items()),
+            "runtime_component_metadata_mismatch")
+    extra = set(observed) - set(expected)
+    if not extra:
+        return
+    require(extra == set(AUTOSCALER_DIAGNOSTICS), "runtime_unknown_annotations")
+    since, until = (observed[k] for k in AUTOSCALER_DIAGNOSTICS)
+    require(type(since) is str and re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\+0000", since)
+            and until == "Inf", "runtime_invalid_autoscaler_diagnostics")
+    try:
+        datetime.strptime(since, "%Y-%m-%dT%H:%M:%S%z")
+    except ValueError:
+        raise ValueError("runtime_invalid_autoscaler_diagnostics") from None
+    # managedFields corroborates the readback's field ownership; it is not an
+    # authentication claim. Neither value is used for identity or admission.
+    fields = metadata.get("managedFields", [])
+    require(type(fields) is list and all(type(entry) is dict for entry in fields), "runtime_autoscaler_ownership_unproven")
+    for key in AUTOSCALER_DIAGNOSTICS:
+        owners = [entry for entry in fields
+                  if "f:" + key in entry.get("fieldsV1", {}).get("f:metadata", {}).get("f:annotations", {})]
+        require(len(owners) == 1 and owners[0].get("manager") == "cluster-autoscaler"
+                and owners[0].get("operation") == "Update" and owners[0].get("apiVersion") == "v1"
+                and owners[0].get("fieldsType") == "FieldsV1" and not owners[0].get("subresource"),
+                "runtime_autoscaler_ownership_unproven")
+
+
 def runtime(snapshot,record,revision,value,refs,cloud):
     guard(record,value,refs,cloud)  # Supplied Pod readbacks never define trusted expected state.
     rows={x["id"]:x for x in record["components"]}
@@ -90,7 +126,7 @@ def runtime(snapshot,record,revision,value,refs,cloud):
         supporting=identity in ("collector","redis-metrics-collector")
         digest=w.legacy.policy()["collector"]["manifest_digest"] if supporting else rows[identity]["digest"]
         artifact=w.legacy.policy()["collector"]["mirror_image"] if supporting else rows[identity]["repository"]+"@"+digest
-        require(pod["metadata"].get("annotations")==w.meta(record,revision,identity,digest),"runtime_component_metadata_mismatch")
+        runtime_annotations(pod, w.meta(record,revision,identity,digest))
         spec=pod["spec"];statuses=pod.get("status",{}).get("containerStatuses",[])
         require(not spec.get("initContainers") and not spec.get("ephemeralContainers") and len(spec["containers"])==len(statuses)==1,"unexpected_runtime_container")
         require(spec["containers"][0]["image"]==artifact and statuses[0].get("imageID","").removeprefix("docker-pullable://")==artifact,"running_component_digest_unproven")

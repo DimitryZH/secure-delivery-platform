@@ -25,7 +25,7 @@ These commands are for later execution. Supply an existing authenticated kubecon
 Capture before/after deployments and health responses for sample-service dev/stage/prod. Baseline and final smoke requests are read-only. Resolve any live drift before exercise authorization.
 
 ```powershell
-$context = 'gke_sre-platform-staging-507220_us-central1-a_secure-delivery-platform'
+$context = '<reviewed-current-context>'  # Explicit isolated context verified against the active binding
 $privateDir = '.local-validation/issue115-failure'
 New-Item -ItemType Directory -Force $privateDir | Out-Null
 $raw = kubectl --context=$context -n dev get deployment/cartservice -o json --request-timeout=10s
