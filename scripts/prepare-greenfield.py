@@ -14,7 +14,20 @@ FOUNDATION = "main.tf variables.tf versions.tf service-accounts.tf outputs.tf gk
 BOOTSTRAP = "main.tf variables.tf versions.tf outputs.tf .terraform.lock.hcl".split()
 QUERIES = "request-rate error-rate p95-latency observed-availability available-replicas desired-replicas".split()
 
+def feature_selection():
+    path = ENV / "foundation-features.private.json"
+    value = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {
+        "version": 1, "endpoint": False, "observability": False}
+    if (type(value) is not dict or set(value) != {"version", "endpoint", "observability"}
+            or type(value["version"]) is not int or value["version"] != 1
+            or any(type(value[k]) is not bool for k in ("endpoint", "observability"))
+            or (value["observability"] and not value["endpoint"])):
+        raise SystemExit("Require closed feature selection v1; observability composition requires endpoint composition")
+    return value
+
+
 def expected():
+    features = feature_selection()
     result = {}
     excluded = {"kubernetes.tf", "legacy-default-pool-import.tf", "shop-endpoint.tf", "shop-observability.tf"}
     actual = {p.name for p in (REPO / "terraform/foundation").iterdir() if p.name.endswith((".tf", ".tf.json"))}
@@ -29,6 +42,16 @@ def expected():
             result[f"terraform/{root}/{name}"] = (REPO / f"terraform/{root}/{name}").read_bytes()
     for name in ["main.tf"]:
         result[f"terraform/kubernetes/{name}"] = (REPO / f"terraform/kubernetes/{name}").read_bytes()
+    for feature, source in (("endpoint", "shop-endpoint.tf"), ("observability", "shop-observability.tf")):
+        if features[feature]:
+            result["terraform/foundation/" + source] = (REPO / "terraform/foundation" / source).read_bytes()
+            name = feature + "-services_override.tf"
+            result["terraform/foundation/" + name] = (REPO / "terraform/greenfield" / name).read_bytes()
+    result["terraform/foundation/greenfield-feature-selection.json"] = (
+        json.dumps(features, sort_keys=True, indent=2) + "\n").encode()
+    if features["observability"]:
+        name = "monitoring/online-shop/frontend-errors.promql.tftpl"
+        result[name] = (REPO / name).read_bytes()
     # Reuse the reviewed provider selections; init must use -lockfile=readonly.
     lock = (REPO / "terraform/foundation/.terraform.lock.hcl").read_text()
     blocks = re.findall(r'provider "registry.terraform.io/hashicorp/(google|kubernetes)" \{.*?^\}', lock, re.S | re.M)
@@ -40,7 +63,19 @@ def expected():
     for name in templates:
         path = f"monitoring/dashboards/{name}"
         result[path] = (REPO / path).read_bytes()
-    result["terraform/foundation/greenfield-disabled.tf"] = (REPO / "terraform/greenfield/disabled-features.tf").read_bytes()
+    disabled = (REPO / "terraform/greenfield/disabled-features.tf").read_text(encoding="utf-8")
+    enabled_variables = []
+    if features["endpoint"]:
+        enabled_variables.append("shop_edge_enforce_evaluated_rules")
+    if features["observability"]:
+        enabled_variables += ["shop_observability_enabled", "shop_observability_schedule_enabled"]
+    for name in enabled_variables:
+        # Remove only the explicit deferred variable stub. Canonical feature files
+        # supply the real declaration; resource code is never text-rewritten.
+        disabled, count = re.subn(r'(?m)^variable "' + name + r'" \{.*?^\}\r?\n?', "", disabled, flags=re.S)
+        if count != 1:
+            raise SystemExit("Unexpected deferred variable composition: " + name)
+    result["terraform/foundation/greenfield-disabled.tf"] = disabled.encode()
     result["terraform/foundation/greenfield_override.tf"] = (REPO / "terraform/greenfield/greenfield_override.tf").read_bytes()
     state = (ENV.resolve() / "state/bootstrap/terraform.tfstate").as_posix()
     result["terraform/bootstrap/backend.tf"] = ('terraform {\n  backend "local" {\n    path = ' + json.dumps(state) + '\n  }\n}\n').encode()

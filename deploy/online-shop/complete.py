@@ -26,10 +26,18 @@ ap = legacy.module("catalog_capacity", HERE / "acceptance.py")
 # current deployment still reviews *all* trust files; shared release verification,
 # profiles, runtime contracts, supporting policy and signing code must match both.
 DEPLOYMENT_CODE = ("deploy/online-shop/complete.py", "deploy/online-shop/complete-acceptance.py")
+DEPLOYMENT_FILES = ("deploy/online-shop/deployment-policy.json",)
 
 
 def reviewed(record, revision):
     c.reviewed(revision)
+    # Deployment decisions are reviewed at the deployment SHA, never retrofitted
+    # into an immutable producing revision or accepted candidate identity.
+    with c.r.fetched(c.r.SDP, revision) as source:
+        for name in DEPLOYMENT_FILES:
+            require((ROOT / name).read_bytes().replace(b"\r\n", b"\n") == source.blob(name),
+                    "unreviewed_deployment_policy")
+    deployment_policy()
     producing = record["configuration_revision"]
     require(re.fullmatch(c.r.SHA, producing or ""), "producing_revision_required")
     if producing != revision:
@@ -119,9 +127,18 @@ ENDPOINT_HOST = "shop.runtimeplatforms.dev"
 ENDPOINT_NAME = "shop-dev-edge"
 
 
+def deployment_policy():
+    current = c.r.policy()
+    value = c.r.read(ROOT / DEPLOYMENT_FILES[0])
+    require(type(value) is dict and set(value) == {"version", "binding", "project", "endpoint_enabled"}
+            and type(value["version"]) is int and value["version"] == 1
+            and value["binding"] == c.r.binding()["id"] and value["project"] == current["project"]
+            and type(value["endpoint_enabled"]) is bool, "invalid_deployment_policy")
+    return value
+
+
 def endpoint_enabled():
-    c.r.policy()  # Includes strict reviewed binding and exact boolean validation.
-    return c.r.read(ROOT / "deploy/environments.json")["endpoint_enabled"]
+    return deployment_policy()["endpoint_enabled"]
 
 
 def endpoint_resources(record, revision):

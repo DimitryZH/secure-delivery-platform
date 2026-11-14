@@ -66,6 +66,33 @@ class CompleteTests(unittest.TestCase):
             gate=patch.object(release.redis,'verify_chain',side_effect=ValueError('redis_publication_chain_pending'))
             gate.start();self.addCleanup(gate.stop)
 
+    def test_deployment_toggle_preserves_candidate_and_producing_files(self):
+        original = w.c.r.read
+        candidate_before = c.r.canonical(self.record)
+        env_before = (ROOT / 'deploy/environments.json').read_bytes()
+        request_before = c.build_request('adservice', REV, self.plans['adservice'])
+        for enabled, count in ((False, 39), (True, 45)):
+            value = {**original(ROOT / w.DEPLOYMENT_FILES[0]), 'endpoint_enabled': enabled}
+            with patch.object(w.c.r, 'read', side_effect=lambda path: value if Path(path).name == 'deployment-policy.json' else original(path)), \
+                 patch.object(w, 'endpoint_enabled', side_effect=lambda: w.deployment_policy()['endpoint_enabled']):
+                self.assertEqual(len(w.render(self.record, REV, self.refs)), count)
+                c.validate_candidate(self.record, REV, self.refs)
+                self.assertEqual(c.r.canonical(self.record), candidate_before)
+                self.assertEqual(c.build_request('adservice', REV, self.plans['adservice']), request_before)
+        self.assertEqual((ROOT / 'deploy/environments.json').read_bytes(), env_before)
+        self.assertTrue(all(name not in c.TRUST_FILES and name not in c.r.TRUSTED_FILES for name in w.DEPLOYMENT_FILES))
+
+    def test_deployment_policy_is_closed_typed_and_binding_scoped(self):
+        original = w.c.r.read
+        base = original(ROOT / w.DEPLOYMENT_FILES[0])
+        changes = [{'version': True}, {'endpoint_enabled': 1}, {'endpoint_enabled': None},
+                   {'binding': 'foreign'}, {'project': 'foreign'}, {'unknown': True}]
+        for change in changes:
+            with self.subTest(change=change), patch.object(w.c.r, 'read', side_effect=lambda path: {**base, **change} if Path(path).name == 'deployment-policy.json' else original(path)):
+                with self.assertRaisesRegex(ValueError, 'invalid_deployment_policy'): w.deployment_policy()
+        with patch.object(w.c.r, 'read', side_effect=lambda path: {k:v for k,v in base.items() if k!='endpoint_enabled'} if Path(path).name=='deployment-policy.json' else original(path)):
+            with self.assertRaises(ValueError): w.deployment_policy()
+
     def test_explicit_endpoint_off_inventory_and_preflight_keep_non_edge_guards(self):
         with patch.object(w, 'endpoint_enabled', return_value=False):
             docs=w.render(self.record,REV,self.refs)
@@ -243,18 +270,21 @@ class CompleteTests(unittest.TestCase):
     def producer_sources(self,release,bad_file=None,unmerged=False):
         calls=[]
         class Source:
+            def __init__(inner, revision): inner.revision = revision
             def git(inner,*args):
                 calls.append(args)
                 if args[0]=='merge-base' and unmerged:raise subprocess.CalledProcessError(1,args)
                 return b''
             def blob(inner,name):
+                if inner.revision != REV:
+                    self.assertIn(name, w.DEPLOYMENT_FILES)
                 if name in w.DEPLOYMENT_CODE:raise AssertionError('producer must not require old deployment executables')
                 raw=(ROOT/name).read_bytes().replace(b'\r\n',b'\n')
                 return raw+b'changed' if name==bad_file else raw
         @contextmanager
         def fetched(repository,revision):
             if repository==release.r.SDP:
-                self.assertEqual(revision,REV);yield Source()
+                self.assertRegex(revision, c.r.SHA);yield Source(revision)
             else:
                 self.assertEqual((repository,revision),(release.r.AML,release.r.REVISION));yield Mock()
         with patch.object(release.r,'fetched',side_effect=fetched):yield calls
@@ -449,7 +479,7 @@ class CompleteTests(unittest.TestCase):
             self.assertNotIn(forbidden,text)
 
     def test_no_prepare_bundle_for_unresolved_dependency(self):
-        with tempfile.TemporaryDirectory() as tmp,patch.object(w.c,'reviewed'):
+        with tempfile.TemporaryDirectory() as tmp,patch.object(w,'reviewed'):
             with self.assertRaisesRegex(ValueError,'redis_publication'):
                 w.prepare(self.record,REV,self.refs,self.plans,RESOURCE,Path(tmp)/'bundle',Mock())
             self.assertFalse((Path(tmp)/'bundle').exists())
@@ -604,8 +634,10 @@ class CompleteTests(unittest.TestCase):
         with patch.object(w.c,'reviewed',side_effect=ValueError('unreviewed_complete_files')),patch.object(w.c.r,'fetched') as source:
             with self.assertRaisesRegex(ValueError,'unreviewed'):w.reviewed(self.record,deployment)
             source.assert_not_called()
-        with patch.object(w.c,'reviewed') as current,patch.object(w.c.r,'fetched') as source:
-            w.reviewed(self.record,REV);current.assert_called_once_with(REV);source.assert_not_called()
+        with patch.object(w.c,'reviewed') as current,self.producer_sources(w.c) as calls:
+            w.reviewed(self.record,REV);current.assert_called_once_with(REV);self.assertEqual(calls, [])
+        with patch.object(w.c,'reviewed'),self.producer_sources(w.c,bad_file=w.DEPLOYMENT_FILES[0]):
+            with self.assertRaisesRegex(ValueError,'unreviewed_deployment_policy'):w.reviewed(self.record,REV)
 
     def test_preflight_requires_admission_of_the_exact_rendered_gateway(self):
         _,snapshot=self.preflight_fixture(REV)

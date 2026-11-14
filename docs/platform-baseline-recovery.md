@@ -50,18 +50,39 @@ as an image or an old URI's signature as authorization for another registry.
 
 ## Preconditions before a saved infrastructure plan
 
-The isolated greenfield generator currently excludes endpoint and synthetic provisioning
-and rejects their activation flags. Review an explicit composition extension from the
-canonical files before planning those resources. Keep one foundation state owner; do not
-switch to a historical cached backend or introduce another maintained Terraform copy.
-Check API ownership first: an enabled API is not necessarily Terraform-managed, and the
-same API must not be claimed twice. Retain provider locks and cloud/Kubernetes separation.
+The isolated generator composes optional endpoint and observability sources into the
+existing foundation root and backend. Its private `foundation-features.private.json`
+selection has exactly `version: 1`, `endpoint: boolean`, and `observability: boolean`;
+omitting the file keeps both compositions disabled. Observability composition requires
+endpoint composition because the synthetic monitor consumes its hostname. The generated
+feature-selection record participates in the freshness manifest. Canonical sources,
+provider locks and cloud/Kubernetes separation remain unchanged. Narrow generated-root
+overrides subtract APIs already owned by the core service set; an enabled API is not
+necessarily Terraform-managed. There is one state owner per API and resource.
 
-The endpoint toggle is currently in `deploy/environments.json`, a shared producing trust
-file. Enabling it is not a private input-only operation: reviewed compatibility work must
-separate that deployment-only decision from immutable producing evidence before reusing
-an older candidate. Do not edit it and bypass mismatches, rebuild valid artifacts merely
-to hide the coupling, or reassign producing references to the deployment revision.
+Review composition changes before planning. The generator refuses unexpected files,
+including obsolete optional generated files: archive a reviewed root privately, verify
+its manifest and remove only identified generated files before reducing composition.
+Never copy inputs, backend metadata, provider caches or state into execution roots.
+Run generation, freshness and execution guards in the same isolated process before a
+full plan. Preserve the exact composition, source/input hashes and locks with its saved
+plan; regenerate and recheck them before a separately authorized apply.
+
+The deployment-only decision is in
+[`deployment-policy.json`](../deploy/online-shop/deployment-policy.json). Its closed
+versioned schema binds the exact project and environment binding. `endpoint_enabled`
+is an exact boolean: false renders 39 resources and true renders 45. The file must match
+the reviewed deployment revision; it is not read from an older producing revision.
+The original environments binding remains immutable producer evidence, including its
+legacy endpoint field. Changing deployment policy does not change candidate identity,
+images, signing policy or supporting artifacts. Shared producing trust-file mismatches
+still block reuse.
+
+A new deployment implementation requires a reviewed deployment revision and new protected
+render/release before rollout. An independent validator cannot reinterpret an old live
+deployment using changed shared deployment code: retain its compatible reviewed validator
+for readback until the new deployment is authorized. Do not relabel the producing or
+actual deployment revision to make a gate pass.
 
 For endpoint bootstrap use `shop_edge_enforce_evaluated_rules=false`; preserve the
 reviewed hostname and global Gateway architecture. Do not reuse assigned IPs, nameservers,
