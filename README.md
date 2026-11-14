@@ -1,6 +1,8 @@
 # Secure Delivery Platform
 
-A Google-native delivery platform promoting one verified, attested image digest through dev, stage, and prod. Build, signing, and deployment authority remain separate.
+Online Shop is the active workload. Sample-service is retired and will not be restored. See [retirement scope](docs/sample-service-retirement.md); its earlier validation below is **historical**, not a current health or preservation requirement.
+
+A Google-native delivery platform for Online Shop, deploying independently verified and attested component digests to dev. Build, signing, and deployment authority remain separate.
 
 ```mermaid
 flowchart TB
@@ -8,15 +10,15 @@ flowchart TB
     Build --> Registry[Artifact Registry digest]
     Registry --> Verify[Metadata verification]
     Verify --> Sign[Separate signer and KMS]
-    Sign --> Deploy[Cloud Deploy: dev → stage → prod]
+    Sign --> Deploy[Cloud Deploy: Online Shop dev]
     Deploy --> Admission{Binary Authorization}
     Admission -->|trusted| Runtime[GKE target namespace]
     Admission -->|denied| Blocked[Pod admission blocked]
 ```
 
-Cloud Deploy orchestrates existing trusted artifacts; Binary Authorization remains admission authority. Stage and prod require separate approval. Promotion never rebuilds, retags, or replaces the artifact.
+Cloud Deploy orchestrates existing trusted artifacts; Binary Authorization remains admission authority. Stage/prod workload promotion is future work; the original sample pipeline is retired. Promotion never rebuilds, retags, or replaces the artifact.
 
-The implemented path includes metadata verification, digest-bound attestation, enforced admission, protected source/render storage, and controlled promotion. Manual readiness and internal HTTP checks validate deployments. Implemented and live-validated: structured application logging in dev, request/latency ingestion for health traffic in dev, deployment availability signals, the deployment health dashboard, and the availability alert policy in its healthy non-firing state. Empty non-health traffic, error, and p95 panels are missing evidence, not performance validation or proof of zero errors.
+The implemented path includes metadata verification, digest-bound attestation, enforced admission, protected source/render storage, and controlled promotion. Manual readiness and internal HTTP checks validate deployments. Historical sample-service validation: structured application logging in dev, request/latency ingestion for health traffic in dev, deployment availability signals, the deployment health dashboard, and the availability alert policy in its healthy non-firing state. Empty non-health traffic, error, and p95 panels are missing evidence, not performance validation or proof of zero errors.
 
 ## MVP implementation and validation
 
@@ -40,7 +42,7 @@ See [Controlled Promotion Validation](docs/trusted-delivery.md#controlled-promot
 
 | Area | Responsibility |
 | --- | --- |
-| `app/` | Minimal sample service |
+| Online Shop | Active workload, produced from the pinned upstream source |
 | `cloudbuild/` | Image, verification, and separate signing execution |
 | `deploy/` | Shared manifests, consumer, and Cloud Deploy preparation |
 | `terraform/` | Reproducible foundation |

@@ -1,5 +1,7 @@
 # Catalog deployment in dev
 
+Active workload: **Online Shop**. Sample-service is retired; any sample preservation or health observations below are **historical evidence only**, never a prerequisite for recovery, delivery or acceptance. Existing recorded runs retain their original results.
+
 The active target and accepted catalog are governed by the [reviewed binding and stage gates](../../cloudbuild/online-shop/README.md#reviewed-environment-binding-and-stage-gates). Recorded live results below belong to their original immutable configuration; they do not establish acceptance for another binding.
 
 The proposed active catalog acceptance records the independently verified build and separate signer in [policy.json](policy.json), bound to `sdp-dev-v1`. Its original producing configuration and held candidate generation are preserved; no historical candidate or attestation is retargeted. Collector acceptance remains pending (`collector_occurrence: null`), so this declaration does not establish full-release or deployment readiness. The new deployment-policy trust-file gate and live accepted-chain verification must run from the actual merged main revision after review; feature-branch checks do not bypass that gate.
@@ -85,8 +87,8 @@ identity does not authorize it. This local guard supplements the fresh independe
 cloud verification required by preparation/preflight; it does not replace it.
 
 The `catalog-dev` pipeline reuses the existing dev target/execution identity and
-artifact bucket. It has only a dev stage. Existing sample-service preparation,
-pipeline, stage/prod progression, manifests and decision controls remain intact.
+artifact bucket. It has only a dev stage. The sample-service pipeline and manifests are retired; shared dev execution,
+protected artifacts and trust/decision helpers remain available for Online Shop.
 There are no Skaffold builds, hooks, `--images` substitutions or public Services.
 
 ## Runtime and telemetry

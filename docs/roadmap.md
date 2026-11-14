@@ -1,5 +1,7 @@
 # Roadmap
 
+Online Shop is the active workload. Sample-service is retired with no restoration planned; earlier sample validation and preservation observations are historical only.
+
 ## Roadmap principle
 
 The Secure Delivery Platform is organized around a trusted software delivery path.
@@ -286,7 +288,7 @@ Immutable AML application/dependency contracts, component build/verification/sig
 * validate a selected synthetic user journey using isolated test data, bounded frequency/traffic and exact cleanup
 * configure actionable application and synthetic-failure alerts with notification routing; establish a meaningful baseline before choosing latency thresholds and treat missing data as missing evidence
 * exercise one bounded application/dependency availability failure in dev; confirm detection, incident opening, notification receipt, telemetry-based diagnosis, recovery and incident closure
-* preserve sample-service in dev/stage/prod and recheck capacity/artifact protection before separately authorized live changes
+* preserve Online Shop and recheck capacity/artifact protection before separately authorized live changes
 * align public architecture, deployment/access instructions, telemetry inspection, synthetic/incident runbooks, validation limits and sanitized durable evidence
 
 This is an independent SDP path consuming canonical AML source. It does not depend on the separate AML → CI Build Platform → Container Platform → SRE Platform integration. Application fixes/instrumentation remain owned by AML; delivery, environment and collection configuration remain owned by SDP.
@@ -334,7 +336,7 @@ Config Sync owns only the declared platform resources. Cloud Deploy continues to
 
 A selected infrastructure module is managed through Infrastructure Manager with one clear state owner. Private Pool networking and execution identities satisfy their reviewed scenario. Selected artifacts have usable vulnerability/SBOM/provenance evidence, and release review states how that evidence affects eligibility.
 
-Permission changes, secret-version changes, policy synchronization/enforcement, network restrictions and IAP access have bounded successful/denied test results. Operators can identify resources and trace representative sensitive actions through inventory and audit records. Existing workload delivery and sample-service remain compatible.
+Permission changes, secret-version changes, policy synchronization/enforcement, network restrictions and IAP access have bounded successful/denied test results. Operators can identify resources and trace representative sensitive actions through inventory and audit records. Existing Online Shop delivery remains compatible.
 
 Every adopted capability has a defined scenario, owner, cost boundary, acceptance result and documented limitation. Broader organization/fleet rollouts, automatic application GitOps and an unconditional migration of the full foundation are outside this milestone.
 
@@ -356,7 +358,7 @@ Milestone 9 has its own reviewed completion/evidence checkpoint. **No separate p
 * define one useful SLI/SLO and error-budget view; establish baseline/error/latency measurements and an explicit decision when evidence is absent or insufficient
 * connect deployment verification or analysis to real observed metrics, documenting success/failure criteria and operator decisions; metric collection alone is not an automatic promotion gate
 * progress the same trusted application image set through dev → stage → prod after environment-specific capacity, configuration, admission and protected-artifact review, without rebuilding between environments
-* execute a bounded failed-update scenario and a controlled rollback to an eligible previous trusted release; verify running digests, recovery, telemetry attribution and sample-service health
+* execute a bounded failed-update scenario and a controlled rollback to an eligible previous trusted release; verify running digests, recovery, telemetry attribution and Online Shop health
 * perform a small blue-green comparison after the canary baseline, recording switching/recovery behavior and temporary resource cost; canary remains the primary progressive delivery strategy
 
 ### Scaling and cost scope

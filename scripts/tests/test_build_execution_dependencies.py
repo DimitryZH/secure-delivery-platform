@@ -58,10 +58,10 @@ class ExecutionDependencyTests(unittest.TestCase):
         with patch.object(c.legacy, "accepted_catalog", return_value=accepted_policy(c.r)["accepted_release"]):
             build = c.build_request("frontend", REV, plan)
         self.assert_bootstrap(build["steps"][0])
-        self.assertEqual(build["timeout"], "1800s")
+        self.assertEqual(build["timeout"], "1200s")
         signing = c.signing_request(REV, "gs://" + r.policy()["project"] + "-attestation-source/complete-shop-v1/run/candidate.json#123", "sha256:" + "a" * 64)
         self.assert_bootstrap(signing["steps"][0], signing=True, transport=True)
-        self.assertEqual(signing["timeout"], "1800s")
+        self.assertEqual(signing["timeout"], "900s")
         support = collector.signing_request(REV)
         self.assert_bootstrap(support["steps"][0], signing=True)
         self.assertEqual(support["timeout"], "900s")

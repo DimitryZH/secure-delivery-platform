@@ -6,7 +6,7 @@ Implements the code path for [issue #87](https://github.com/DimitryZH/secure-del
 A bounded `catalog-v1` live flow completed a real build, independent verification
 and separate attestation with occurrence/signature readback. The linked evidence
 in [`validation.json`](validation.json) awaits review; its scope and limits apply.
-The existing sample-service build, metadata, verifier, signer and trigger are unchanged.
+Sample-service is retired. Shared metadata verification, signing identities and trust remain in use by Online Shop; the sample-only build and trigger are removed.
 No deployment, rendering, preflight, Redis, Collector or telemetry infrastructure is included.
 
 ## Reviewed environment binding and stage gates

@@ -13,16 +13,16 @@ Before starting, have a second operator/session able to run the same guarded rec
 Stop and recover immediately on any of these observations.
 
 - The expected synthetic condition/notification is not observed within the four-minute mutation window.
-- Either node becomes NotReady, or sample-service in dev/stage/prod loses Ready/Available or HTTP 200.
+- Either node becomes NotReady, or Online Shop loses Ready/Available or HTTP 200.
 - Another rollout, HPA, workload-template change or concurrent replica mutation appears.
 - Unexpected admission, resource-pressure, monitoring-authentication or Cloud Armor denial prevents attribution to the cart dependency.
 - The operator requests recovery.
 
 ## Preparation and scoped commands
 
-These commands are for later execution. Supply an existing authenticated kubeconfig and retain all output privately. Explicitly verify project `sre-platform-staging-507220`, context, namespace, active accepted release and app digests first. Compare the fresh protected-release references and holds with #111 evidence. Confirm nodes and sample-service health, no active rollout, both scheduled checks passing, correct email channel, successful delivery and current incident state. Confirm the query/check IDs from Terraform output and readback.
+These commands are for later execution. Supply an existing authenticated kubeconfig and retain all output privately. Explicitly verify project `sre-platform-staging-507220`, context, namespace, active accepted release and app digests first. Compare the fresh protected-release references and holds with #111 evidence. Confirm nodes and Online Shop health, no active rollout, both scheduled checks passing, correct email channel, successful delivery and current incident state. Confirm the query/check IDs from Terraform output and readback.
 
-Capture before/after deployments and health responses for sample-service dev/stage/prod. Baseline and final smoke requests are read-only. Resolve any live drift before exercise authorization.
+Capture before/after deployments and health responses for Online Shop. Baseline and final smoke requests are read-only. Resolve any live drift before exercise authorization.
 
 ```powershell
 $context = '<reviewed-current-context>'  # Explicit isolated context verified against the active binding
@@ -52,7 +52,7 @@ try {
 
     while ([DateTimeOffset]::UtcNow -lt $deadline) {
         if (Test-Path "$privateDir/recover-now") { break }
-        # Perform fresh node, sample-service and rollout stop-condition checks
+        # Perform fresh node, Online Shop and rollout stop-condition checks
         # in the observing session. Create recover-now on any stop condition.
         Start-Sleep -Seconds 5
     }
@@ -100,6 +100,6 @@ Record UTC for baseline success, scale0, failed execution, incident opening, ema
 
 Require one Ready/Available cart replica with the original template/digests and healthy endpoint browsing. Wait for the next scheduled browse run to pass, its state/cleanup evidence, and incident closure. The five-minute application rate window can delay the warning's closure after service recovery. Capture that behavior without extending the outage.
 
-Confirm incident closure from actual successful results and the absence of new errors in the following window. Missing samples or an automatically closed incident do not establish recovery. Finally verify sample-service Ready/Available and HTTP 200 in dev/stage/prod, nodes Ready, original app digests, no unexpected rollout, and no owned port-forward remaining. Leave the issue open until review of the sanitized timeline.
+Confirm incident closure from actual successful results and the absence of new errors in the following window. Missing samples or an automatically closed incident do not establish recovery. Finally verify Online Shop Ready/Available and expected HTTP health, nodes Ready, original app digests, no unexpected rollout, and no owned port-forward remaining. Leave the issue open until review of the sanitized timeline.
 
 Recovery reserves four minutes after the mutation window. Three attempts each bound GET and scale to five seconds, followed by readiness up to 120 seconds. Conflicts trigger fresh UID/template/replica checks. All other errors and exhausted conflicts transfer immediately to the recovery owner. The pinned Google 5.45.2 provider has no notification_prompts field. Recovery acceptance requires successful scheduled results and observed incident closure; a recovery email is recorded if delivered but is not required.

@@ -1,12 +1,9 @@
 # Trusted Delivery
 
-## Delivery path
-
-```text
-Verified release candidate → Trust → Cloud Deploy → Binary Authorization → GKE target namespace
-```
-
-Image production, metadata verification, signing, orchestration, and admission have separate responsibilities. Cloud Build executes distinct image and signing jobs under different identities. Cloud Deploy renders/deploys an existing trusted digest through the deployment identity. Binary Authorization remains admission authority. [Release Model](architecture/release-model.md) owns contracts; [Operator Runbook](operator-runbook.md) owns procedures.
+Online Shop is the active workload: independent production and digest verification,
+separate KMS-backed attestation, protected Cloud Deploy source/rendering, and
+enforced Binary Authorization. See [complete workload delivery](../deploy/online-shop/complete-README.md),
+[release model](architecture/release-model.md) and [IAM model](iam-model.md).
 
 ## Verification
 
@@ -33,23 +30,22 @@ The standard Binary Authorization simple-signing payload binds the immutable sub
 
 Success emits `attestation_status=created`, artifact identity, fresh verification, and occurrence `trust_signal_ref`. Failure emits failed status/error without a trust reference. A failure after creation can leave an occurrence; inspect before retrying. Retries can produce duplicates for one digest.
 
-Assemble signing code/config from a reviewed immutable commit; copy only candidate JSON. Do not accept candidate-controlled scripts or reuse the image trigger. Submission/source upload/signer `actAs` need separate reviewed authority. The signer cannot publish images, deploy, or administer admission policy. Persistent key-ring names and protected key lifecycle require deliberate review. Builds, KMS, logs, and storage incur charges.
+Assemble signing code/config from a reviewed immutable commit; copy only candidate JSON. Do not accept candidate-controlled scripts or reuse an image-producing build. Submission/source upload/signer `actAs` need separate reviewed authority. The signer cannot publish images, deploy, or administer admission policy. Persistent key-ring names and protected key lifecycle require deliberate review. Builds, KMS, logs, and storage incur charges.
 
 `--inspect-only` matches subject/note/key and validates signatures without signing/writes. Reviewer occurrence-viewing/attestor-verification access is separate from signing. See [IAM Model](iam-model.md) and [inspection procedure](operator-runbook.md#attestation-inspection).
 
 ## Cloud Deploy orchestration and rendering
 
-One pipeline uses serial dev/stage/prod profiles. Targets reference `projects/<PROJECT_ID>/locations/us-central1-a/clusters/<GKE_CLUSTER>`. Namespace selection is in manifests; GKE targets have no namespace field. RENDER and DEPLOY use `<DEPLOY_SERVICE_ACCOUNT>`, default Cloud Build workers, and required Google-managed agents.
-
-`deploy/clouddeploy/prepare-release.py` reuses the existing consumer validation, `deploy/environments.json`, and shared manifests. It validates the input target and all target views before writing, never overwrites a bundle, and makes no subprocess/cloud calls. Only namespace, environment annotation, and `APP_ENV` vary.
-
-Release creation renders all serial targets. `--disable-initial-rollout` prevents initial deployment; stage/prod rendering creates no rollouts or workloads. Pinned raw manifests need no `--images` or `--build-artifacts` substitution. Source has no application build stanza, hooks, or image overrides. Generated/default effective Skaffold `build.local` and `tagPolicy.gitCommit` alone do not prove rebuilding: inspect actual execution and rendered/running digest for build, retag, or substitution.
+Keep `catalog-dev`, shared `dev` target, deployment identity and protected storage.
+Preparation must verify a reviewed deployment revision and exact immutable images;
+no build, tag replacement or direct sample deployment path remains.
+See [operator procedures](operator-runbook.md) and [retirement dependencies](sample-service-retirement.md).
 
 ## Source and rendered artifact protection
 
 `gs://<CLOUD_DEPLOY_BUCKET>` uses STANDARD in `us-central1`, uniform bucket-level access, enforced public access prevention, disabled versioning, and `force_destroy=false`. Unlocked 86400-second retention prevents byte overwrite/delete during that period. Administrators can change the policy; it is not an irreversible lock.
 
-Source uses `source/<release-name>/`; outputs use `rendered/dev`, `rendered/stage`, and `rendered/prod`. Prefixes are not IAM boundaries. Target `artifact_storage` does not configure source staging; creation separately supplies `--gcs-source-staging-dir`.
+Source uses `source/<release-name>/`; current outputs use `rendered/dev`; old `rendered/stage` and `rendered/prod` objects remain historical protected material. Prefixes are not IAM boundaries. Target `artifact_storage` does not configure source staging; creation separately supplies `--gcs-source-staging-dir`.
 
 The caller uploads; deploy execution reads source and writes/reads outputs through Cloud Build. Existing agents support execution. Builder/Job Runner grants include inherited project storage access, which bucket IAM cannot revoke. Retention protects bytes without granting builder deployment authority.
 
@@ -67,78 +63,16 @@ Global evaluation enables Google-maintained system-image exceptions by image ide
 
 Admission checks digest-bound signatures, not metadata verification, promotion history, registry selection, or reference syntax. It affects new requests and does not evict existing Pods. Deployment creation may succeed while Pod admission fails; require rollout success and inspect ReplicaSet events. Break-glass is a boundary limitation, never a validation shortcut. Additional clusters/cross-project attestors need explicit review; policy changes need separate authorization.
 
-## Environment-aware deployment
+## Controlled promotion validation
 
-`deploy/deploy-release.py` is the existing direct consumer. It checks configured project/cluster/registry/producer/target, passed verification, UTC timestamp, occurrence reference, and exact digest. Tags and arbitrary namespace/image/authority/kubeconfig/break-glass overrides are rejected. `--reviewed` is not Cloud Deploy approval or proof of prior rollout history.
+The original sample dev/stage/prod controlled promotion and screenshots are
+**historical** [validation evidence](historical/sample-service/README.md).
+Online Shop currently has a dev-only pipeline. Stage/prod delivery is future work.
 
-Preparation needs Python 3.10+; execution needs gcloud/kubectl, authorized authentication, enforced admission, node pull access, and current attestation. Synthetic examples are offline fixtures, not live evidence. Store generated records/bundles in ignored local paths.
+## Release review and rollback
 
-Execution impersonates deploy authority using a short-lived token and isolated valid empty temporary kubeconfig with expected endpoint/CA. It never falls back to operator context. Temporary config/CA are removed on success/failure; tokens are absent from persisted config/results. Errors exclude token-bearing commands and subprocess stderr. PATH supports Windows `gcloud.CMD` and Linux/macOS executables.
+Use [manual release rejection and rollback](operator-runbook.md#manual-release-rejection-and-rollback)
+and fresh independent preflight. READY establishes eligibility only, not authorization.
+Keep raw evidence private. Paused workers do not establish workload readiness.
 
-`--execute` applies a Deployment and ClusterIP Service, waits up to 120 seconds, checks current generation availability/template digest, and emits deployment UID/time and correlation. Failure emits no `deployed_at` and may leave resources configured. No automatic rollback/cleanup exists. This consumer never builds/signs or creates Cloud Deploy releases; existing-release controlled promotion uses Cloud Deploy.
-
-## Release review
-
-Use the [release review checkpoint](operator-runbook.md#release-review-checkpoint) to reconcile immutable identity, independently inspected trust/admission evidence, deployment state, and operational evidence. Record exactly one decision and reason: continue, hold, or reject. Health cannot replace trust; missing evidence cannot silently pass. Continue requires separate promotion authorization; reject does not execute rollback. The checkpoint is read-only.
-
-## Manual rejection and rollback
-
-The [canonical workflow](operator-runbook.md#manual-release-rejection-and-rollback) records reject and stops further progression without automatic recovery. Separately authorized Cloud Deploy target rollback creates a new rollout of an explicitly selected previously accepted release, preserving its immutable digest, trust requirements, deployment authority, and target approval gates. Required source/render material must remain available and protected for the execution/validation window; readable bytes with expired retention do not satisfy the contract. No rebuild, retag, substitution, new release, direct Kubernetes deployment, or trust bypass is a recovery shortcut.
-
-## Executable release decision preflight
-
-`deploy/clouddeploy/release-preflight.py` evaluates an explicitly selected release, target, immutable digest, and intended `promotion` or `rollback` using a fresh, operator-supplied evidence snapshot. The [operator procedure](operator-runbook.md#release-decision-preflight) owns evidence collection and the CLI input contract. Common gates cover release/source/build identity, retained trusted verification, independently validated attestation, current Binary Authorization compatibility, source/render availability and hash readback, at least 75 minutes of remaining protection, target snapshot/current configuration, rollout conflicts, effective caller permission, and operational review. Promotion additionally requires a successful prior target rollout/job and review; rollback requires a previously accepted earlier release with a successful prior target rollout/job and a different current release.
-
-`READY` means the supplied current evidence satisfies the eligibility rules at evaluation time. Missing or stale security and required-read evidence produces `BLOCKED`; missing or stale operational evidence alone produces `HOLD`. Confirmed gate failures and malformed snapshots also produce `BLOCKED`. The CLI is an evidence-snapshot evaluator: it does not independently collect cloud data, and a fabricated snapshot cannot establish live trust. Its result is read-only and requires separate authorization before any Cloud Deploy mutation or target approval. Recollect and re-evaluate immediately before a separately authorized action.
-
-### Preflight validation status
-
-Read-only live validation for #80 produced a representative `READY / 0`, then a retention-driven `BLOCKED / 3` when source and rendered-artifact protection fell below the 75-minute margin. Both evaluations were read-only and performed no Cloud Deploy action. These observations do not authorize a future action or establish current eligibility.
-
-HOLD, rollback eligibility, malformed/stale evidence, and other negative decision scenarios have offline-only coverage. Manual rejection and rollback procedures are documented and checked offline; no rollback execution is claimed.
-
-## Security controls
-
-Require complete identity, approved location, passed gate, separate attestation, pinned digest, explicit target authority, and enforced admission. Claimed JSON status/annotations alone establish no trust. Inspect effective IAM, integrity, jobs, running digest, annotations, and health. Preserve prior environments. Further promotion, retries, cleanup, rollback, and corrections need separate authorization. Logs, metrics, a dashboard, and an availability alert policy support manual review; their bounded live validation is described in [Observability](observability.md). Automated promotion/rollback, error/latency alerting, notification routing, SLOs, tracing, and broader performance validation remain deferred.
-
-## Controlled Promotion Validation
-
-The historical controlled-promotion validation created one trusted release without an initial rollout, then deployed dev and separately promoted/approved stage and prod. Checks covered the same digest and source/build/trust correlation, successful rollout/jobs, Running/Ready Pods, ClusterIP, internal HTTP 200, unchanged prior environments/IAM/admission, and no rebuild, retag, external exposure, or bypass.
-
-![Stage rollout waiting for separate approval](images/controlled-promotion/01-stage-pending-approval.png)
-
-Stage rollout waiting for separate approval
-
-![Production rollout waiting for separate approval](images/controlled-promotion/02-prod-pending-approval.png)
-
-Production rollout waiting for separate approval
-
-![The same trusted release deployed across dev, stage, and prod](images/controlled-promotion/03-promotion-complete.png)
-
-The same trusted release deployed across dev, stage, and prod
-
-Screenshots show approval/progression but do not themselves prove digest identity, attestation, Binary Authorization, or HTTP health; those require the surrounding validated contract and read-only checks. UI `Verify: Disabled` means Skaffold verify phase, not disabled metadata verification/admission. These are historical examples, not fresh infrastructure inventory.
-
-## Offline validation
-
-```sh
-python -B -m unittest discover -s scripts/tests -p 'test_*py' -v
-python deploy/clouddeploy/prepare-release.py --metadata /local/verified-release.json --reviewed --output-dir .local-validation/bundle
-cd .local-validation/bundle
-skaffold diagnose -f skaffold.yaml -p dev --yaml-only
-skaffold render -f skaffold.yaml -p dev --offline=true --digest-source=none --output ../render-dev.yaml
-```
-
-Repeat for stage/prod from the bundle directory with an empty local kubeconfig. Validated schema/tool: `skaffold/v4beta7`, Skaffold v2.13.2. Preparation rejects tags despite general raw-manifest flexibility. Offline tests simulate APIs, not live IAM denial, KMS cryptography, or admission. A trusted rollout does not establish unexecuted negative tests.
-
-## References
-
-- [Attestation flow](https://docs.cloud.google.com/binary-authorization/docs/making-attestations)
-- [Signature validation](https://docs.cloud.google.com/binary-authorization/docs/reference/rest/v1/projects.attestors/validateAttestationOccurrence)
-- [KMS signing](https://docs.cloud.google.com/kms/docs/reference/rest/v1/projects.locations.keyRings.cryptoKeys.cryptoKeyVersions/asymmetricSign)
-- [System-image exceptions](https://docs.cloud.google.com/binary-authorization/docs/key-concepts#google-maintained_system_images)
-- [Execution environment](https://docs.cloud.google.com/deploy/docs/execution-environment)
-- [Cloud Deploy service accounts](https://docs.cloud.google.com/deploy/docs/cloud-deploy-service-account)
-- [Release command](https://docs.cloud.google.com/sdk/gcloud/reference/deploy/releases/create)
-- [Retention](https://docs.cloud.google.com/storage/docs/using-bucket-lock)
-- [Lifecycle](https://docs.cloud.google.com/storage/docs/lifecycle)
+Use the [release review checkpoint](operator-runbook.md#release-review-checkpoint) to reconcile independent trust, deployment state and fresh operational evidence.

@@ -34,7 +34,7 @@ resource "google_project_service" "catalog_trace" {
 }
 
 # Only the managed agent's original catalog stdout copy is excluded. The
-# Collector's online-shop/catalog stream remains ingested. Sample logs stay intact.
+# Collector's online-shop/catalog stream remains ingested. Other workloads are outside this filter.
 resource "google_logging_project_exclusion" "catalog_stdout" {
   project     = var.project_id
   name        = "catalog-stdout-owned-by-collector"

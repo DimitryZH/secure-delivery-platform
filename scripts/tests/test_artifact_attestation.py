@@ -20,7 +20,7 @@ spec.loader.exec_module(attest)
 PROJECT = "example-project"
 REGISTRY = "us-central1-docker.pkg.dev/" + PROJECT + "/secure-delivery"
 DIGEST = "sha256:" + "a" * 64
-ARTIFACT = REGISTRY + "/sample-service@" + DIGEST
+ARTIFACT = REGISTRY + "/online-shop-productcatalogservice@" + DIGEST
 KEY = "projects/example-project/locations/us-central1/keyRings/secure-delivery-attestation/cryptoKeys/verification/cryptoKeyVersions/1"
 PUBLIC_KEY_ID = "//cloudkms.googleapis.com/v1/" + KEY
 NOTE = "projects/example-project/notes/secure-delivery-verification"
@@ -28,7 +28,7 @@ METADATA = {
     "source_repository": "DimitryZH/secure-delivery-platform",
     "commit_sha": "a" * 40, "build_id": "11111111-2222-3333-4444-555555555555",
     "build_service_account": "secure-delivery-build@example-project.iam.gserviceaccount.com",
-    "image_uri": REGISTRY + "/sample-service:main", "image_digest": DIGEST,
+    "image_uri": REGISTRY + "/online-shop-productcatalogservice:main", "image_digest": DIGEST,
 }
 REAL_RUN = subprocess.run
 
@@ -106,7 +106,7 @@ class AttestationTest(unittest.TestCase):
     def test_missing_failed_or_forged_verification_never_reaches_authority(self):
         for record in (None, {}, {"verification_status": "passed", "artifact_identity": ARTIFACT},
                        {**METADATA, "image_digest": "latest"},
-                       {**METADATA, "image_uri": REGISTRY + "/sample-service@sha256:" + "b" * 64},
+                       {**METADATA, "image_uri": REGISTRY + "/online-shop-productcatalogservice@sha256:" + "b" * 64},
                        {**METADATA, "image_uri": "elsewhere.example/image:main"}):
             with self.subTest(record=record):
                 status, result, commands, api, stored = self.exercise(metadata=record)

@@ -1,5 +1,5 @@
 # #100 proposal only. Apply requires review of the full saved plan and separate
-# authorization. Preserve the existing default pool and sample-service nodes.
+# authorization. Preserve both shared node pools and the selected capacity mode.
 resource "google_container_node_pool" "complete_shop" {
   project    = var.project_id
   location   = var.gke_location

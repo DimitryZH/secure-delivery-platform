@@ -1,5 +1,7 @@
 # Online Shop scheduled checks
 
+Active workload: **Online Shop**. Sample-service is retired; any sample preservation or health observations below are **historical evidence only**, never a prerequisite for recovery, delivery or acceptance. Existing recorded runs retain their original results.
+
 For active-environment preparation, follow the [baseline recovery gates](../../docs/platform-baseline-recovery.md).
 Historical IDs/results below are not operational defaults or current acceptance.
 Use the isolated execution roots and reviewed private inputs; never reuse a cached
@@ -71,7 +73,7 @@ At five-minute frequency there are about 8,640 synthetic runs and at most 25,920
 3. Confirm delivery to the designated email. Follow the bounded [cart dependency failure](incident-runbook.md) after exercise authorization.
 4. Record policy condition, incident ID, detection delay and operator receipt time. Diagnose the affected frontend operation and cart dependency through dashboard, traces and logs.
 5. Restore one cartservice replica within the bound. Require application recovery, a subsequent successful scheduled run, incident closure based on success samples.
-6. Check sample-service dev/stage/prod and final app health. Publish sanitized timing/results. Raw responses, session correlation and email stay private.
+6. Check final Online Shop health when workers are running. Publish sanitized timing/results. Raw responses, session correlation and email stay private.
 
 Provisioning and schedule enablement have completed. The HTTPS check passed from five locations. The synthetic check failed before any Shop GET with `synthetic_trace_context_missing`, opened incident `0.oequ1e89idz7`, and delivered the operator-confirmed failure email. The exact derived session key read back `EXISTS=0` and the owned forward was closed. The merged fix subsequently passed scheduled browsing and application correlation, and this incident closed. See [recorded synthetic/edge correlation](scheduled-correlation.md) for the retained evidence, corrected LB identity assumption and data limits. The separately authorized cartservice failure exercise remains pending.
 
