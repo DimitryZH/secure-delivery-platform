@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "binding": "sdp-dev-v1",
+  "project": "sdp-gcp",
+  "endpoint_enabled": false
+}

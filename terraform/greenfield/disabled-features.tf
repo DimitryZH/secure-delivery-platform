@@ -1,4 +1,4 @@
-# Initial greenfield cloud root deliberately excludes endpoint/synthetic resources.
+# Deferred variable guards are retained only for features excluded by composition.
 variable "shop_edge_enforce_evaluated_rules" {
   type    = bool
   default = false

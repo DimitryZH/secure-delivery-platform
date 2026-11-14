@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "scope": "Optional endpoint and observability foundation composition; deployment-only endpoint policy",
+  "baseline_runtime": {
+    "validator_revision": "240ca1907160abd4fcc4df5f9a4b66dec1917913",
+    "producing_revision": "d9ae670f0147d90bd4892f776b021618a2af9c90",
+    "deployment_revision": "d9ae670f0147d90bd4892f776b021618a2af9c90",
+    "release": "shop-complete-d9ae670-f43702a1",
+    "rollout": "dev-full-001",
+    "runtime": "passed",
+    "ready_pods": 14,
+    "application_services": 10,
+    "redis_members": 1,
+    "collector_agents": 2,
+    "collector_metrics": 1,
+    "service_endpoint_and_dns_checks": 12,
+    "sample_service": "absent; separate workload",
+    "new_rollout": false,
+    "fresh_checkout": "not performed"
+  },
+  "terraform": {
+    "provider_google": "5.45.2",
+    "fmt_check": "passed",
+    "validate": "passed",
+    "full_refreshed_plan": {
+      "add": 33,
+      "change": 0,
+      "destroy": 0,
+      "replace": 0,
+      "import": 0
+    },
+    "plan_sha256": "98630b5767739ca791fec7d9041ec8c2c88d93a03cbdffeadc0799595556a7f8",
+    "drift": "Nested cluster pool initial/count fields changed from 0 to 1 after an earlier resume. Cluster and managed pool planned actions remain no-op.",
+    "unchanged": [
+      "cluster",
+      "managed node pools",
+      "human operator binding",
+      "existing dashboard"
+    ],
+    "armor_waf_and_throttle": "preview",
+    "scheduled_checks": 0,
+    "application_alert_enabled": false,
+    "synthetic_zip_sha256": "a84b3c430f8be229057d88ebac1e3b1fb2f15146def6d9feca43eb9590b3ffb4",
+    "apply_performed": false
+  },
+  "regressions": {
+    "tests": 185,
+    "passed": 181,
+    "optional_skipped": 4,
+    "failed": 0,
+    "coverage": [
+      "closed deployment-policy schema and project/binding rejection",
+      "deployment revision pins policy independently of producing revision",
+      "39/45 resource endpoint toggle with unchanged candidate/build request",
+      "canonical optional composition, API ownership subtraction, alert template and freshness",
+      "existing release, signing, runtime and cleanup guards"
+    ],
+    "pinned_provider_offline_integrations": {
+      "passed": 2,
+      "skipped": 0,
+      "fixtures": [
+        "loopback Binary Authorization policy/import plan",
+        "Workload Identity dependency graph"
+      ]
+    }
+  },
+  "limits": [
+    "Plan is a review artifact, not authorization to apply.",
+    "No new endpoint, DNS, function or scheduled monitor was created.",
+    "Optional native Collector and public registry fixture tests were skipped; no new runtime claim for this code.",
+    "New deployment code requires merge and a new reviewed protected render/release before a separately authorized rollout. Existing deployment readback retains its compatible validator revision.",
+    "DNS delegation, certificate activation, endpoint rollout and scheduled acceptance remain separate gates.",
+    "Sample-service restoration and controlled incident exercise remain pending."
+  ]
+}

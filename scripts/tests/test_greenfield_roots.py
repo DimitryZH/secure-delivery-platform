@@ -14,6 +14,10 @@ spec.loader.exec_module(g)
 class GreenfieldRootsTests(unittest.TestCase):
     def setUp(self):
         (g.REPO / ".local-validation").mkdir(parents=True, exist_ok=True)
+        temporary = tempfile.TemporaryDirectory(dir=g.REPO / ".local-validation")
+        self.addCleanup(temporary.cleanup)
+        isolated = patch.object(g, "ENV", Path(temporary.name))
+        isolated.start(); self.addCleanup(isolated.stop)
 
     def test_no_legacy_inputs_or_kubernetes_in_cloud(self):
         files = g.expected()
@@ -26,6 +30,45 @@ class GreenfieldRootsTests(unittest.TestCase):
         self.assertNotIn("terraform/foundation/shop-endpoint.tf", files)
         self.assertNotIn("terraform/foundation/shop-observability.tf", files)
         self.assertEqual(files["terraform/foundation/gke-capacity.tf"], (g.REPO / "terraform/foundation/gke-capacity.tf").read_bytes())
+
+    def test_optional_features_reuse_canonical_sources_and_same_state_owner(self):
+        for endpoint, observability in ((False, False), (True, False), (True, True)):
+            with self.subTest(endpoint=endpoint, observability=observability), tempfile.TemporaryDirectory(dir=g.REPO / '.local-validation') as d, patch.object(g, 'ENV', Path(d)):
+                profile = {'version': 1, 'endpoint': endpoint, 'observability': observability}
+                (Path(d) / 'foundation-features.private.json').write_text(json.dumps(profile))
+                files = g.expected(); guard = files['terraform/foundation/greenfield-disabled.tf'].decode()
+                for selected, name in ((endpoint, 'shop-endpoint.tf'), (observability, 'shop-observability.tf')):
+                    path = 'terraform/foundation/' + name
+                    self.assertEqual(path in files, selected)
+                    if selected: self.assertEqual(files[path], (g.REPO / path).read_bytes())
+                self.assertEqual('variable "shop_edge_enforce_evaluated_rules"' in guard, not endpoint)
+                self.assertEqual('variable "shop_observability_enabled"' in guard, not observability)
+                self.assertIn('greenfield_pool_creation', guard)
+                self.assertEqual('monitoring/online-shop/frontend-errors.promql.tftpl' in files, observability)
+                cloud = b'\n'.join(v for k,v in files.items() if k.startswith('terraform/foundation/') and k.endswith('.tf'))
+                self.assertNotIn(b'provider "kubernetes"', cloud)
+                for feature in ('endpoint', 'observability'):
+                    key='terraform/foundation/'+feature+'-services_override.tf'
+                    if profile[feature]: self.assertIn(b'setsubtract', files[key])
+                g.materialize(); g.materialize(check=True)
+                self.assertEqual(files['terraform/foundation/main.tf'], (g.REPO/'terraform/foundation/main.tf').read_bytes())
+
+    def test_feature_selection_rejects_invalid_types_unknown_keys_and_stale_composition(self):
+        with tempfile.TemporaryDirectory(dir=g.REPO / '.local-validation') as d, patch.object(g, 'ENV', Path(d)):
+            path=Path(d)/'foundation-features.private.json'
+            for value in ({'version':True,'endpoint':False,'observability':False},
+                          {'version':1,'endpoint':1,'observability':False},
+                          {'version':1,'endpoint':False,'observability':True},
+                          {'version':1,'endpoint':True,'observability':True,'extra':1}):
+                path.write_text(json.dumps(value))
+                with self.assertRaises(SystemExit):g.expected()
+            path.unlink();g.materialize()
+            path.write_text(json.dumps({'version':1,'endpoint':True,'observability':True}))
+            with self.assertRaises(SystemExit):g.materialize(check=True)
+            g.materialize();g.materialize(check=True)
+            # A downgrade cannot silently delete generated resources/files.
+            path.unlink()
+            with self.assertRaises(SystemExit):g.materialize()
 
     def test_freshness_and_unexpected_files_fail_closed(self):
         with tempfile.TemporaryDirectory(dir=g.REPO / ".local-validation") as d, patch.object(g, "ENV", Path(d)):
