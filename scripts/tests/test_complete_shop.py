@@ -773,6 +773,53 @@ class CompleteTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'incompatible_deployed_trust_files'):
                 a.review_deployed_configuration('e'*40)
 
+    def autoscaler_diagnostics(self, pod):
+        keys = a.AUTOSCALER_DIAGNOSTICS
+        pod['metadata']['annotations'].update({keys[0]: '2026-01-01T00:00:00+0000', keys[1]: 'Inf'})
+        pod['metadata']['managedFields'] = [{'manager': 'cluster-autoscaler', 'operation': 'Update',
+            'apiVersion': 'v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'f:' + k: {} for k in keys}}}}]
+        return pod
+
+    def test_runtime_accepts_closed_autoscaler_diagnostics_after_independent_guard(self):
+        snapshot = self.runtime_fixture(REV)
+        for pod in snapshot['pods']['items']:
+            self.autoscaler_diagnostics(pod)
+        with patch.object(a, 'guard') as guard:
+            self.assertEqual(a.runtime(snapshot, self.record, REV, self.plans, self.refs, Mock())['runtime'], 'passed')
+            guard.assert_called_once()
+
+    def test_autoscaler_diagnostics_reject_unknown_partial_malformed_and_unowned(self):
+        expected = {'release-set': 'accepted', 'digest': 'sha256:' + 'a' * 64}
+        pod = self.autoscaler_diagnostics({'metadata': {'annotations': dict(expected)}})
+        a.runtime_annotations(pod, expected)
+        changes = [lambda p: p['metadata']['annotations'].update({'other': 'value'}),
+            lambda p: p['metadata']['annotations'].pop(a.AUTOSCALER_DIAGNOSTICS[1]),
+            lambda p: p['metadata']['annotations'].update({a.AUTOSCALER_DIAGNOSTICS[0]: True}),
+            lambda p: p['metadata']['annotations'].update({a.AUTOSCALER_DIAGNOSTICS[0]: '2026-02-30T00:00:00+0000'}),
+            lambda p: p['metadata']['annotations'].update({a.AUTOSCALER_DIAGNOSTICS[1]: 'forever'}),
+            lambda p: p['metadata'].pop('managedFields'),
+            lambda p: p['metadata']['managedFields'][0].update(manager='foreign'),
+            lambda p: p['metadata']['managedFields'][0].update(operation='Apply'),
+            lambda p: p['metadata']['managedFields'][0].update(subresource='status'),
+            lambda p: p['metadata']['managedFields'].append(copy.deepcopy(p['metadata']['managedFields'][0])),
+            lambda p: p['metadata']['annotations'].update({'release-set': 'foreign'}),
+            lambda p: p['metadata']['annotations'].pop('digest')]
+        for index, change in enumerate(changes):
+            with self.subTest(case=index):
+                altered = copy.deepcopy(pod); change(altered)
+                with self.assertRaises(ValueError): a.runtime_annotations(altered, expected)
+
+    def test_autoscaler_diagnostics_do_not_allow_source_inventory_or_image_substitution(self):
+        docs = w.render(self.record, REV, self.refs)
+        deployment = next(d for d in docs if d['kind'] == 'Deployment')
+        self.autoscaler_diagnostics(deployment['spec']['template'])
+        with self.assertRaises(ValueError): w.inventory(docs, self.record, REV, self.refs)
+        snapshot = self.runtime_fixture(REV)
+        for pod in snapshot['pods']['items']: self.autoscaler_diagnostics(pod)
+        snapshot['pods']['items'][0]['spec']['containers'][0]['image'] = 'foreign:latest'
+        with patch.object(a, 'guard'), self.assertRaises(ValueError):
+            a.runtime(snapshot, self.record, REV, self.plans, self.refs, Mock())
+
     def test_runtime_positive_and_coherent_tamper_guard(self):
         docs=w.render(self.record,REV,self.refs);pods=[]
         for d in docs:

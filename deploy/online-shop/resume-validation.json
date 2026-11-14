@@ -1,0 +1,120 @@
+{
+  "version": 1,
+  "configuration_revision": "d9ae670f0147d90bd4892f776b021618a2af9c90",
+  "release": "shop-complete-d9ae670-f43702a1",
+  "rollout": "dev-full-001",
+  "recorded_at": "2026-11-13",
+  "live_runtime_guard": {
+    "status": "BLOCKED",
+    "reason": "runtime_component_metadata_mismatch",
+    "diagnosis": "Existing release annotations and imageIDs match; observed extra GKE autoscaler diagnostic pair has cluster-autoscaler Update field ownership.",
+    "fixed_validator_live_status": "PENDING_REVIEW_AND_MERGE"
+  },
+  "offline_metadata_replay": {
+    "recorded_pods": 14,
+    "status": "passed",
+    "limit": "Recorded metadata check only, not live independent runtime acceptance."
+  },
+  "read_only_smoke": {
+    "HTTP_requests": 3,
+    "paths": [
+      "/_healthz",
+      "/",
+      "/product/<selected-product>"
+    ],
+    "statuses": [
+      200,
+      200,
+      200
+    ],
+    "Redis_DBSIZE_before": 0,
+    "Redis_DBSIZE_after": 0,
+    "checkout_executed": false,
+    "forward_closed": true
+  },
+  "fresh_telemetry": {
+    "trace_services": [
+      "adservice",
+      "cartservice",
+      "currencyservice",
+      "frontend",
+      "productcatalogservice",
+      "recommendationservice"
+    ],
+    "trace_spans": 62,
+    "native_logs": 85,
+    "metric_components": [
+      "frontend",
+      "cartservice",
+      "productcatalogservice",
+      "adservice",
+      "currencyservice",
+      "recommendationservice",
+      "redis-cart"
+    ],
+    "attribution_validated": true,
+    "limit": "Read-only smoke exercises six services plus Redis; full checkout/all-ten acceptance not rerun."
+  },
+  "dashboard": {
+    "queries_match": true,
+    "widgets": 7,
+    "queries": 6,
+    "results": {
+      "Application requests": {
+        "series": 6,
+        "warnings": []
+      },
+      "Application errors": {
+        "series": 3,
+        "warnings": []
+      },
+      "Server latency p95": {
+        "series": 3,
+        "warnings": []
+      },
+      "Observed server success": {
+        "series": 3,
+        "warnings": []
+      },
+      "Kubernetes readiness \u00b7 available replicas": {
+        "series": 10,
+        "warnings": []
+      },
+      "Kubernetes readiness \u00b7 desired replicas": {
+        "series": 10,
+        "warnings": []
+      }
+    },
+    "observed_at": "2026-11-13T21:48:15.091703Z",
+    "limit": "Read-only smoke window only; checkout/all-ten user-traffic acceptance not repeated."
+  },
+  "validation": {
+    "tests": 176,
+    "passed": 172,
+    "skipped": 4,
+    "failures": 0,
+    "errors": 0,
+    "skips": [
+      "native Collector optional integration",
+      "native Collector optional validation",
+      "native Collector optional validation",
+      "optional actual public registry/source byte fixture"
+    ]
+  },
+  "new_deployments": 0,
+  "new_artifact_build_or_signing": 0,
+  "pending": [
+    "Merge validator and re-run normal runtime with actual producing/deployment SHA and actual merged validator SHA.",
+    "Review isolated root composition and deployment-only endpoint compatibility before full infrastructure plan.",
+    "Endpoint/DNS/TLS/Armor resources and acceptance; preserve parent website/mail.",
+    "Separate sample-service trusted delivery to dev/stage/prod.",
+    "Full dashboard checkout acceptance, synthetic provisioning then scheduling/notifications.",
+    "Controlled failure/recovery #115 remains open; no historic success inferred."
+  ],
+  "synthetic_package_sha256": "a84b3c430f8be229057d88ebac1e3b1fb2f15146def6d9feca43eb9590b3ffb4",
+  "implementation_sha256": {
+    "deploy/online-shop/complete-acceptance.py": "sha256:edc5ebf3804994a683f71a972017fc0a1f4500132101235edcfed140d478c9b9",
+    "scripts/tests/test_complete_shop.py": "sha256:f3f631b9cb91f741e68f057d160a80f5d0e7503b379a50dce956328be108f170"
+  },
+  "cloud_resource_mutations": 0
+}

@@ -81,6 +81,30 @@ Fresh observed allocatable CPU was 1930m on default-pool and 3920m on shop-dev-c
 
 The existing catalog exclusion and new scoped exclusion matched reviewed configuration. Collector agents cover both nodes; only the eleven named dev stdout paths are collected. Original managed stdout queries returned zero entries during the bounded journey window, and project sink review found only the expected default/required sinks. This is a window-bound observation, not a long-running no-loss/no-duplication claim.
 
+## Existing workloads after a manual node resume
+
+Inspect the existing release, controllers and Pods before considering another rollout.
+Redis uses emptyDir and starts empty after node removal. Node readiness alone is not
+application acceptance. Follow the [baseline recovery gates](../../docs/platform-baseline-recovery.md).
+
+The runtime validator permits only the observed GKE diagnostic pair
+`cloud.google.com/cluster_autoscaler_unhelpable_since` and
+`cloud.google.com/cluster_autoscaler_unhelpable_until` on live Pods, with a valid
+UTC `YYYY-MM-DDTHH:MM:SS+0000` timestamp and the exact sentinel `Inf`. Both fields
+must have a single `cluster-autoscaler` Update owner in v1 managedFields. Ownership
+metadata corroborates the readback; it does not authenticate a caller or define
+release identity. Collect live Pod managed fields explicitly (for example,
+`kubectl --context=<reviewed-context> -n dev get pods -o json --show-managed-fields=true`).
+Missing ownership, partial pairs, other values and unknown annotations fail closed. Every release annotation remains exact. Source templates
+and prepared/server-rendered inventory retain their exact comparisons; this is
+not a metadata-stripping rule for manifests.
+
+A validator-only fix requires merge before live acceptance. Retain the candidate's
+producing SHA and actual deployment SHA; supply the actual merged validator SHA
+via `--validator-revision`. The reviewed-main and deployed/shared-trust-file gates
+still run. This change requires no artifact rebuild, re-signing or workload rollout.
+See [resume validation](resume-validation.json) for current observations and pending live gates.
+
 ## Reusing an existing trusted candidate
 
 Producing and deployment revisions have separate meanings. `--configuration-revision` on the acceptance CLI is the candidate's immutable producing SHA; `--deployment-revision` is the newly merged configuration containing the executing deployment/acceptance code. Pass both to runtime, signals, journey and capacity. Prepare/preflight take the candidate and explicit deployment revision. For the current candidate, producing SHA remains `00e925e724808ac80f1313fb85da1c6b3ec19f3f`; use merged `0c12993dccb802b47270ca2730a4e0c2005a98a6` as the deployment revision for the recorded repeat. Legacy same-revision acceptance calls retain their default; omitting the new deployment SHA after a deployment-code change still fails review.

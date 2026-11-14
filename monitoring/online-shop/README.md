@@ -1,5 +1,10 @@
 # Online Shop scheduled checks
 
+For active-environment preparation, follow the [baseline recovery gates](../../docs/platform-baseline-recovery.md).
+Historical IDs/results below are not operational defaults or current acceptance.
+Use the isolated execution roots and reviewed private inputs; never reuse a cached
+historical backend to provision these resources.
+
 The #115 configuration provisions a public HTTPS uptime check, a Cloud Monitoring synthetic monitor and email alerts for the accepted dev Online Shop. The existing [dashboard and native correlation procedure](../dashboards/online-shop-dev/README.md) supplies diagnosis. Read-only results and validation limits are in [validation.json](validation.json). The [incident runbook](incident-runbook.md) defines the separately authorized failure exercise.
 
 ## Observations and thresholds
