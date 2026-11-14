@@ -34,7 +34,6 @@ administrative grants, trust identities, registry artifacts and evidence holds a
 
 | Stage | Resources and ownership | Required result before continuing |
 | --- | --- | --- |
-| Sample baseline | Existing sample Cloud Build trigger; one verified image/metadata and separate signing if absent; existing sample Cloud Deploy pipeline/targets | Same new-registry digest/signature promoted to dev/stage/prod with required approvals; Ready/Available and HTTP health in all three |
 | Endpoint foundation | Foundation state: `google_project_service.shop_edge`, global address, child DNS zone, two DNS records, Certificate Manager authorization/certificate/map/entry, SSL policy and Armor policy from `shop-endpoint.tf` | Reviewed full plan; ten non-API resources plus three API ownership records if not already managed; no node-pool or unrelated changes |
 | DNS/TLS | Operator changes only the reviewed child delegation/authorization at the actual external DNS provider | Actual assigned nameservers, authoritative/public DNS, no conflicting AAAA/DS, appropriate CAA, unchanged parent website/mail, certificate ACTIVE |
 | Endpoint workload | Cloud Deploy owns Gateway, two HTTPRoutes and three policies; Gateway controller owns ALB/NEGs/forwarding/backend resources | Protected release/server render of 45 resources, fresh preflight and separate rollout authorization; observed-generation Gateway readiness, healthy frontend backend and valid HTTPS/HTTP301 |
@@ -42,11 +41,9 @@ administrative grants, trust identities, registry artifacts and evidence holds a
 | Dashboard | Existing `google_monitoring_dashboard.online_shop_dev`, six reviewed PromQL queries and the existing Collector exporter path | Fresh query results for a bounded checkout, native trace/log linkage, probe exclusion, zero-versus-no-data and single ingestion through the existing Collector-to-Cloud-Monitoring path/PromQL bridge; no duplicate scrape path |
 | Synthetic provisioning | `shop-observability.tf`: source bucket/object, function image repository, two dedicated SAs/scoped grants, function/invoker bindings, monitoring service identity, private email channel and disabled frontend-error policy | Reviewed ZIP/hash and full plan, function ACTIVE/build SUCCESS, private invoker and scoped identities; no scheduled checks yet |
 | Scheduled monitoring | Two checks and two check-failure policies; enable frontend-error policy | Separate full plan with scheduling enabled, successful scheduled HTTPS/synthetic runs, at most3GET per synthetic run, trace/log linkage, exact session evidence and notification delivery |
-| Incident exercise | Existing dev cartservice only; independent recovery owner/session | Pre-reviewed guarded1-to0 failure, recovery starts by4minutes and completes within8, failed execution/incident/email, recovery run and incident closure, exact cleanup/sample preservation |
+| Incident exercise | Existing dev cartservice only; independent recovery owner/session | Pre-reviewed guarded1-to0 failure, recovery starts by4minutes and completes within8, failed execution/incident/email, recovery run and incident closure, exact cleanup/Online Shop health |
 
-Sample-service is a separate workload. Its absence is not repaired by an Online Shop
-rollout. Reuse valid sample artifacts after fresh verification; never treat candidate JSON
-as an image or an old URI's signature as authorization for another registry.
+Sample-service is retired and has no restoration or preservation gate. Online Shop is the active workload; reuse requires fresh artifact and trust verification.
 
 ## Preconditions before a saved infrastructure plan
 

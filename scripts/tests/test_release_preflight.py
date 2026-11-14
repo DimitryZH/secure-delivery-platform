@@ -33,7 +33,7 @@ def evidence(action="promotion", target="stage"):
         "commit_sha": "c" * 40,
         "build_id": BUILD,
         "build_service_account": POLICY["build_service_account"],
-        "image_uri": POLICY["approved_registry"] + "/sample-service@" + DIGEST,
+        "image_uri": POLICY["approved_registry"] + "/online-shop-productcatalogservice@" + DIGEST,
         "image_digest": DIGEST,
         "verification_status": "passed",
         "verification_timestamp": stamp(-60),

@@ -1,4 +1,5 @@
 {
+  "historical_notice": "Historical recorded-run evidence; sample-service observations and restoration notes are superseded by retirement and impose no active requirement.",
   "base_revision": "031c2bd3da7d667bb6232b7cc3fbc68d15597c03",
   "blockers_before_live": [
     "No further live operation is needed for this bounded negative-denial check. Review it together with the earlier dev runtime/RPC/telemetry acceptance before closing #93.",

@@ -32,7 +32,7 @@ class ReleaseRollbackWorkflowTest(unittest.TestCase):
     def test_explicit_existing_release_new_rollout_and_separate_approval(self):
         command = TEXT.split("```sh\n", 1)[1].split("```", 1)[0]
         self.assertEqual(command.count("gcloud deploy targets rollback"), 1)
-        for flag in ("--project=<PROJECT_ID>", "--region=<REGION>", "--delivery-pipeline=sample-service",
+        for flag in ("--project=<PROJECT_ID>", "--region=<REGION>", "--delivery-pipeline=<REVIEWED_PIPELINE>",
                      "--release=<PREVIOUS_ACCEPTED_RELEASE>", "--rollout-id=<NEW_ROLLBACK_ROLLOUT_ID>"):
             self.assertIn(flag, command)
         self.assertNotRegex(command, r"kubectl|--images|--override|builds|releases create")

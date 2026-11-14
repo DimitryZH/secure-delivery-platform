@@ -1,5 +1,7 @@
 # Complete Online Shop in dev (issue #100)
 
+Active workload: **Online Shop**. Sample-service is retired; any sample preservation or health observations below are **historical evidence only**, never a prerequisite for recovery, delivery or acceptance. Existing recorded runs retain their original results.
+
 This is the complete dev integration entry point for [#100](https://github.com/DimitryZH/secure-delivery-platform/issues/100), using reviewed SDP `00e925e724808ac80f1313fb85da1c6b3ec19f3f`, application AML `89fd1cde8285761cc2a35dfb22d145adb2eed980` and Redis dependency contract `23b5b28de59e73fbfe2d4eff027f33bd82ae5e26`. The full application was deployed together; no service subset was promoted independently. See [sanitized validation](complete-validation.json).
 
 **Recorded decision: signals acceptance passed for the preserved journey; pending review of #100.** Merged validator `55e6706edffc1b05bfb2104be20232ceb4f1ff18` returned CLI exit 0 with its normal independent guard. Actual deployment remains `0c12993dccb802b47270ca2730a4e0c2005a98a6` and producing configuration remains `00e925e724808ac80f1313fb85da1c6b3ec19f3f`. Only the original journey record was added to a copy of the historical snapshot. No deployment, journey, traffic or live mutation occurred. This validates the recorded run, not current application state. Historical failures remain unchanged.

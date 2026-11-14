@@ -6,7 +6,6 @@ This directory manages the shared Google Cloud/GKE infrastructure with explicit 
 
 - `main.tf`: provider settings, baseline APIs, Artifact Registry repository.
 - `service-accounts.tf`: build/deploy/node/reviewer accounts and scoped bindings.
-- `cloudbuild.tf`: sample image-build trigger.
 - `gke.tf`: cluster and explicitly managed node pools.
 - `gke-capacity.tf`: explicit manual running/paused mode for separately managed pools.
 - `kubernetes.tf`: namespaces/provider retained in the existing combined root.
@@ -14,12 +13,10 @@ This directory manages the shared Google Cloud/GKE infrastructure with explicit 
 - `attestation.tf`: separate signer, KMS key, note/attestor, signing IAM, and attestation source bucket.
 - `binary-authorization.tf`: protected cluster admission policy.
 - `clouddeploy.tf`: API, Job Runner binding, serial pipeline/targets, and source/render artifact bucket.
-- `logging-metrics.tf.json`: three structured sample-service request/error/latency metrics.
-- `dashboard.tf`: one deployment health dashboard using existing metrics.
-- `alert-policy.tf.json`: one availability review policy using existing deployment-state gauges.
+- `dashboard.tf`: the retained Online Shop dev dashboard.
 - `outputs.tf`: resource identities and integration outputs.
 
-Resources here define the bounded [release-health log-based metrics](../../monitoring/log-based-metrics/README.md), one [deployment health dashboard](../../monitoring/dashboards/README.md), and one [availability alert policy](../../monitoring/alert-policies/README.md). The availability alert policy is deployed and live-validated in its healthy state. Future Terraform mutations require a reviewed plan and explicit apply authorization. [IAM Model](../../docs/iam-model.md) owns the identity/authority matrix; [Trusted Delivery](../../docs/trusted-delivery.md) owns delivery and storage contracts.
+Sample-only resources are removed from desired configuration; see [retirement scope](../../docs/sample-service-retirement.md). Online Shop, shared dev target, identities, trust, storage and paused capacity are retained. New plans and evidence stay private; apply requires separate authorization.
 
 ## Validation and backend
 
@@ -66,4 +63,4 @@ Ownership and ordering:
 
 For greenfield pools, the temporary cluster-created pool is removed before the separately managed default pool is created. Historical adoption remains in the combined root; do not apply that import to a nonexistent pool. The singleton Binary Authorization import is retained: after separately authorized API enablement, confirm the project policy exists before planning its import. If absent, review creation semantics rather than deleting the import automatically.
 
-Other prerequisites include state-bucket name availability, API/quota/IAM review, node/surge capacity and the GitHub connection/repository referenced by the sample-service trigger. That connection is not created by this Terraform. Offline validation is not a live readiness check. Separate persistent/runtime lifecycle management remains future work; controller-owned Gateway/load-balancer resources must be removed before cluster teardown.
+Other prerequisites include state-bucket name availability, API/quota/IAM review, node/surge capacity and the retained shared GitHub connection/repository. That connection is not created by this Terraform. Offline validation is not a live readiness check. Separate persistent/runtime lifecycle management remains future work; controller-owned Gateway/load-balancer resources must be removed before cluster teardown.

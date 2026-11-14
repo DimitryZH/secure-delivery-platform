@@ -66,17 +66,17 @@ run_metadata() {
     COMMIT_SHA="0123456789abcdef0123456789abcdef01234567" \
     BUILD_ID="11111111-2222-3333-4444-555555555555" \
     BUILD_SERVICE_ACCOUNT="secure-delivery-build@example-project.iam.gserviceaccount.com" \
-    IMAGE_URI="us-central1-docker.pkg.dev/example-project/secure-delivery/sample-service:0123456789abcdef0123456789abcdef01234567" \
+    IMAGE_URI="us-central1-docker.pkg.dev/example-project/secure-delivery/online-shop-productcatalogservice:0123456789abcdef0123456789abcdef01234567" \
     bash "$metadata_script"
 }
 
 valid_digest="sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 run_metadata "$valid_digest" > "$output_file"
 
-expected_output='{"source_repository":"DimitryZH/secure-delivery-platform","commit_sha":"0123456789abcdef0123456789abcdef01234567","build_id":"11111111-2222-3333-4444-555555555555","build_service_account":"secure-delivery-build@example-project.iam.gserviceaccount.com","image_uri":"us-central1-docker.pkg.dev/example-project/secure-delivery/sample-service:0123456789abcdef0123456789abcdef01234567","image_digest":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}'
+expected_output='{"source_repository":"DimitryZH/secure-delivery-platform","commit_sha":"0123456789abcdef0123456789abcdef01234567","build_id":"11111111-2222-3333-4444-555555555555","build_service_account":"secure-delivery-build@example-project.iam.gserviceaccount.com","image_uri":"us-central1-docker.pkg.dev/example-project/secure-delivery/online-shop-productcatalogservice:0123456789abcdef0123456789abcdef01234567","image_digest":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}'
 [[ "$(<"$output_file")" == "$expected_output" ]] || fail_test "release metadata JSON did not match the expected record"
 
-expected_command='gcloud artifacts docker images describe us-central1-docker.pkg.dev/example-project/secure-delivery/sample-service:0123456789abcdef0123456789abcdef01234567 --project=example-project --format=value(image_summary.digest)'
+expected_command='gcloud artifacts docker images describe us-central1-docker.pkg.dev/example-project/secure-delivery/online-shop-productcatalogservice:0123456789abcdef0123456789abcdef01234567 --project=example-project --format=value(image_summary.digest)'
 grep -Fxq -- "$expected_command" "$command_log" || fail_test "published image digest lookup was not invoked"
 
 run_metadata "$valid_digest" 1 > "$output_file"
@@ -84,7 +84,7 @@ run_metadata "$valid_digest" 1 > "$output_file"
 [[ "$(grep -Fxc -- "$expected_command" "$command_log")" -eq 2 ]] || fail_test "digest lookup was not retried exactly once after a transient failure"
 grep -Fxq -- 'sleep 2' "$command_log" || fail_test "digest lookup retry did not use the expected bounded delay"
 
-if run_metadata "sample-service:0123456789abcdef0123456789abcdef01234567" > "$output_file" 2>&1; then
+if run_metadata "online-shop-productcatalogservice:0123456789abcdef0123456789abcdef01234567" > "$output_file" 2>&1; then
   fail_test "a tag was accepted as an immutable image digest"
 fi
 [[ "$(grep -Fxc -- "$expected_command" "$command_log")" -eq 5 ]] || fail_test "invalid digest lookup did not fail after the bounded attempt limit"

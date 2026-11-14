@@ -1,5 +1,7 @@
 # Adopt the selected Collector supporting image
 
+Active workload: **Online Shop**. Sample-service is retired; any sample preservation or health observations below are **historical evidence only**, never a prerequisite for recovery, delivery or acceptance. Existing recorded runs retain their original results.
+
 Refs [#93](https://github.com/DimitryZH/secure-delivery-platform/issues/93).
 This path is separate from application release #87. It never rebuilds, retags,
 changes membership of, or reattests that accepted catalog release.
@@ -146,7 +148,7 @@ not permission to resubmit, mutate IAM, weaken verification or replace the image
 - Prior authorized infrastructure apply is recorded separately in validation.
   This change performs no infrastructure operation, mirror, signing or deployment.
 - Collector runtime, WIF export, file permissions/rotation, native-linked telemetry,
-  admission and preservation of sample-service remain later live acceptance.
+  admission remain later live acceptance.
 
 Sources: [Cosign verification](https://docs.sigstore.dev/cosign/verifying/verify/),
 [pinned crane copy implementation](https://github.com/google/go-containerregistry/blob/v0.22.1/cmd/crane/cmd/copy.go),
