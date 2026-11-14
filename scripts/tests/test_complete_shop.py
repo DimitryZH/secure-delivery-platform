@@ -46,6 +46,18 @@ class HistoricalProducerCompatibilityTests(unittest.TestCase):
     BROKEN_DEPLOYMENT = 'cd931e774bbaf1a464d776325032b558edf70001'
     HELPER = 'deploy/deploy-release.py'
 
+    def setUp(self):
+        # Replay the recorded deployment policy as well as its producer bytes;
+        # today's endpoint activation must not rewrite that historical fixture.
+        path = ROOT / w.DEPLOYMENT_FILES[0]
+        recorded = w.c.r.Source(ROOT, self.DEPLOYMENT).blob(w.DEPLOYMENT_FILES[0])
+        read_bytes, read = Path.read_bytes, w.c.r.read
+        for gate in (
+            patch.object(Path, 'read_bytes', lambda p: recorded if p == path else read_bytes(p)),
+            patch.object(w.c.r, 'read', lambda p: json.loads(recorded) if Path(p) == path else read(p)),
+        ):
+            gate.start(); self.addCleanup(gate.stop)
+
     @contextmanager
     def historical_source(self, repository, revision):
         self.assertEqual(repository, w.c.r.SDP)
@@ -137,6 +149,26 @@ class CompleteTests(unittest.TestCase):
                 self.assertEqual(c.build_request('adservice', REV, self.plans['adservice']), request_before)
         self.assertEqual((ROOT / 'deploy/environments.json').read_bytes(), env_before)
         self.assertTrue(all(name not in c.TRUST_FILES and name not in c.r.TRUSTED_FILES for name in w.DEPLOYMENT_FILES))
+
+    def test_checked_in_endpoint_policy_requires_exact_45_resource_render(self):
+        self.assertIs(w.deployment_policy()['endpoint_enabled'], True)
+        # Exercise the checked-in policy, rather than setUp's endpoint mock.
+        before = c.r.canonical(self.record)
+        with patch.object(w, 'endpoint_enabled', side_effect=lambda: w.deployment_policy()['endpoint_enabled']):
+            docs = w.render(self.record, REV, self.refs)
+        self.assertEqual(len(docs), 45)
+        edge = [d for d in docs if d['kind'] in ('Gateway', 'HTTPRoute', 'GCPBackendPolicy', 'GCPGatewayPolicy', 'HealthCheckPolicy')]
+        self.assertEqual(len(edge), 6)
+        self.assertEqual(sum(d['kind'] == 'Gateway' for d in edge), 1)
+        self.assertEqual(sum(d['kind'] == 'HTTPRoute' for d in edge), 2)
+        gateway = next(d for d in edge if d['kind'] == 'Gateway')
+        self.assertEqual(gateway['spec']['gatewayClassName'], 'gke-l7-global-external-managed')
+        https = next(x for x in gateway['spec']['listeners'] if x['protocol'] == 'HTTPS')
+        self.assertNotIn('tls', https)
+        redirect = next(d for d in edge if d['kind'] == 'HTTPRoute' and d['metadata']['name'] == 'shop-http-redirect')
+        value = redirect['spec']['rules'][0]['filters'][0]['requestRedirect']
+        self.assertEqual(value, {'scheme': 'https', 'hostname': w.ENDPOINT_HOST, 'statusCode': 301})
+        self.assertEqual(c.r.canonical(self.record), before)
 
     def test_deployment_policy_is_closed_typed_and_binding_scoped(self):
         original = w.c.r.read
