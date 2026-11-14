@@ -39,6 +39,62 @@ class CleanupScopeTests(unittest.TestCase):
                 a.cleanup_scope({**environment,**overrides})
 
 
+class HistoricalProducerCompatibilityTests(unittest.TestCase):
+    """Replay real Git blobs; matching-current-byte mocks miss producer breakage."""
+    PRODUCING = 'd9ae670f0147d90bd4892f776b021618a2af9c90'
+    DEPLOYMENT = '68df496c7e69cc015ec3be8ccec7f3e31a823878'
+    BROKEN_DEPLOYMENT = 'cd931e774bbaf1a464d776325032b558edf70001'
+    HELPER = 'deploy/deploy-release.py'
+
+    @contextmanager
+    def historical_source(self, repository, revision):
+        self.assertEqual(repository, w.c.r.SDP)
+        source = w.c.r.Source(ROOT, revision)
+        git = source.git
+
+        def local_git(*args):
+            if args[0] == 'fetch':
+                self.assertEqual(args, ('fetch', '--no-tags', w.c.r.SDP + '.git', 'main'))
+                return b''  # Offline replay of the recorded reviewed main, not today's remote.
+            if args[0] == 'merge-base':
+                self.assertEqual(args[-1], 'FETCH_HEAD')
+                return git(*args[:-1], self.DEPLOYMENT)
+            return git(*args)
+
+        source.git = local_git
+        yield source
+
+    def test_existing_producer_reused_with_distinct_reviewed_deployment_and_historical_bytes(self):
+        self.assertNotEqual(self.PRODUCING, self.DEPLOYMENT)
+        historical = w.c.r.Source(ROOT, self.PRODUCING).blob(self.HELPER)
+        self.assertEqual((ROOT / self.HELPER).read_bytes().replace(b'\r\n', b'\n'), historical)
+        self.assertIn(self.HELPER, w.c.TRUST_FILES)
+        self.assertNotIn(self.HELPER, w.DEPLOYMENT_CODE)
+        record = {'configuration_revision': self.PRODUCING}
+        with patch.object(w.c.r, 'fetched', side_effect=self.historical_source):
+            # Execute both deployment review and producer compatibility checks.
+            w.reviewed(record, self.DEPLOYMENT)
+        self.assertEqual(record, {'configuration_revision': self.PRODUCING})
+
+    def test_new_deployment_sha_does_not_authorize_changed_shared_producing_helper(self):
+        historical = w.c.r.Source(ROOT, self.PRODUCING).blob(self.HELPER)
+        incompatible = w.c.r.Source(ROOT, self.BROKEN_DEPLOYMENT).blob(self.HELPER)
+        self.assertNotEqual(historical, incompatible)
+        read_bytes = Path.read_bytes
+
+        def changed_helper(path):
+            return incompatible if path == ROOT / self.HELPER else read_bytes(path)
+
+        with patch.object(Path, 'read_bytes', changed_helper), \
+             patch.object(w.c, 'reviewed') as deployment_review, \
+             patch.object(w.c.r, 'fetched', side_effect=self.historical_source):
+            # Even if a new deployment has passed its own review, the real old
+            # producer's shared bytes still reject the helper from initial PR126.
+            with self.assertRaisesRegex(ValueError, '^incompatible_producing_trust_files$'):
+                w.reviewed({'configuration_revision': self.PRODUCING}, self.BROKEN_DEPLOYMENT)
+            deployment_review.assert_called_once_with(self.BROKEN_DEPLOYMENT)
+
+
 class CompleteTests(unittest.TestCase):
     def setUp(self):
         for legacy in (c.legacy, w.legacy, a.w.legacy):

@@ -8,24 +8,55 @@ Temporarily scale only `dev/Deployment/cartservice` from one replica to zero. Fr
 
 This interrupts dev cart browsing for all visitors. Use an agreed dev window and retain the original template, UID and replica count privately. Start immediately before a known scheduled run, with its next run due within 60 seconds. Restore immediately after the expected incident and operator notification are recorded. Start restoration by four minutes, reserving API and readiness time within the eight-minute exercise bound. Never extend the outage to obtain a notification.
 
-Before starting, have a second operator/session able to run the same guarded recovery commands if the main shell disconnects. Without that recovery owner, defer the exercise. This covers failures outside a PowerShell `finally` block, such as host termination.
+Before starting, require the full Online Shop baseline: all application components, Redis and Collector Ready/Available at their reviewed replica counts, original accepted digests, healthy endpoint browsing, and both scheduled checks passing. Require both nodes Ready. If workers are paused, defer the exercise; this procedure does not authorize resume. Have a second operator/session able to run the same guarded recovery commands if the main shell disconnects. Without that recovery owner, defer the exercise. This covers failures outside a PowerShell `finally` block, such as host termination.
+
+During the bounded injection, expected degradation is limited to cartservice desired replicas zero and no available cart Pods, cart RPC unavailability, dependent frontend catalog/cart HTTP 500 responses, and the resulting scheduled browse failure and attributed frontend-error incident. These observations are the intended test signals, not immediate stop conditions. They must correlate to this exact injection window and cart dependency. Missing cart server spans are expected with zero cart Pods. Other application components, Redis, Collector and nodes must retain their baseline readiness and digests; the frontend `/_healthz` and HTTPS check should remain healthy. An error without evidence linking it to the injected cart failure is not an expected result.
 
 Stop and recover immediately on any of these observations.
 
 - The expected synthetic condition/notification is not observed within the four-minute mutation window.
-- Either node becomes NotReady, or Online Shop loses Ready/Available or HTTP 200.
+- Either node becomes NotReady, any non-cart workload (including Redis or Collector) loses baseline Ready/Available state, or frontend `/_healthz` / the HTTPS check fails.
+- An unrelated endpoint or dependency fails, digests change, or failures cannot be attributed to the injected cart dependency. Do not treat expected cart-dependent HTTP 500 or the browse synthetic failure as collateral failure.
 - Another rollout, HPA, workload-template change or concurrent replica mutation appears.
 - Unexpected admission, resource-pressure, monitoring-authentication or Cloud Armor denial prevents attribution to the cart dependency.
 - The operator requests recovery.
 
 ## Preparation and scoped commands
 
-These commands are for later execution. Supply an existing authenticated kubeconfig and retain all output privately. Explicitly verify project `sre-platform-staging-507220`, context, namespace, active accepted release and app digests first. Compare the fresh protected-release references and holds with #111 evidence. Confirm nodes and Online Shop health, no active rollout, both scheduled checks passing, correct email channel, successful delivery and current incident state. Confirm the query/check IDs from Terraform output and readback.
+These commands are for later execution. Supply an existing authenticated kubeconfig and retain all output privately. Resolve the project, cluster, location and identities from the current reviewed `deploy/release-binding.json`, cross-check `deploy/environments.json`, then verify the actual project number and selected context's cluster endpoint before any runtime read or mutation. Do not use project identifiers from historical evidence. Confirm namespace, active accepted release and app digests. Compare fresh protected-release references and holds with the current accepted release; #111 is historical guidance only. Confirm the full pre-exercise baseline above, no active rollout, correct email channel, successful delivery and current incident state. Confirm the query/check IDs from current Terraform output and readback.
 
 Capture before/after deployments and health responses for Online Shop. Baseline and final smoke requests are read-only. Resolve any live drift before exercise authorization.
 
 ```powershell
 $context = '<reviewed-current-context>'  # Explicit isolated context verified against the active binding
+$binding = Get-Content -LiteralPath 'deploy/release-binding.json' -Raw | ConvertFrom-Json
+$environment = Get-Content -LiteralPath 'deploy/environments.json' -Raw | ConvertFrom-Json
+if ($binding.version -ne 1 -or [string]::IsNullOrWhiteSpace($binding.project) -or
+    [string]::IsNullOrWhiteSpace($binding.cluster) -or [string]::IsNullOrWhiteSpace($binding.location) -or
+    $environment.release_binding -ne $binding.id -or $environment.project -ne $binding.project -or
+    $environment.project_number -ne $binding.project_number -or
+    $environment.cluster -ne $binding.cluster -or $environment.location -ne $binding.location -or
+    $environment.approved_registry -ne $binding.registry -or
+    $environment.deployment_service_account -ne $binding.deployer -or
+    $environment.environments.dev.namespace -ne 'dev') {
+    throw 'Current reviewed environment binding mismatch'
+}
+$projectNumber = gcloud projects describe $binding.project --format='value(projectNumber)'
+if ($LASTEXITCODE -ne 0 -or [string]$projectNumber -ne [string]$binding.project_number) {
+    throw 'Actual project does not match the current binding'
+}
+$clusterRaw = gcloud container clusters describe $binding.cluster --project=$($binding.project) --location=$($binding.location) --format=json
+if ($LASTEXITCODE -ne 0) { throw 'Cannot verify bound cluster' }
+$cluster = $clusterRaw | ConvertFrom-Json
+$contextRaw = kubectl config view --context=$context --minify -o json
+if ($LASTEXITCODE -ne 0) { throw 'Cannot verify selected context' }
+$contextConfig = $contextRaw | ConvertFrom-Json
+if ($cluster.name -ne $binding.cluster -or [string]::IsNullOrWhiteSpace($cluster.endpoint) -or
+    @($contextConfig.clusters).Count -ne 1 -or
+    $contextConfig.clusters[0].cluster.server -ne "https://$($cluster.endpoint)" -or
+    $contextConfig.clusters[0].cluster.'insecure-skip-tls-verify' -eq $true) {
+    throw 'Selected context does not match the bound cluster endpoint and TLS requirement'
+}
 $privateDir = '.local-validation/issue115-failure'
 New-Item -ItemType Directory -Force $privateDir | Out-Null
 $raw = kubectl --context=$context -n dev get deployment/cartservice -o json --request-timeout=10s
@@ -52,7 +83,9 @@ try {
 
     while ([DateTimeOffset]::UtcNow -lt $deadline) {
         if (Test-Path "$privateDir/recover-now") { break }
-        # Perform fresh node, Online Shop and rollout stop-condition checks
+        # Check nodes, non-cart readiness/digests, independent frontend health,
+        # cart-failure attribution and rollout stop conditions. Expected cart
+        # unavailability / dependent HTTP 500 / browse failure are test signals.
         # in the observing session. Create recover-now on any stop condition.
         Start-Sleep -Seconds 5
     }
@@ -98,7 +131,7 @@ Record UTC for baseline success, scale0, failed execution, incident opening, ema
 
 ## Recovery acceptance
 
-Require one Ready/Available cart replica with the original template/digests and healthy endpoint browsing. Wait for the next scheduled browse run to pass, its state/cleanup evidence, and incident closure. The five-minute application rate window can delay the warning's closure after service recovery. Capture that behavior without extending the outage.
+Require the full Online Shop baseline again: one Ready/Available cart replica with the original template/digests, every other application component, Redis and Collector at baseline readiness/digests, both nodes Ready, and healthy endpoint browsing including the previously failing cart-dependent paths. Wait for both scheduled checks to pass, the browse run's state/cleanup evidence, and incident closure. The five-minute application rate window can delay the warning's closure after service recovery. Capture that behavior without extending the outage.
 
 Confirm incident closure from actual successful results and the absence of new errors in the following window. Missing samples or an automatically closed incident do not establish recovery. Finally verify Online Shop Ready/Available and expected HTTP health, nodes Ready, original app digests, no unexpected rollout, and no owned port-forward remaining. Leave the issue open until review of the sanitized timeline.
 

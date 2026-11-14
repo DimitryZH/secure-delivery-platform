@@ -38,7 +38,8 @@ Assemble signing code/config from a reviewed immutable commit; copy only candida
 
 Keep `catalog-dev`, shared `dev` target, deployment identity and protected storage.
 Preparation must verify a reviewed deployment revision and exact immutable images;
-no build, tag replacement or direct sample deployment path remains.
+no build or tag replacement is permitted. The sample deployment path is unsupported;
+its historical shared helper is retained unchanged solely for producing-trust compatibility.
 See [operator procedures](operator-runbook.md) and [retirement dependencies](sample-service-retirement.md).
 
 ## Source and rendered artifact protection

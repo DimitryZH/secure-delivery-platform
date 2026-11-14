@@ -36,12 +36,21 @@ Online Shop dashboards, endpoint, synthetic resources and their dedicated identi
 No identity or trust resource is exclusively owned by sample-service in this change.
 
 `deploy/environments.json` remains the immutable producer binding used by Online
-Shop. `deploy/deploy-release.py` retains shared metadata validation only;
-`deploy/clouddeploy/release-preflight.py` retains read-only evidence evaluation
-and time/protection helpers imported by Online Shop. Sample manifests, rendering,
-direct deployment execution, trigger config and implementation-specific tests are removed.
-Changing reviewed helper bytes requires a newly reviewed deployment revision for
-future preparation; existing producer/deployment revisions and candidates are not relabeled.
+Shop. `deploy/deploy-release.py` is retained **unchanged as a legacy dependency**:
+its exact historical bytes participate in the shared producing trust-file set.
+The shared read-only `deploy/clouddeploy/release-preflight.py` imports it, and
+Online Shop imports the preflight time/protection helpers. Do not exclude the
+legacy helper from trust checks or change its bytes to retire sample execution:
+a different deployment SHA cannot make changed shared producing files compatible
+with an existing candidate's immutable producing revision. The old sample CLI
+is unsupported; its manifests, example, bundle generator, image-build config and
+trigger are removed. Do not invoke it to restore or deploy sample-service.
+
+The regression replays real historical Git blobs with distinct producing and
+deployment revisions. It confirms reuse with the unchanged helper and confirms
+`incompatible_producing_trust_files` for the changed helper from the initial
+retirement commit, even after a separate deployment review. Producing identities,
+accepted candidates and the complete trust-file checks remain unchanged.
 
 ## Evidence and review gates
 
