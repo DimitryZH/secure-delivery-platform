@@ -17,6 +17,24 @@ Choose `gke-l7-global-external-managed`: one Premium global IPv4 NamedAddress, p
 
 The global choice avoids the regional proxy-only subnet and regional certificate attachment path. It supports the selected certificate-map integration and HTTPRoute traffic splitting. Future [Cloud Deploy Gateway canary](https://docs.cloud.google.com/deploy/docs/deployment-strategies/canary/gke/gateway-api) needs a separately reviewed `gatewayServiceMesh` strategy, stable/canary Service inventory and capacity; this change does not implement canary. [IAP through GCPBackendPolicy](https://docs.cloud.google.com/kubernetes-engine/docs/how-to/configure-gateway-resources#configure_iap) is a future backend access-policy change with explicit identities and OAuth/secret treatment. A separate Service/backend is needed if public demo and protected access must coexist without one policy overriding the other. No IAP bypass or automatic compatibility claim for future policy combinations is made. Regional access could be reconsidered for an explicit locality/Standard Tier need; global routing does not make this single-zone workload HA.
 
+## Reviewed endpoint activation
+
+The checked-in [deployment policy](deployment-policy.json) selects endpoint-on rendering
+for the next reviewed deployment revision. This is preparation for a new protected
+45-resource render; it does not alter the existing 39-resource deployment. Reuse the
+trusted candidate and original producing revision. Do not rebuild or re-sign images
+merely to change endpoint exposure, and do not substitute the deployment SHA for the
+producing SHA. The policy must pass the merged-main review gate before use.
+
+Current DNS/TLS checks are recorded in
+[endpoint-readiness-validation.json](endpoint-readiness-validation.json). They establish
+DNS delegation and certificate readiness only. They do not establish an attached load
+balancer, healthy backend or application HTTPS acceptance. Keep nodes paused until a
+separately authorized runtime step. After merge and authorized capacity resume, prepare
+a unique Cloud Deploy release with the approved source staging bucket and initial rollout
+disabled. Verify all 45 actual rendered resources and fresh protection, identities,
+capacity, admission and Gateway dry-run evidence before requesting rollout approval.
+
 ## Protection and exact deployment contract
 
 The HealthCheckPolicy uses HTTP `/_healthz` on the frontend Pod port 8080. GCPBackendPolicy attaches only `shop-dev-edge` Armor and enables 100% sampled backend request logs using the GKE integer scale (`sampleRate: 1000000`). Never confuse that scale with the Compute API floating-point logConfig scale. Do not log request bodies or publish checkout/session data.

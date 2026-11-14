@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "scope": "Reviewed deployment-only endpoint activation; no release or rollout",
+  "checked_at_utc": "2026-11-14T14:56:19.207956+00:00",
+  "binding": "sdp-dev-v1",
+  "dns": {
+    "parent_authoritative_servers_checked": 2,
+    "child_authoritative_servers_checked": 4,
+    "authoritative_checks": 20,
+    "public_checks": 7,
+    "delegation": "exactly assigned a1-a4 Cloud DNS nameservers; no old b1-b4",
+    "A": "136.81.187.166",
+    "authorization_CNAME": "matches actual DNS authorization and Cloud DNS record",
+    "conflicting_AAAA": false,
+    "child_DS": false,
+    "child_and_parent_CAA": "no records returned; no observed restriction",
+    "terraform_outputs_match": true
+  },
+  "certificate": {
+    "name": "shop-dev-edge",
+    "hostname": "shop.runtimeplatforms.dev",
+    "state": "ACTIVE",
+    "map_entry_state": "ACTIVE",
+    "exact_certificate_binding": "passed with independently verified project ID/number mapping"
+  },
+  "deployment": {
+    "endpoint_enabled": true,
+    "expected_resources": 45,
+    "endpoint_resources": 6,
+    "candidate_unchanged": true,
+    "release_set_id": "sha256:f43702a14af0f8f5ee380650f6f05a0c17a089c286222690e189c2ae16d755d1",
+    "producing_revision": "d9ae670f0147d90bd4892f776b021618a2af9c90",
+    "new_deployment_revision": "pending reviewed merge",
+    "protected_release": "not created",
+    "server_render": "pending",
+    "preflight": "pending authorized resume and protected release",
+    "rollout": "not executed"
+  },
+  "validation": {
+    "tests": 188,
+    "passed": 184,
+    "optional_skipped": 4,
+    "failures": 0,
+    "regressions": [
+      "checked-in policy selects 45 resources including exact six endpoint objects",
+      "HTTPS Gateway with certmap and no invalid listener TLS block",
+      "HTTP redirect HTTPS/301 with explicit hostname and no port",
+      "unchanged candidate identity and build request across endpoint modes",
+      "closed schema/mixed binding rejection and reviewed deployment policy pinning",
+      "real historical producer/helper compatibility with recorded historical deployment policy"
+    ]
+  },
+  "limits": [
+    "DNS and certificate readiness is not application HTTPS acceptance.",
+    "Both node pools remain paused; no Kubernetes API admission, capacity or runtime checks performed.",
+    "Feature-branch deployment gate is not bypassed; new protected release and server-render checks follow merge.",
+    "No DNS/cloud mutation, build, signing, resume, release or rollout performed.",
+    "Optional native Collector and public registry integration fixtures were skipped."
+  ]
+}
