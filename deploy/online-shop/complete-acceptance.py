@@ -113,6 +113,7 @@ def runtime_annotations(pod, expected):
 
 def runtime(snapshot,record,revision,value,refs,cloud):
     guard(record,value,refs,cloud)  # Supplied Pod readbacks never define trusted expected state.
+    nodes={n["metadata"]["name"]:n for n in snapshot["nodes"]["items"]}
     rows={x["id"]:x for x in record["components"]}
     counts={identity:0 for identity in (*c.MEMBERS,"collector","redis-metrics-collector")};collector_nodes=set();app_nodes=set()
     for pod in snapshot["pods"]["items"]:
@@ -134,9 +135,16 @@ def runtime(snapshot,record,revision,value,refs,cloud):
         require(pod.get("status",{}).get("phase")=="Running" and any(x.get("type")=="Ready" and x.get("status")=="True" for x in pod["status"].get("conditions",[])),"complete_pod_not_ready")
         require(spec.get("automountServiceAccountToken") is False and spec.get("serviceAccountName")==("catalog-collector" if supporting else identity),"runtime_identity_mismatch")
         node=spec.get("nodeName");require(bool(node),"runtime_node_unknown")
+        require(node in nodes,"runtime_node_unproven")
+        if identity!="collector":
+            require(all(spec.get("nodeSelector",{}).get(k)==v and nodes[node]["metadata"]["labels"].get(k)==v
+                    for k,v in w.APPLICATION_NODE_SELECTOR.items()),"runtime_application_placement_mismatch")
         (collector_nodes if identity=="collector" else app_nodes).add(node)
         counts[identity]+=1
     require(all(counts[x]==1 for x in (*c.MEMBERS,"redis-metrics-collector")) and counts["collector"]==len(collector_nodes)>0 and app_nodes<=collector_nodes,"incomplete_runtime_or_log_coverage")
+    eligible={name for name,n in nodes.items() if all(n["metadata"]["labels"].get(k)==v for k,v in
+        {"kubernetes.io/os":"linux","kubernetes.io/arch":"amd64","iam.gke.io/gke-metadata-server-enabled":"true"}.items())}
+    require(collector_nodes==eligible,"incomplete_per_node_collector_coverage")
     redis=[d for d in snapshot["deployments"]["items"] if d["metadata"].get("namespace")=="dev" and d["metadata"]["name"]=="redis-cart"]
     require(len(redis)==1 and redis[0]["spec"]["replicas"]==1 and redis[0]["spec"]["strategy"]=={"type":"Recreate"},"redis_singleton_violation")
     expected=set(c.MEMBERS)|{"shop-redis-metrics"};available=set()

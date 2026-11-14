@@ -1,0 +1,87 @@
+{
+  "version": 1,
+  "scope": "Workload-pool placement and per-node Collector feasibility",
+  "read_only_observation": {
+    "small_node_allocatable_cpu_m": 1930,
+    "small_node_requested_cpu_m": 1816,
+    "small_node_free_cpu_m": 114,
+    "pending_agent_request_cpu_m": 300,
+    "agent_coverage": "1 of 2",
+    "other_node_free_cpu_m": 2796,
+    "application_and_agent_priority": 0,
+    "placement": "Applications unrestricted between pools; DaemonSet agent pinned to its own node by controller",
+    "ordering": "Nodes became Ready one second apart; coarse event timestamps do not establish a total scheduler ordering."
+  },
+  "decision": {
+    "deployment_selector": {
+      "delivery-capacity": "complete-shop-dev"
+    },
+    "affected_deployments": 12,
+    "agent_selector": "unchanged across both eligible pools",
+    "agent_requests": {
+      "cpu": "300m",
+      "memory": "512Mi"
+    },
+    "new_priority_class": false,
+    "preemption_change": false,
+    "pool_or_machine_type_change": false,
+    "inventory_resources": 45,
+    "producing_contracts_and_candidate": "unchanged",
+    "capacity_model": "Old replicas charged at actual placement; new selectors honored; all singleton Recreate placement combinations; pending Pods remain BLOCKED",
+    "additional_per_node_headroom": {
+      "cpu_m": 100,
+      "memory_mi": 128
+    },
+    "existing_operational_cpu_budget_m": 800
+  },
+  "offline_feasibility": {
+    "projection_only": true,
+    "node_allocatable_cpu_m": [
+      1930,
+      3920
+    ],
+    "system_total_cpu_m": 1270,
+    "steady_application_cpu_m": 1370,
+    "full_application_overlap_cpu_m": 2570,
+    "agents_total_cpu_m": 600,
+    "headroom_plus_operational_cpu_m": 1000,
+    "remaining_total_cpu_m_after_full_overlap_and_budgets": 410,
+    "system_placement_scenarios": "observed, all movable system Pods on either node; both node enumeration orders",
+    "memory_and_pod_slots": "passed with actual saved readbacks",
+    "live_snapshot": "still BLOCKED; no recovery performed",
+    "initial_recovery_projection": {
+      "two_stateless_100m_moves": "BLOCKED: only14m remains after agent",
+      "three_stateless_100m_moves": "feasible with114m local headroom and all4 Redis/metrics Recreate combinations; separate authorization required"
+    }
+  },
+  "tests": {
+    "run": 193,
+    "passed": 189,
+    "optional_skipped": 4,
+    "failed": 0,
+    "additional_selector_Terraform_contract_test": "1 passed",
+    "regressions": [
+      "pinned Deployments and unchanged agent budget/inventory",
+      "missing pool label and local shortages despite aggregate CPU",
+      "both node orders and worst-case system placements",
+      "real old-placement charging and all4 singleton transition cases",
+      "live pending agent remains blocked",
+      "runtime selector/node-label substitution and missing per-node agent rejected",
+      "candidate, mixed references, producer compatibility and admission guards retained"
+    ]
+  },
+  "implementation_sha256_lf": {
+    "deploy/online-shop/complete.py": "21fdc20da681abc560c69c4011751d406d4cd58297cfa2f6c53f3d195b9a2454",
+    "deploy/online-shop/complete-acceptance.py": "60a1c38e8be8c5663637d7ff57be92bd45aa46ebf5363010caac96ad61142aae",
+    "scripts/tests/test_complete_shop.py": "73b49e0a9ca40ee5848b19f9d8b0e16f23db12ee0298f48c7679329da4f398e1"
+  },
+  "limits": [
+    "No live scheduling, eviction, cordon, resize, rollout or stop/resume performed.",
+    "No Terraform, IAM, API or trust-model changes.",
+    "Offline feasibility is not a real preflight or runtime acceptance.",
+    "The existing blocked placement needs a separately reviewed bounded recovery; do not weaken readiness guards.",
+    "Persistent placement takes effect only through an authorized deployment from merged code.",
+    "The single workload-pool node is not HA, and future system growth still requires fresh capacity checks.",
+    "Four optional native Collector/public registry fixtures were skipped."
+  ]
+}

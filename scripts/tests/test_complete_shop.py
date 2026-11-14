@@ -47,14 +47,14 @@ class HistoricalProducerCompatibilityTests(unittest.TestCase):
     HELPER = 'deploy/deploy-release.py'
 
     def setUp(self):
-        # Replay the recorded deployment policy as well as its producer bytes;
-        # today's endpoint activation must not rewrite that historical fixture.
-        path = ROOT / w.DEPLOYMENT_FILES[0]
-        recorded = w.c.r.Source(ROOT, self.DEPLOYMENT).blob(w.DEPLOYMENT_FILES[0])
+        # Freeze deployment-only files to the recorded deployment; shared producer
+        # files, including the helper under test, still use their real Git bytes.
+        source = w.c.r.Source(ROOT, self.DEPLOYMENT)
+        recorded = {ROOT / name: source.blob(name) for name in (*w.DEPLOYMENT_FILES, *w.DEPLOYMENT_CODE)}
         read_bytes, read = Path.read_bytes, w.c.r.read
         for gate in (
-            patch.object(Path, 'read_bytes', lambda p: recorded if p == path else read_bytes(p)),
-            patch.object(w.c.r, 'read', lambda p: json.loads(recorded) if Path(p) == path else read(p)),
+            patch.object(Path, 'read_bytes', lambda p: recorded[p] if p in recorded else read_bytes(p)),
+            patch.object(w.c.r, 'read', lambda p: json.loads(recorded[Path(p)]) if Path(p) == ROOT / w.DEPLOYMENT_FILES[0] else read(p)),
         ):
             gate.start(); self.addCleanup(gate.stop)
 
@@ -241,7 +241,10 @@ class CompleteTests(unittest.TestCase):
             if d['kind']=='Deployment':d['status']={'observedGeneration':1,'replicas':1,'updatedReplicas':1,'readyReplicas':1,'availableReplicas':1}
             else:d['status']={'observedGeneration':1,'desiredNumberScheduled':1,'updatedNumberScheduled':1,'numberReady':1,'numberAvailable':1}
         return {'pods':{'items':pods},'deployments':{'items':[d for d in docs if d['kind']=='Deployment']},
-                'daemonsets':{'items':[d for d in docs if d['kind']=='DaemonSet']}}
+                'daemonsets':{'items':[d for d in docs if d['kind']=='DaemonSet']},
+                'nodes':{'items':[{'metadata':{'name':'node','labels':{
+                    'kubernetes.io/os':'linux','kubernetes.io/arch':'amd64',
+                    'iam.gke.io/gke-metadata-server-enabled':'true',**w.APPLICATION_NODE_SELECTOR}}}]}}
 
     def endpoint_fixture(self,binding,now):
         cert='projects/'+c.r.policy()['project']+'/locations/global/certificates/shop-dev-edge'
@@ -583,7 +586,7 @@ class CompleteTests(unittest.TestCase):
 
     def test_capacity_uses_overlap_singleton_and_per_node_requests(self):
         docs=w.render(self.record,REV,self.refs)
-        node={'metadata':{'name':'node','labels':{'kubernetes.io/os':'linux','kubernetes.io/arch':'amd64','iam.gke.io/gke-metadata-server-enabled':'true'}},
+        node={'metadata':{'name':'node','labels':{'kubernetes.io/os':'linux','kubernetes.io/arch':'amd64','iam.gke.io/gke-metadata-server-enabled':'true',**w.APPLICATION_NODE_SELECTOR}},
             'spec':{},'status':{'allocatable':{'cpu':'1930m','memory':'6025Mi','pods':'110'},'conditions':[{'type':'Ready','status':'True'}]}}
         snapshot={'nodes':{'items':[node]},'pods':{'items':[]}}
         self.assertFalse(w.capacity(snapshot,docs)['capacity_ready'])
@@ -591,6 +594,124 @@ class CompleteTests(unittest.TestCase):
         result=w.capacity(snapshot,docs);self.assertTrue(result['capacity_ready']);self.assertEqual(result['redis_overlap_replicas'],1)
         pending={'metadata':{'name':'waiting','namespace':'other'},'spec':{},'status':{'phase':'Pending'}}
         snapshot['pods']['items']=[pending];self.assertFalse(w.capacity(snapshot,docs)['capacity_ready'])
+
+    def placement_capacity_fixture(self, movable_on_big=0):
+        labels = {'kubernetes.io/os':'linux', 'kubernetes.io/arch':'amd64',
+                  'iam.gke.io/gke-metadata-server-enabled':'true'}
+        nodes = []
+        for name, cpu, memory in [('small','1930m','5000Mi'),('big','3920m','12000Mi')]:
+            nodes.append({'metadata':{'name':name,'labels':{**labels, **(w.APPLICATION_NODE_SELECTOR if name=='big' else {})}},
+                'spec':{},'status':{'allocatable':{'cpu':cpu,'memory':memory,'pods':'110'},
+                    'conditions':[{'type':'Ready','status':'True'}]}})
+        pods = []
+        # Measured system-only CPU at both extremes of the movable system budget.
+        for name, cpu in [('small',846-movable_on_big),('big',424+movable_on_big)]:
+            pods.append({'metadata':{'namespace':'kube-system','name':'system-'+name},
+                'spec':{'nodeName':name,'containers':[{'resources':{'requests':{'cpu':str(cpu)+'m','memory':'1500Mi'}}}]},
+                'status':{'phase':'Running'}})
+        return {'nodes':{'items':nodes},'pods':{'items':pods}}
+
+    def test_placement_keeps_agent_requests_and_images_without_priority_or_new_resources(self):
+        before = c.r.canonical(self.record)
+        terraform=(ROOT/'terraform/foundation/complete-shop.tf').read_text()
+        for key,value in w.APPLICATION_NODE_SELECTOR.items():
+            self.assertIn(json.dumps(key)+' = '+json.dumps(value),terraform)
+        docs = w.render(self.record, REV, self.refs)
+        self.assertEqual(len(docs),45)
+        workloads = [d for d in docs if d['kind']=='Deployment']
+        self.assertEqual(len(workloads),12)
+        for d in workloads:
+            pod=d['spec']['template']['spec']
+            self.assertTrue(all(pod['nodeSelector'][k]==v for k,v in w.APPLICATION_NODE_SELECTOR.items()))
+            self.assertNotIn('affinity',pod)
+        agent=next(d for d in docs if d['kind']=='DaemonSet')['spec']['template']['spec']
+        self.assertFalse(set(agent['nodeSelector']) & set(w.APPLICATION_NODE_SELECTOR))
+        self.assertEqual(agent['containers'][0]['resources']['requests'],{'cpu':'300m','memory':'512Mi'})
+        self.assertTrue(all('priorityClassName' not in d['spec']['template']['spec'] for d in workloads))
+        self.assertNotIn('priorityClassName',agent)
+        self.assertEqual(c.r.canonical(self.record),before)
+        bad=copy.deepcopy(docs);next(d for d in bad if d['kind']=='Deployment')['spec']['template']['spec']['nodeSelector'].clear()
+        with self.assertRaisesRegex(ValueError,'complete_rendered_inventory_mismatch'):
+            w.inventory(bad,self.record,REV,self.refs)
+
+    def test_resume_and_overlap_fit_both_node_orders_and_worst_system_placement(self):
+        docs=w.render(self.record,REV,self.refs)
+        # Independent arithmetic: full simultaneous app overlap plus singleton
+        # Redis/metrics and agent uses 2870m on the big node, before system Pods.
+        self.assertEqual(sum(w.ap.pod_requests(d['spec']['template'],'cpu') *
+            (1 if d['metadata']['name'] in ('redis-cart','shop-redis-metrics') else 2)
+            for d in docs if d['kind']=='Deployment'),2570)
+        for movable in (-15,0,437):
+            for reverse in (False,True):
+                snapshot=self.placement_capacity_fixture(movable)
+                if reverse:snapshot['nodes']['items'].reverse()
+                # Regardless of application/agent scheduling order, no application
+                # is eligible for the small node; its full agent always fits.
+                small=next(n for n in snapshot['nodes']['items'] if n['metadata']['name']=='small')
+                self.assertFalse(all(small['metadata']['labels'].get(k)==v for k,v in w.APPLICATION_NODE_SELECTOR.items()))
+                self.assertGreaterEqual(1930-(846-movable)-300,100)
+                result=w.capacity(snapshot,docs)
+                self.assertTrue(result['capacity_ready'],result)
+                self.assertEqual(result['application_overlap_replicas'],2)
+                self.assertEqual(result['per_node_headroom_cpu_m'],100)
+
+    def test_placement_capacity_rejects_missing_label_local_shortage_and_pending_agent(self):
+        docs=w.render(self.record,REV,self.refs)
+        snapshot=self.placement_capacity_fixture()
+        snapshot['nodes']['items'][1]['metadata']['labels'].pop('delivery-capacity')
+        self.assertFalse(w.capacity(snapshot,docs)['capacity_ready'])
+        snapshot=self.placement_capacity_fixture()
+        snapshot['nodes']['items'][1]['status']['allocatable']['cpu']='2500m'
+        self.assertFalse(w.capacity(snapshot,docs)['capacity_ready'])
+        snapshot=self.placement_capacity_fixture()
+        snapshot['pods']['items'].append({'metadata':{'namespace':'dev','name':'catalog-collector-waiting'},
+            'spec':{},'status':{'phase':'Pending'}})
+        self.assertFalse(w.capacity(snapshot,docs)['capacity_ready'])
+        for key,value in [('affinity',{'nodeAffinity':{}}),('nodeName','big')]:
+            bad=copy.deepcopy(docs);next(d for d in bad if d['kind']=='Deployment')['spec']['template']['spec'][key]=value
+            with self.assertRaisesRegex(ValueError,'unsupported_capacity_placement'):
+                w.capacity(self.placement_capacity_fixture(),bad)
+
+    def test_transition_keeps_actual_old_placement_and_checks_both_recreate_states(self):
+        docs=w.render(self.record,REV,self.refs)
+        snapshot=self.placement_capacity_fixture()
+        for d in docs:
+            if d['kind']!='Deployment':continue
+            pod=copy.deepcopy(d['spec']['template'])
+            pod['metadata'].update(namespace='dev',name=d['metadata']['name']+'-old')
+            pod['spec']['nodeName']='big' if d['metadata']['name'] in ('adservice','cartservice') else 'small'
+            pod['spec']['nodeSelector'].pop('delivery-capacity')  # Actual old revision.
+            pod['status']={'phase':'Running'};snapshot['pods']['items'].append(pod)
+        # Even without the pending object, hypothetical repacking must not turn
+        # this actual old placement into READY. Agent + local headroom do not fit.
+        result=w.capacity(snapshot,docs)
+        self.assertFalse(result['capacity_ready'])
+        self.assertGreater(result['unscheduled_budget_items'],0)
+        self.assertEqual(result['recreate_placement_scenarios'],4)
+        # Projection of a separately authorized recovery, not a live mutation:
+        # two 100m moves leave 14m; three leave 114m including the 300m agent.
+        for identity in ('currencyservice','emailservice'):
+            next(p for p in snapshot['pods']['items'] if p['metadata']['name']==identity+'-old')['spec']['nodeName']='big'
+        self.assertFalse(w.capacity(snapshot,docs)['capacity_ready'])
+        next(p for p in snapshot['pods']['items'] if p['metadata']['name']=='paymentservice-old')['spec']['nodeName']='big'
+        result=w.capacity(snapshot,docs)
+        self.assertTrue(result['capacity_ready'],result)
+        self.assertEqual(result['redis_overlap_replicas'],1)
+
+    def test_runtime_rejects_wrong_application_placement_and_missing_per_node_agent(self):
+        with patch.object(a,'guard'):
+            good=self.runtime_fixture(REV)
+            self.assertEqual(a.runtime(good,self.record,REV,self.plans,self.refs,Mock())['runtime'],'passed')
+            bad=copy.deepcopy(good)
+            next(p for p in bad['pods']['items'] if p['metadata']['labels']['app']=='frontend')['spec']['nodeSelector'].pop('delivery-capacity')
+            with self.assertRaisesRegex(ValueError,'runtime_application_placement_mismatch'):
+                a.runtime(bad,self.record,REV,self.plans,self.refs,Mock())
+            bad=copy.deepcopy(good);bad['nodes']['items'][0]['metadata']['labels'].pop('delivery-capacity')
+            with self.assertRaisesRegex(ValueError,'runtime_application_placement_mismatch'):
+                a.runtime(bad,self.record,REV,self.plans,self.refs,Mock())
+            bad=copy.deepcopy(good);small=copy.deepcopy(bad['nodes']['items'][0]);small['metadata']['name']='small';small['metadata']['labels'].pop('delivery-capacity');bad['nodes']['items'].append(small)
+            with self.assertRaisesRegex(ValueError,'incomplete_per_node_collector_coverage'):
+                a.runtime(bad,self.record,REV,self.plans,self.refs,Mock())
 
     def test_cleanup_only_exact_synthetic_session_loopback(self):
         for session,endpoint in [('production-key','127.0.0.1:16379'),('issue100-'+'a'*32,'redis:6379'),('issue100-'+('a'*32)+'\r\nFLUSHALL','127.0.0.1:16379')]:
@@ -941,19 +1062,7 @@ class CompleteTests(unittest.TestCase):
             a.runtime(snapshot, self.record, REV, self.plans, self.refs, Mock())
 
     def test_runtime_positive_and_coherent_tamper_guard(self):
-        docs=w.render(self.record,REV,self.refs);pods=[]
-        for d in docs:
-            if d['kind'] not in ('Deployment','DaemonSet'):continue
-            template=copy.deepcopy(d['spec']['template']);template['metadata'].update(name=d['metadata']['name']+'-fixture',namespace='dev')
-            template['spec']['nodeName']='node'
-            app=template['spec']['containers'][0]
-            template['status']={'phase':'Running','conditions':[{'type':'Ready','status':'True'}],'containerStatuses':[{'name':app['name'],'imageID':app['image'],'ready':True}]}
-            pods.append(template)
-        for d in docs:
-            d['metadata']['generation']=1
-            if d['kind']=='Deployment':d['status']={'observedGeneration':1,'replicas':1,'updatedReplicas':1,'readyReplicas':1,'availableReplicas':1}
-            if d['kind']=='DaemonSet':d['status']={'observedGeneration':1,'desiredNumberScheduled':1,'updatedNumberScheduled':1,'numberReady':1,'numberAvailable':1}
-        snapshot={'pods':{'items':pods},'deployments':{'items':[d for d in docs if d['kind']=='Deployment']},'daemonsets':{'items':[d for d in docs if d['kind']=='DaemonSet']}}
+        snapshot=self.runtime_fixture(REV)
         with patch.object(a,'guard'):
             self.assertEqual(a.runtime(snapshot,self.record,REV,self.plans,self.refs,Mock())['runtime'],'passed')
             altered=copy.deepcopy(snapshot);altered['pods']['items'][0]['spec']['containers'][0]['image']='image:latest'

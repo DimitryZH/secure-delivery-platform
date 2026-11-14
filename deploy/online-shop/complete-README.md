@@ -14,6 +14,81 @@ Use the [reviewed environment binding and staged catalog acceptance procedure](.
 
 Collector exporter project/resource attribution must match the active binding. Catalog release/digest attributes are filled from the validated candidate during rendering. Redis cleanup derives its dev target from the same environment, retains exact session ownership and DEL/EXISTS scope, and remains independent of renewed cloud verification.
 
+## Workload placement and manual resume
+
+All ten application Deployments, Redis and the singleton metrics Collector select
+`delivery-capacity=complete-shop-dev`, the existing label on the application pool
+in [complete-shop.tf](../../terraform/foundation/complete-shop.tf). The Collector agent
+DaemonSet keeps its Linux/amd64/metadata-server selector across both pools and its
+**300m CPU / 512Mi memory** request. No pool size, machine type, resource request,
+PriorityClass or application image changes. Inventory remains 45 resources with the
+endpoint enabled (39 with it disabled).
+
+This is a hard [node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector),
+not a scheduling preference. Equal-priority application Pods can otherwise fill the
+smaller node before its agent. Applications now wait for the application pool instead
+of consuming the smaller node's Collector budget, regardless of resume ordering.
+Pinning only two small services would free 200m in the observed placement but leave
+just 14m after the missing 300m agent; that does not provide a robust local margin.
+A uniform workload-pool contract avoids service-specific placement exceptions.
+
+[PriorityClass](https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/)
+was considered but is not added. `preemptionPolicy: Never` orders pending Pods but
+cannot recover CPU already allocated before an agent enters the queue.
+`PreemptLowerPriority` could displace singleton applications or Redis; scheduler
+preemption is not a controlled application recovery or an availability guarantee.
+DaemonSet affinity to its individual node is expected; removing it would hide missing
+per-node log coverage. This change introduces no new preemption policy.
+
+The capacity guard honors selectors and rejects unsupported scheduling constraints.
+Old replicas remain charged to their real nodes; new application replicas obey the
+workload-pool selector. Every before/after placement combination of singleton Redis
+and metrics is checked, without inventing concurrent Redis replicas. Agent requests
+are reserved on each eligible node. The existing 800m operational/probe budget remains,
+with an additional **100m CPU / 128Mi per-node headroom**. These are feasibility budgets,
+not live reservations or guarantees against future system growth. Pending Pods still
+block readiness; missing pool labels or local shortages cannot be covered by spare
+CPU on an ineligible node. Runtime checks require the selected actual application
+node and agent coverage on every eligible node.
+
+Read-only sizing and projected overlap results are in
+[scheduling-validation.json](scheduling-validation.json). Existing capacity fits the
+measured bounds without resize. The measured CPU envelopes below include all simultaneous application overlap,
+singleton Redis/metrics and a 300m agent on each node. Values are projected free
+request CPU before the unchanged 800m operational budget and new 100m/node reserve:
+
+| System placement bound | System CPU small / big | Free CPU small / big |
+| --- | --- | --- |
+| Observed system placement | 846m / 424m | 784m / 626m |
+| All movable system Pods on big node | 409m / 861m | 1221m / 189m |
+| All movable system Pods on small node | 861m / 409m | 769m / 641m |
+
+Across both nodes: 5850m allocatable minus 1270m system, 2570m application overlap,
+600m agents and 1000m headroom/operational budgets leaves 410m. Memory and Pod slots
+also passed in the saved-readback projections; this is not a load/performance test.
+
+A fresh real preflight remains mandatory. The single
+application node is not HA: loss or delayed startup of that pool leaves applications
+Pending; no spillover to the small node is intended. Redis remains ephemeral and its
+existing Recreate policy is unchanged.
+
+### First adoption from an already blocked placement
+
+Merging this code neither moves existing Pods nor resolves a pending agent. Do not
+waive the pending-Pod gate or substitute an offline projection for live evidence.
+Before the endpoint release, separately authorize a bounded placement recovery with
+fresh UID/template, PDB, capacity and collateral-health checks, explicit time limits
+and recovery ownership. Preserve Redis and system Pods. In the observed baseline,
+three 100m stateless application moves would leave 114m after the 300m agent; two leave
+only 14m and fail the local headroom gate. This is a calculation, not authorization
+to evict, cordon or modify live workloads.
+
+After recovery, require both agents and the whole Shop Ready, then create the reviewed
+protected endpoint release with original producing references and a fresh full
+preflight. Apply these persistent templates only through the separately authorized
+Cloud Deploy rollout after merge. Repeat a real stop/resume acceptance later; local
+feasibility does not prove a live scheduling cycle.
+
 ## Bounded complete-release execution
 
 The complete producer requests use a 1200-second timeout per non-catalog application;

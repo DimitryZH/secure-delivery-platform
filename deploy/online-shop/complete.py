@@ -5,6 +5,7 @@ import copy
 from datetime import datetime, timedelta, timezone
 import importlib.util
 import ipaddress
+from itertools import product
 import json
 import os
 from pathlib import Path
@@ -27,6 +28,8 @@ ap = legacy.module("catalog_capacity", HERE / "acceptance.py")
 # profiles, runtime contracts, supporting policy and signing code must match both.
 DEPLOYMENT_CODE = ("deploy/online-shop/complete.py", "deploy/online-shop/complete-acceptance.py")
 DEPLOYMENT_FILES = ("deploy/online-shop/deployment-policy.json",)
+# Existing workload-pool label from Terraform; agents still cover both pools.
+APPLICATION_NODE_SELECTOR = {"delivery-capacity": "complete-shop-dev"}
 
 
 def reviewed(record, revision):
@@ -192,6 +195,7 @@ def render(record, revision, refs):
             template = d["spec"]["template"]
             template["metadata"]["annotations"] = meta(record, revision, identity, rows[identity]["digest"])
             pod = template["spec"]
+            pod["nodeSelector"] = {**pod.get("nodeSelector", {}), **APPLICATION_NODE_SELECTOR}
             require(len(pod["containers"]) == 1 and not pod.get("initContainers") and not pod.get("ephemeralContainers"), "unexpected_runtime_container")
             pod["serviceAccountName"] = identity
             pod["automountServiceAccountToken"] = False
@@ -248,6 +252,7 @@ def render(record, revision, refs):
     agent["spec"].pop("updateStrategy");agent["spec"].update(replicas=1,strategy={"type":"Recreate"},selector={"matchLabels":{"app":"shop-redis-metrics"}})
     template=agent["spec"]["template"];template["metadata"]={"labels":{"app":"shop-redis-metrics"},"annotations":metrics_meta}
     pod=template["spec"];pod["volumes"]=[{"name":"config","configMap":{"name":metrics_name}}]
+    pod["nodeSelector"].update(APPLICATION_NODE_SELECTOR)
     app=pod["containers"][0];app["volumeMounts"]=[{"name":"config","mountPath":"/etc/otelcol","readOnly":True}]
     app["ports"]=[{"containerPort":13133}]
     app["securityContext"].update(runAsUser=10001,runAsNonRoot=True)
@@ -274,45 +279,75 @@ def inventory(docs, record, revision, refs, context=None):
     return {"applications":len(c.APPS),"dependencies":["redis-cart"],"supporting":["collector"],"loadgenerator":"excluded"}
 
 def capacity(snapshot, documents):
-    # First-fit decreasing on each actual eligible node; all existing non-shop
-    # requests remain charged. Count *both* old/new application replicas, singleton
-    # Redis and one supporting agent per node. No aggregate-only capacity claim.
-    bins=[]
-    for node in snapshot["nodes"]["items"]:
+    # Actual old Pods stay charged to their nodes. New replicas obey the reviewed
+    # selectors; a feasible aggregate or hypothetical repacking is insufficient.
+    nodes=snapshot["nodes"]["items"];pods=snapshot["pods"]["items"];bins=[]
+    active=[p for p in pods if p.get("status",{}).get("phase") not in ("Succeeded","Failed")]
+    shop=(*c.MEMBERS,"catalog-collector","shop-redis-metrics")
+    def member(p):
+        return p["metadata"].get("namespace")=="dev" and p["metadata"].get("labels",{}).get("app") in shop
+    for node in nodes:
         labels=node["metadata"]["labels"]
         require(labels.get("kubernetes.io/os")=="linux" and labels.get("kubernetes.io/arch")=="amd64"
             and labels.get("iam.gke.io/gke-metadata-server-enabled")=="true" and not node["spec"].get("taints")
             and not node["spec"].get("unschedulable") and any(x["type"]=="Ready" and x["status"]=="True" for x in node["status"]["conditions"]),"node_constraints_or_readiness")
-        current=[p for p in snapshot["pods"]["items"] if p.get("spec",{}).get("nodeName")==node["metadata"]["name"]
-            and p.get("status",{}).get("phase") not in ("Succeeded","Failed")
-            and not (p["metadata"].get("namespace")=="dev" and p["metadata"].get("labels",{}).get("app") in (*c.MEMBERS,"catalog-collector","shop-redis-metrics"))]
+        current=[p for p in active if p.get("spec",{}).get("nodeName")==node["metadata"]["name"] and not member(p)]
         alloc=node["status"]["allocatable"]
         bins.append([ap.quantity(alloc["cpu"],True)-sum(ap.pod_requests(p,"cpu") for p in current),
             ap.quantity(alloc["memory"])-sum(ap.pod_requests(p,"memory") for p in current),int(alloc["pods"])-len(current)])
     require(bins,"no_nodes")
-    demand=[]
+    indices={n["metadata"]["name"]:i for i,n in enumerate(nodes)}
+    def need(p):return [ap.pod_requests(p,"cpu"),ap.pod_requests(p,"memory"),1]
+    def eligible(spec):
+        require(not any(spec.get(k) for k in ("nodeName","affinity","topologySpreadConstraints","tolerations"))
+                and spec.get("schedulerName","default-scheduler")=="default-scheduler","unsupported_capacity_placement")
+        return [i for i,n in enumerate(nodes) if all(n["metadata"]["labels"].get(k)==v
+                for k,v in spec.get("nodeSelector",{}).items())]
+    demand=[];recreate=[]
     for d in documents:
         if d["kind"] not in ("Deployment","DaemonSet"):continue
-        pod=d["spec"]["template"]
-        n=len(bins) if d["kind"]=="DaemonSet" else 1 if d["metadata"]["name"]=="redis-cart" else 2
-        need=[ap.pod_requests(pod,"cpu"),ap.pod_requests(pod,"memory"),1]
+        pod=d["spec"]["template"];targets=eligible(pod["spec"]);new=(need(pod),targets)
+        old=[p for p in active if member(p) and p["metadata"]["labels"]["app"]==d["metadata"]["name"] and p.get("spec",{}).get("nodeName")]
+        require(all(p["spec"]["nodeName"] in indices for p in old),"capacity_old_node_unknown")
         if d["kind"]=="DaemonSet":
-            # Reserve its actual placement on every node, not a generic free bin.
-            for b in bins:
-                for i in range(3):b[i]-=need[i]
-        else:demand += [need for _ in range(1 if d["metadata"]["name"]=="shop-redis-metrics" else n)]
-    # Sample has no requests: keep an explicit allowance plus a negative-test
-    # slot and unallocated CPU/memory headroom; these are reserves, not limits.
-    demand += [[100,128*1024**2,0] for _ in range(3)] + [[200,256*1024**2,1],[300,512*1024**2,0]]
-    failures=sum(any(x<0 for x in b) for b in bins)
-    for need in sorted(demand,key=lambda x:(x[0],x[1]),reverse=True):
-        index=next((i for i,b in enumerate(bins) if all(have>=amount for have,amount in zip(b,need))),None)
-        if index is None:failures+=1
-        else:bins[index]=[have-amount for have,amount in zip(bins[index],need)]
-    pending=[p for p in snapshot["pods"]["items"] if not p.get("spec",{}).get("nodeName") and p.get("status",{}).get("phase") not in ("Succeeded","Failed")]
+            for i in targets:
+                existing=[p for p in old if indices[p["spec"]["nodeName"]]==i]
+                # maxSurge=0: reserve one agent, or larger actual old requests.
+                amounts=[max(new[0][axis],sum(need(p)[axis] for p in existing)) for axis in range(3)]
+                demand.append((amounts,[i]))
+            if not targets:demand.append(new)
+        elif d["spec"]["strategy"]["type"]=="Recreate":
+            require(len(old)<=1,"capacity_recreate_not_singleton")
+            # Evaluate every before/after placement combination for singleton
+            # Redis and metrics. Never invent overlapping Redis replicas.
+            choices=[new]
+            if old:choices.append((need(old[0]),[indices[old[0]["spec"]["nodeName"]]]))
+            recreate.append(choices)
+        else:
+            demand += [(need(p),[indices[p["spec"]["nodeName"]]]) for p in old]
+            demand += [new for _ in range(max(1,2-len(old)))]
+    # Preserve the existing 800m operational/negative-test budget and add hard
+    # 100m/128Mi headroom on each node, rather than aggregate-only free space.
+    demand += [(amounts,list(range(len(bins)))) for amounts in
+        [[100,128*1024**2,0] for _ in range(3)] + [[200,256*1024**2,1],[300,512*1024**2,0]]]
+    demand += [([100,128*1024**2,0],[i]) for i in range(len(bins))]
+    outcomes=[]
+    for choices in product(*recreate):
+        remaining=copy.deepcopy(bins);failures=sum(any(x<0 for x in row) for row in remaining)
+        # Constrained old/new placements precede unbound operational reserves.
+        for amounts,targets in sorted(demand+list(choices),key=lambda x:(len(x[1]),-x[0][0],-x[0][1])):
+            index=next((i for i in targets if all(have>=amount for have,amount in zip(remaining[i],amounts))),None)
+            if index is None:failures+=1
+            else:remaining[index]=[have-amount for have,amount in zip(remaining[index],amounts)]
+        outcomes.append((failures,remaining))
+    failures,budget=max(outcomes,key=lambda x:(x[0],-min(row[0] for row in x[1])))
+    pending=[p for p in active if not p.get("spec",{}).get("nodeName")]
     return {"capacity_ready":not failures and not pending,"unscheduled_budget_items":failures,"unassigned_pods":len(pending),
         "node_count":len(bins),"application_overlap_replicas":2,"redis_overlap_replicas":1,"collector_per_node":1,
-        "remaining_bins":[{"cpu_m":float(b[0]),"memory_mi":float(b[1]/1024**2),"slots":b[2]} for b in bins]}
+        "per_node_headroom_cpu_m":100,"recreate_placement_scenarios":len(outcomes),
+        "remaining_bins":[{"node":n["metadata"]["name"],"cpu_m":float(row[0]),"memory_mi":float(row[1]/1024**2),"slots":row[2]}
+            for n,row in zip(nodes,budget)]}
+
 
 def prepare(record, revision, refs, value, release, output, cloud):
     reviewed(record, revision)
