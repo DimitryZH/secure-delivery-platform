@@ -20,9 +20,9 @@ All times below are UTC on 2026-11-08. Each edge request, including its recorded
 
 | Method and path | HTTPS client interval | Edge start | Result |
 | --- | --- | --- | --- |
-| GET `/` | 15:09:19.888â€“15:09:20.309081524 | 15:09:19.967548 | 200 / ACCEPT |
-| GET `/product/OLJCESPC7Z` | 15:09:20.311â€“15:09:20.368025994 | 15:09:20.313783 | 200 / ACCEPT |
-| GET `/cart` | 15:09:20.370â€“15:09:20.411008267 | 15:09:20.370640 | 200 / ACCEPT |
+| GET `/` | 15:09:19.888–15:09:20.309081524 | 15:09:19.967548 | 200 / ACCEPT |
+| GET `/product/OLJCESPC7Z` | 15:09:20.311–15:09:20.368025994 | 15:09:20.313783 | 200 / ACCEPT |
+| GET `/cart` | 15:09:20.370–15:09:20.411008267 | 15:09:20.370640 | 200 / ACCEPT |
 
 The match also requires all of the following:
 
