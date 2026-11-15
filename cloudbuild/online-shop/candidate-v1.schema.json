@@ -15,7 +15,7 @@
       "required": ["repository", "revision"],
       "properties": {
         "repository": {"const": "https://github.com/DimitryZH/application-modernization-lab"},
-        "revision": {"const": "89fd1cde8285761cc2a35dfb22d145adb2eed980"}
+        "revision": {"const": "67b6cd85ae01c698bbf86904d953d5145b7b5820"}
       }
     },
     "configuration": {
@@ -36,7 +36,7 @@
         "inputs_sha256": {"$ref": "#/$defs/digest"},
         "planner_sha256": {"$ref": "#/$defs/digest"},
         "contract_sha256": {"$ref": "#/$defs/digest"},
-        "uri": {"const": "git+https://github.com/DimitryZH/application-modernization-lab@89fd1cde8285761cc2a35dfb22d145adb2eed980#workloads/online-shop/build_plan.py"}
+        "uri": {"const": "git+https://github.com/DimitryZH/application-modernization-lab@67b6cd85ae01c698bbf86904d953d5145b7b5820#workloads/online-shop/build_plan.py"}
       }
     },
     "build": {

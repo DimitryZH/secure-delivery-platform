@@ -1,5 +1,5 @@
 {
-  "aml_revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
+  "aml_revision": "67b6cd85ae01c698bbf86904d953d5145b7b5820",
   "documents": [
     {
       "apiVersion": "apps/v1",
@@ -656,7 +656,7 @@
                   "--appendonly",
                   "no"
                 ],
-                "image": "docker.io/dmitryzhuravlev/online-shop-redis-cart@sha256:81be8a1f52db5f99fe3de0bbbd2efce827f51ce409155a95e9bdbac8c2721ba6",
+                "image": "docker.io/dmitryzhuravlev/online-shop-redis-cart@sha256:1cf73a2f04808e55a8bd2f5706c2aa0ebb0f71938f93deb7af79f48311cd5cb9",
                 "livenessProbe": {
                   "periodSeconds": 5,
                   "tcpSocket": {
@@ -1411,6 +1411,6 @@
       }
     }
   ],
-  "source_sha256": "sha256:fee1d2c0b62bd322b1ed7e2c877258b905e65641dfd6755b9c0d3bf559a892f7",
+  "source_sha256": "sha256:2f02fc2f04463274453e7cb20ae27d49506b7971ea00750e0099e99566d418ed",
   "version": 1
 }
