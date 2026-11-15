@@ -28,8 +28,12 @@ images, retains resource/security settings, and keeps the endpoint toggle and
 [Source-adoption validation](../../cloudbuild/online-shop/source-adoption-validation.json)
 records why the existing immutable contracts require ten application rebuilds,
 including a new catalog acceptance before the nine complete-flow builds. Current
-`accepted_release` is pending (`null`); prepare, runtime/signals and full delivery
-must fail closed until fresh acceptance exists. Prior candidates, artifact trust
+catalog acceptance is proposed with real references in the
+[catalog acceptance record](../../cloudbuild/online-shop/catalog-acceptance-validation.json).
+Its merged-main accepted-chain gate remains pending. The other nine application
+builds, a new complete candidate and complete signing have not run; prepare,
+runtime/signals and full delivery must not treat historical artifacts as this
+new-source complete release. Prior candidates, artifact trust
 and rollout evidence remain historical at their original revisions; they do not
 become candidates for this source by recomputing an identity. No new artifact IDs
 are assigned by this change. Use the original immutable tooling to interpret a

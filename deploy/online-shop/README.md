@@ -1,8 +1,8 @@
-> Active source adoption: catalog acceptance is currently pending for AML
-> `67b6cd85ae01c698bbf86904d953d5145b7b5820`. See the
-> [current source gates](../../cloudbuild/online-shop/README.md#source-revision-activation).
-> Recorded catalog IDs and successful runs below are historical and cannot
-> authorize the new source. No live deployment is performed by this update.
+> Catalog acceptance for AML `67b6cd85ae01c698bbf86904d953d5145b7b5820` is
+> proposed with [verified immutable references](../../cloudbuild/online-shop/catalog-acceptance-validation.json).
+> The accepted-chain deployment trust gate remains pending review/merge and a
+> fresh check at actual merged main. Older catalog IDs below remain historical.
+> No complete release or live deployment is established by this update.
 
 # Catalog deployment in dev
 
