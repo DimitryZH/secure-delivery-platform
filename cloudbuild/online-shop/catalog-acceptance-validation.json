@@ -1,0 +1,136 @@
+{
+  "version": 1,
+  "status": "trusted_catalog_proposed_acceptance_pending_merge",
+  "observed_date": "2026-11-15",
+  "source_revision": "67b6cd85ae01c698bbf86904d953d5145b7b5820",
+  "configuration_revision": "9c3188b00b4b09ee00085174ce20e82d000543d3",
+  "accepted_release": {
+    "binding": "sdp-dev-v1",
+    "project": "sdp-gcp",
+    "configuration_revision": "9c3188b00b4b09ee00085174ce20e82d000543d3",
+    "build_id": "30108e72-9f73-4729-a29e-4e544f96752e",
+    "release_set_id": "sha256:1bebd013a7aba9a791ec2c4854797e1954e1b6821f932dc20413e0c39d083f4c",
+    "manifest_digest": "sha256:5cc30b0c5b560356539ca1f0aa3e080ab88de74fb21d3f2700cb599c43a0a646",
+    "signing_build_id": "0325b6fd-dd40-48ce-ac94-7a2a0783d028",
+    "candidate_generation": "1794752722454652",
+    "candidate_transport_sha256": "sha256:3b7f24eadaa35e12077fc262e48811025d271683676e39f37e2b1c249d30b41c",
+    "occurrence": "projects/sdp-gcp/occurrences/9976df80-2079-40e3-8c18-46ff89b66e4b"
+  },
+  "platform": "linux/amd64",
+  "artifact": "us-central1-docker.pkg.dev/sdp-gcp/secure-delivery/online-shop-productcatalogservice@sha256:5cc30b0c5b560356539ca1f0aa3e080ab88de74fb21d3f2700cb599c43a0a646",
+  "config_digest": "sha256:41227e261a69033db3676a5207c859288ee0929bdb9210a15702e115e043d258",
+  "candidate_size": 1992,
+  "temporaryHold": true,
+  "verification": {
+    "independent": "passed",
+    "signer_independent": "passed",
+    "signer_result": "trusted",
+    "occurrence_readback": "passed",
+    "signature_validation": "VERIFIED",
+    "exact_generation_hash_size_readback": "passed",
+    "signer_build_request_source_identity": "passed"
+  },
+  "producing_build": {
+    "id": "30108e72-9f73-4729-a29e-4e544f96752e",
+    "status": "SUCCESS",
+    "timeout_seconds": 1200,
+    "submissions": 1
+  },
+  "signing_build": {
+    "id": "0325b6fd-dd40-48ce-ac94-7a2a0783d028",
+    "status": "SUCCESS",
+    "timeout_seconds": 600,
+    "authorized_maximum_seconds": 900,
+    "submissions": 1
+  },
+  "authority": {
+    "note": "projects/sdp-gcp/notes/secure-delivery-verification",
+    "attestor": "projects/sdp-gcp/attestors/secure-delivery-verification",
+    "key_version": "projects/sdp-gcp/locations/us-central1/keyRings/secure-delivery-attestation/cryptoKeys/verification/cryptoKeyVersions/1"
+  },
+  "post_merge_accepted_chain_gate": "pending_actual_merged_main_revision",
+  "limits": [
+    "Acceptance policy is proposed on a feature branch; merged-main deployment trust gate is not bypassed.",
+    "No other application build, complete release, deployment, node resume or monitoring apply.",
+    "Collector policy and occurrence unchanged; this catalog acceptance is not fresh Collector verification.",
+    "Historical evidence and prior candidate holds remain unchanged."
+  ],
+  "signing_request_sha256": "sha256:cd02563f9a946e0ea0cfd61a1e15a9d3bbd20fafe2ddb9b896c3c1b344171616",
+  "validation": {
+    "tests": 187,
+    "passed": 183,
+    "skips": 4,
+    "suites": [
+      {
+        "suite": "test_online_shop_release.py",
+        "exit_code": 0,
+        "tests": 35,
+        "skips": 0
+      },
+      {
+        "suite": "test_catalog_deployment.py",
+        "exit_code": 0,
+        "tests": 27,
+        "skips": 1
+      },
+      {
+        "suite": "test_complete_shop.py",
+        "exit_code": 0,
+        "tests": 59,
+        "skips": 2
+      },
+      {
+        "suite": "test_release_binding.py",
+        "exit_code": 0,
+        "tests": 5,
+        "skips": 0
+      },
+      {
+        "suite": "test_source_adoption.py",
+        "exit_code": 0,
+        "tests": 6,
+        "skips": 0
+      },
+      {
+        "suite": "test_accepted_catalog.py",
+        "exit_code": 0,
+        "tests": 2,
+        "skips": 0
+      },
+      {
+        "suite": "test_redis_source.py",
+        "exit_code": 0,
+        "tests": 9,
+        "skips": 1
+      },
+      {
+        "suite": "test_collector_adoption.py",
+        "exit_code": 0,
+        "tests": 44,
+        "skips": 0
+      }
+    ],
+    "skip_limits": [
+      "Three optional native Collector checks: executable not configured.",
+      "One optional saved Redis source/registry-byte fixture: not configured."
+    ],
+    "feature_policy_candidate_binding": "passed",
+    "producing_candidate_verifier": "passed",
+    "feature_accepted_chain_CLI": {
+      "exit_code": 3,
+      "decision": "BLOCKED",
+      "expected_reason": "unreviewed_deployment_files",
+      "post_merge_gate_bypassed": false
+    },
+    "git_diff_check": "passed"
+  },
+  "candidate_uri": "gs://sdp-gcp-attestation-source/online-shop/catalog-v1/9c3188b00b4b09ee00085174ce20e82d000543d3/30108e72-9f73-4729-a29e-4e544f96752e/candidate.json#1794752722454652",
+  "implementation_hash_format": "SHA-256 of Git-compatible LF-normalized bytes",
+  "implementation_hashes": {
+    "deploy/online-shop/policy.json": "73e3c3aaef8dad8f36396b7574d27ccb4d093e833c4f0fed334e09d3c0d94e69",
+    "scripts/tests/test_accepted_catalog.py": "6fdff42db3020905376a524136fc06ff995c3a5dc3505018c2381ebad5e8e718",
+    "scripts/tests/test_release_binding.py": "c40d769181fd10989cc180508d52240a3ac0efb373be1416d116da80a24c92db",
+    "scripts/tests/test_source_adoption.py": "7fb27bc8a954e1bbcb76705800d3db50b03ebc68f317b1d29fe1ba78dc02f508",
+    "scripts/tests/test_collector_adoption.py": "84100a8097593d21d4d005e07dab133e91b5e71c4915a9be2984cfeb3a407a93"
+  }
+}

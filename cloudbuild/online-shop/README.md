@@ -39,20 +39,26 @@ The active AML source is `67b6cd85ae01c698bbf86904d953d5145b7b5820`, including
 The complete comparison from the preceding pin also includes Redis PR #27.
 See [source-adoption validation](source-adoption-validation.json).
 
-`accepted_release` is deliberately `null` until a new catalog at this source has
-passed independent verification, protected create-only candidate publication,
-separate signing and occurrence/signature readback, followed by reviewed policy
-acceptance. Catalog production remains available; complete production and
-deployment fail closed while acceptance is missing. No placeholder build IDs,
-digests, generations or signatures authorize the next stage. The prior accepted
-catalog is preserved as historical evidence in the validation record and Git.
+The proposed `accepted_release` now records a real catalog at this source after
+independent verification, create-only candidate publication, generation-specific
+temporary hold, separate signing and occurrence/signature readback. See the
+[catalog acceptance record](catalog-acceptance-validation.json) for exact immutable
+references. Producing configuration and original candidate generation are retained;
+a later deployment revision cannot replace them. The feature-branch policy still
+requires review/merge and a fresh accepted-chain check using the actual merged main
+revision. This post-merge gate is pending, not bypassed by the live signer result.
+
+Catalog production remains independent of acceptance; complete production and
+deployment fail closed when acceptance is missing. No placeholder build IDs,
+digests, generations or signatures authorize the next stage. The preceding catalog
+remains historical evidence in the source-adoption validation record and Git.
 
 The existing contract requires all ten application images to bind the active
 `SOURCE_REVISION` through their plans, build arguments and registry config labels.
 Only recommendation COPY-expanded input bytes changed, but the other nine old
 images do not satisfy the new immutable revision. No reuse exception is added.
-Start with a separately authorized bounded catalog build after merge; a new
-accepted catalog is a prerequisite for the nine complete-flow builds. Redis and
+The catalog build/signing stage is complete; its proposed acceptance must merge
+and pass fresh verification before separately authorized nine complete-flow builds. Redis and
 Collector retain their own pinned policies and require fresh proof before reuse.
 
 ## Contract and identity

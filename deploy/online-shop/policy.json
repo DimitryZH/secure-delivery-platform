@@ -2,7 +2,18 @@
   "version": 1,
   "target": "dev",
   "pipeline": "catalog-dev",
-  "accepted_release": null,
+  "accepted_release": {
+    "binding": "sdp-dev-v1",
+    "project": "sdp-gcp",
+    "configuration_revision": "9c3188b00b4b09ee00085174ce20e82d000543d3",
+    "build_id": "30108e72-9f73-4729-a29e-4e544f96752e",
+    "release_set_id": "sha256:1bebd013a7aba9a791ec2c4854797e1954e1b6821f932dc20413e0c39d083f4c",
+    "manifest_digest": "sha256:5cc30b0c5b560356539ca1f0aa3e080ab88de74fb21d3f2700cb599c43a0a646",
+    "signing_build_id": "0325b6fd-dd40-48ce-ac94-7a2a0783d028",
+    "candidate_generation": "1794752722454652",
+    "candidate_transport_sha256": "sha256:3b7f24eadaa35e12077fc262e48811025d271683676e39f37e2b1c249d30b41c",
+    "occurrence": "projects/sdp-gcp/occurrences/9976df80-2079-40e3-8c18-46ff89b66e4b"
+  },
   "collector": {
     "version": "0.164.0",
     "upstream_repository": "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib",

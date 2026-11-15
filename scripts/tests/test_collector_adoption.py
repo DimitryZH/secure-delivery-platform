@@ -114,12 +114,16 @@ class CollectorTests(unittest.TestCase):
         with patch.object(c, "publisher", return_value={"status": "publisher_verified"}):
             return c.attest(self.policy, self.cloud, self.helper, **kwargs)
 
-    def test_support_selection_remains_exact_with_catalog_acceptance_pending(self):
-        policy = c.policy()
-        self.assertEqual(policy["manifest_digest"], "sha256:ac0bb9cdc844b55d2fd2655d03e596243787d6a8c52dd408b1dc96dd1bd372ee")
-        accepted = c.r.read(ROOT / "deploy/online-shop/policy.json")["accepted_release"]
-        self.assertIsNone(accepted)
-        self.assertEqual(c.r.read(ROOT / "deploy/online-shop/policy.json")["collector_occurrence"], "projects/" + c.r.policy()["project"] + "/occurrences/9a8dedba-fd25-467a-b90f-4d6069bc41d0")
+    def test_support_selection_is_independent_of_catalog_acceptance_state(self):
+        expected = c.policy()
+        document = c.r.read(ROOT / "deploy/online-shop/policy.json")
+        original = c.r.read
+        for accepted in (None, document['accepted_release']):
+            policy = copy.deepcopy(document); policy['accepted_release'] = accepted
+            with patch.object(c.r, 'read', side_effect=lambda path: policy if Path(path).name=='policy.json' else original(path)):
+                self.assertEqual(c.policy(), expected)
+        self.assertEqual(expected["manifest_digest"], "sha256:ac0bb9cdc844b55d2fd2655d03e596243787d6a8c52dd408b1dc96dd1bd372ee")
+        self.assertEqual(document["collector_occurrence"], "projects/" + c.r.policy()["project"] + "/occurrences/9a8dedba-fd25-467a-b90f-4d6069bc41d0")
 
     def test_policy_rejects_alternate_repository_mirror_publisher_and_version_types(self):
         original = c.r.read

@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 import types
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parents[2]
 OLD = '89fd1cde8285761cc2a35dfb22d145adb2eed980'
@@ -44,12 +44,12 @@ class SourceAdoptionTests(unittest.TestCase):
         self.assertEqual(len(runtime['documents']), 32)
         self.assertFalse(any(x['metadata']['name'] == 'loadgenerator' for x in runtime['documents']))
 
-    def test_bootstrap_catalog_available_while_full_release_blocks(self):
-        self.assertIsNone(c.legacy.policy()['accepted_release'])
+    def test_bootstrap_catalog_available_while_missing_acceptance_blocks_full_release(self):
+        pending = copy.deepcopy(c.legacy.policy()); pending['accepted_release'] = None
         request = r.build_request(r.policy(), 'c' * 40, plan_hash='sha256:' + '1' * 64)
         self.assertEqual(request['timeout'], '1200s')
         self.assertIn('SOURCE_REVISION=' + NEW, request['steps'][1]['args'])
-        with self.assertRaisesRegex(ValueError, 'accepted_catalog_pending'):
+        with patch.object(c.legacy, 'policy', return_value=pending), self.assertRaisesRegex(ValueError, 'accepted_catalog_pending'):
             c.build_request('recommendationservice', 'c' * 40, {})
 
     def test_old_candidate_source_rejected_after_identity_recomputation(self):
@@ -82,7 +82,8 @@ class SourceAdoptionTests(unittest.TestCase):
         before = json.loads(source.blob('deploy/online-shop/policy.json'))
         historical = r.read(ROOT / 'cloudbuild/online-shop/source-adoption-validation.json')['historical_accepted_catalog']
         self.assertEqual({k:historical[k] for k in before['accepted_release']}, before['accepted_release'])
-        current = c.legacy.policy()
+        current = copy.deepcopy(c.legacy.policy())
+        current['accepted_release'] = None
         before['accepted_release'] = None
         self.assertEqual(current, before)
         for name in ('cloudbuild/online-shop/validation.json', 'cloudbuild/online-shop/complete-execution-validation.json',
