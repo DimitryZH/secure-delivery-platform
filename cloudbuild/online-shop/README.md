@@ -32,11 +32,34 @@ Capture metadata/media privately; require `temporaryHold=true`, matching generat
 
 Retain accepted candidates for current and rollback releases. Release a hold only after an explicit retirement review confirms no retained release/signing/readback depends on the generation; unaccepted temporary objects remain eligible for normal lifecycle cleanup. Keep original signing generation immutable. If recovery is ever needed, a separately reviewed `readback_generation` may select restored bytes with the **original** transport SHA-256, while the signing build continues to be checked against its original URI/generation.
 
+## Source revision activation
+
+The active AML source is `67b6cd85ae01c698bbf86904d953d5145b7b5820`, including
+[AML PR #28](https://github.com/DimitryZH/application-modernization-lab/pull/28).
+The complete comparison from the preceding pin also includes Redis PR #27.
+See [source-adoption validation](source-adoption-validation.json).
+
+`accepted_release` is deliberately `null` until a new catalog at this source has
+passed independent verification, protected create-only candidate publication,
+separate signing and occurrence/signature readback, followed by reviewed policy
+acceptance. Catalog production remains available; complete production and
+deployment fail closed while acceptance is missing. No placeholder build IDs,
+digests, generations or signatures authorize the next stage. The prior accepted
+catalog is preserved as historical evidence in the validation record and Git.
+
+The existing contract requires all ten application images to bind the active
+`SOURCE_REVISION` through their plans, build arguments and registry config labels.
+Only recommendation COPY-expanded input bytes changed, but the other nine old
+images do not satisfy the new immutable revision. No reuse exception is added.
+Start with a separately authorized bounded catalog build after merge; a new
+accepted catalog is a prerequisite for the nine complete-flow builds. Redis and
+Collector retain their own pinned policies and require fresh proof before reuse.
+
 ## Contract and identity
 
 [`catalog-v1.json`](catalog-v1.json) is the environment-independent allowed profile:
 exactly `productcatalogservice`, `linux/amd64`, canonical AML repository at
-`89fd1cde8285761cc2a35dfb22d145adb2eed980`. The executable policy additionally
+`67b6cd85ae01c698bbf86904d953d5145b7b5820`. The executable policy additionally
 requires that exact profile; supplying a different JSON profile is not authorization.
 Changing membership or the approved source requires a reviewed policy/version change.
 

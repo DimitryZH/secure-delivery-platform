@@ -47,12 +47,19 @@ class HistoricalProducerCompatibilityTests(unittest.TestCase):
     HELPER = 'deploy/deploy-release.py'
 
     def setUp(self):
-        # Freeze deployment-only files to the recorded deployment; shared producer
-        # files, including the helper under test, still use their real Git bytes.
+        # Replay the recorded source-profile generation, not today's AML pins.
+        # Keep the shared helper under test live so its compatibility check still
+        # compares real historical Git bytes with the implementation under test.
         source = w.c.r.Source(ROOT, self.DEPLOYMENT)
-        recorded = {ROOT / name: source.blob(name) for name in (*w.DEPLOYMENT_FILES, *w.DEPLOYMENT_CODE)}
+        recorded = {ROOT / name: source.blob(name)
+                    for name in (*w.DEPLOYMENT_FILES, *w.c.TRUST_FILES) if name != self.HELPER}
         read_bytes, read = Path.read_bytes, w.c.r.read
+        historical_profile = json.loads(source.blob('cloudbuild/online-shop/catalog-v1.json'))
+        historical_complete_sha = w.c.r.sha(source.blob('cloudbuild/online-shop/complete-v1.json'))
         for gate in (
+            patch.object(w.c.r, 'PROFILE', historical_profile),
+            patch.object(w.c.legacy.r, 'PROFILE', historical_profile),
+            patch.object(w.c, 'PROFILE_SHA', historical_complete_sha),
             patch.object(Path, 'read_bytes', lambda p: recorded[p] if p in recorded else read_bytes(p)),
             patch.object(w.c.r, 'read', lambda p: json.loads(recorded[Path(p)]) if Path(p) == ROOT / w.DEPLOYMENT_FILES[0] else read(p)),
         ):
@@ -133,6 +140,17 @@ class CompleteTests(unittest.TestCase):
         for release in (c,w.c,a.c):
             gate=patch.object(release.redis,'verify_chain',side_effect=ValueError('redis_publication_chain_pending'))
             gate.start();self.addCleanup(gate.stop)
+
+    def test_previous_source_profile_rejected_even_with_recomputed_identity(self):
+        previous = copy.deepcopy(self.record)
+        previous['profile_sha256'] = 'sha256:3fc00dee52b0829f98c36c9d1fd2d7c6a34a3f3c405648138eb07d555460b6dc'
+        for row in previous['components'][:-1]:
+            row['source']['revision'] = '89fd1cde8285761cc2a35dfb22d145adb2eed980'
+        previous['release_set_id'] = c.r.fingerprint({k:v for k,v in previous.items() if k!='release_set_id'})
+        cloud = Mock()
+        with self.assertRaisesRegex(ValueError, 'complete_candidate_policy_mismatch'):
+            c.verify(previous, REV, self.plans, self.refs, cloud)
+        self.assertEqual(cloud.mock_calls, [])
 
     def test_deployment_toggle_preserves_candidate_and_producing_files(self):
         original = w.c.r.read

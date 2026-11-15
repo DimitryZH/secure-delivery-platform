@@ -29,8 +29,9 @@ class BindingTests(unittest.TestCase):
         b, p = r.binding(), r.policy()
         self.assertEqual((b["project"], b["project_number"]), ("sdp-gcp", "738317279206"))
         self.assertNotEqual(p["producer"], p["signer"])
-        accepted = w.accepted_catalog()
-        self.assertEqual((accepted["binding"], accepted["project"]), (b["id"], b["project"]))
+        self.assertIsNone(w.policy()['accepted_release'])
+        with self.assertRaisesRegex(ValueError, 'accepted_catalog_pending'):
+            w.accepted_catalog()
         self.assertEqual(w.collector_occurrence(), "projects/" + p["project"] + "/occurrences/9a8dedba-fd25-467a-b90f-4d6069bc41d0")
         request = r.build_request(p, "c" * 40, {"components": [{"inputs": []}]})
         self.assertEqual(request["serviceAccount"], p["producer"])

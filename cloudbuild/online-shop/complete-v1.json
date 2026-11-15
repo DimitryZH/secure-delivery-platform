@@ -20,11 +20,11 @@
   "contracts_sha256": {
     "build.contract.json": "sha256:2a78958157874a90b8ac633def1f337449b7f5c73beaf6e46bde05b388f6995b",
     "build_plan.py": "sha256:f7341c26c21432af7deb334447c6d3262781bea61f827ed26e210a69bf784f01",
-    "docs/RUNTIME.md": "sha256:4ba68431a559d16b06764afa8050a3df2f2d6cf30e655e87ab931b679a5a9368",
-    "docs/TELEMETRY.md": "sha256:ce31c54cb60006e913aea9ddd664a129cf0f5460072afb6da061b00eff7bcfd0",
-    "images.lock.json": "sha256:94f4074cd6d0bfaaa91268719b3b0fefc12793735a5d172f1bf4008ae7829ac9",
-    "kubernetes/online-shop.yaml": "sha256:fee1d2c0b62bd322b1ed7e2c877258b905e65641dfd6755b9c0d3bf559a892f7",
-    "redis.runtime.json": "sha256:37290e790f046ad89acc8bc2af5c2df6bad51dc64895b7896fad39d67c1c621b"
+    "docs/RUNTIME.md": "sha256:406f094da6a50ad1752d9ad66b6a50fb1acf801eb3e1874c50066ced1a4aa303",
+    "docs/TELEMETRY.md": "sha256:dbb5dea78539fadb5d40a4436277579aaf67e9f26bda1c84ced7372d98d1c0e7",
+    "images.lock.json": "sha256:6e5ccb029dc0aaa2c9fa8322139b406b814865a7e31b06df0103b0b8d8539f0c",
+    "kubernetes/online-shop.yaml": "sha256:2f02fc2f04463274453e7cb20ae27d49506b7971ea00750e0099e99566d418ed",
+    "redis.runtime.json": "sha256:12324ccfae81d46eaead0f17f7fa2453e9b293fd647382252b60bcd2a0e41682"
   },
   "id": "complete-shop-v1",
   "platform": "linux/amd64",
@@ -45,7 +45,7 @@
   ],
   "source": {
     "repository": "https://github.com/DimitryZH/application-modernization-lab",
-    "revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
+    "revision": "67b6cd85ae01c698bbf86904d953d5145b7b5820",
     "workload_path": "workloads/online-shop"
   },
   "supporting_images": [

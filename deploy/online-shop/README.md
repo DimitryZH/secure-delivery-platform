@@ -1,3 +1,9 @@
+> Active source adoption: catalog acceptance is currently pending for AML
+> `67b6cd85ae01c698bbf86904d953d5145b7b5820`. See the
+> [current source gates](../../cloudbuild/online-shop/README.md#source-revision-activation).
+> Recorded catalog IDs and successful runs below are historical and cannot
+> authorize the new source. No live deployment is performed by this update.
+
 # Catalog deployment in dev
 
 Active workload: **Online Shop**. Sample-service is retired; any sample preservation or health observations below are **historical evidence only**, never a prerequisite for recovery, delivery or acceptance. Existing recorded runs retain their original results.
@@ -23,9 +29,9 @@ fixture then received an explicit Binary Authorization API denial for missing
 required attestation on 2026-11-01. See the separate attempts below and
 [validation.json](validation.json). Acceptance evidence awaits review; #93 stays open.
 
-## Release and deployment boundaries
+## Historical release and deployment boundaries
 
-The application remains the accepted `catalog-v1` release from [#87](../../cloudbuild/online-shop/README.md).
+The recorded application used the accepted `catalog-v1` release from [#87](../../cloudbuild/online-shop/README.md).
 Its producing configuration is `6043c9af617274fcdc97dc9828b4356c72061dd1`, AML
 is `89fd1cde8285761cc2a35dfb22d145adb2eed980`, and build is
 `b4c1e382-e23a-465c-b6b4-e7093af95391`. Exact accepted release identity, digest,

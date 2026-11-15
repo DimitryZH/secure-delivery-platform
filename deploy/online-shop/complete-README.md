@@ -2,7 +2,7 @@
 
 Active workload: **Online Shop**. Sample-service is retired; any sample preservation or health observations below are **historical evidence only**, never a prerequisite for recovery, delivery or acceptance. Existing recorded runs retain their original results.
 
-This is the complete dev integration entry point for [#100](https://github.com/DimitryZH/secure-delivery-platform/issues/100), using reviewed SDP `00e925e724808ac80f1313fb85da1c6b3ec19f3f`, application AML `89fd1cde8285761cc2a35dfb22d145adb2eed980` and Redis dependency contract `23b5b28de59e73fbfe2d4eff027f33bd82ae5e26`. The full application was deployed together; no service subset was promoted independently. See [sanitized validation](complete-validation.json).
+The historical complete dev integration for [#100](https://github.com/DimitryZH/secure-delivery-platform/issues/100) used reviewed SDP `00e925e724808ac80f1313fb85da1c6b3ec19f3f`, application AML `89fd1cde8285761cc2a35dfb22d145adb2eed980` and Redis dependency contract `23b5b28de59e73fbfe2d4eff027f33bd82ae5e26`. The full application was deployed together; no service subset was promoted independently. See [sanitized validation](complete-validation.json).
 
 **Recorded decision: signals acceptance passed for the preserved journey; pending review of #100.** Merged validator `55e6706edffc1b05bfb2104be20232ceb4f1ff18` returned CLI exit 0 with its normal independent guard. Actual deployment remains `0c12993dccb802b47270ca2730a4e0c2005a98a6` and producing configuration remains `00e925e724808ac80f1313fb85da1c6b3ec19f3f`. Only the original journey record was added to a copy of the historical snapshot. No deployment, journey, traffic or live mutation occurred. This validates the recorded run, not current application state. Historical failures remain unchanged.
 
@@ -13,6 +13,27 @@ Use the [reviewed environment binding and staged catalog acceptance procedure](.
 `endpoint_enabled` in [deployment-policy.json](deployment-policy.json) is a required exact boolean in a closed version-1 project/binding-specific policy, pinned to the reviewed deployment SHA. The legacy field in [environments.json](../environments.json) remains immutable producing evidence and does not control this render. Producing/signing contracts and accepted candidate identity remain unchanged. `false` renders exactly 39 resources, without Gateway, HTTPRoutes or endpoint policies; exact inventory rejects their unexpected addition. Common capacity, artifact protection, admission, digest and source guards remain required. `true` renders all 45 resources and retains endpoint infrastructure/DNS/TLS/Armor, redirect and actual Gateway server-side dry-run guards. Changing this mode requires review and a new protected render/release; a snapshot cannot turn it off. Public endpoint journeys reject endpoint-off mode. Endpoint/synthetic infrastructure remains a separate provisioning decision.
 
 Collector exporter project/resource attribution must match the active binding. Catalog release/digest attributes are filled from the validated candidate during rendering. Redis cleanup derives its dev target from the same environment, retains exact session ownership and DEL/EXISTS scope, and remains independent of renewed cloud verification.
+
+## Active source adoption
+
+The active application source pin is now
+`67b6cd85ae01c698bbf86904d953d5145b7b5820`. This includes the recommendation
+deadline fix and the intermediate Redis contract changes; the selected Redis
+7.4.12 dependency policy already matches those changes and remains unchanged.
+The extracted runtime contract is bound to the new YAML hash, with the existing
+loadgenerator exclusion. Rendering still substitutes only verified registry
+images, retains resource/security settings, and keeps the endpoint toggle and
+39/45-resource inventories.
+
+[Source-adoption validation](../../cloudbuild/online-shop/source-adoption-validation.json)
+records why the existing immutable contracts require ten application rebuilds,
+including a new catalog acceptance before the nine complete-flow builds. Current
+`accepted_release` is pending (`null`); prepare, runtime/signals and full delivery
+must fail closed until fresh acceptance exists. Prior candidates, artifact trust
+and rollout evidence remain historical at their original revisions; they do not
+become candidates for this source by recomputing an identity. No new artifact IDs
+are assigned by this change. Use the original immutable tooling to interpret a
+retained historical release.
 
 ## Workload placement and manual resume
 
@@ -118,7 +139,7 @@ generation or digest may be inferred from the accepted catalog or supporting ima
 
 [Candidate wire version 2](../../cloudbuild/online-shop/complete-candidate-v1.schema.json) gives each application its own immutable AML source, SDP build configuration, single-component input-plan hash, build ID/producer, registry manifest/config digest and linux/amd64 platform. The profile binds AML build, runtime, telemetry and Redis contracts by hash. Identity is the canonical JSON SHA-256 excluding only `release_set_id`; exact integer version, closed reconstructed records, order and membership are checked before evidence calls. Schema validation alone is insufficient (JSON Schema considers integral floats integers); the Python guard rejects float and boolean versions explicitly.
 
-The [complete release CLI](../../cloudbuild/online-shop/complete.py) runs the pinned AML planner and materializes only its enumerated immutable Git inputs, checking bytes, file modes, context boundaries and Docker arguments. Nine separate bounded builds use the existing producer. `productcatalogservice` cannot be rebuilt through this path: it reuses exactly the accepted #87 catalog build `b4c1e382-e23a-465c-b6b4-e7093af95391`, producing configuration `6043c9af617274fcdc97dc9828b4356c72061dd1`, candidate generation/hash and independently verified occurrence. The original catalog-v1 APIs and accepted release remain unchanged.
+The [complete release CLI](../../cloudbuild/online-shop/complete.py) runs the pinned AML planner and materializes only enumerated immutable Git inputs, checking bytes, file modes, context boundaries and Docker arguments. Nine separate bounded builds use the existing producer only after catalog acceptance. `productcatalogservice` cannot be rebuilt through this path: it must reuse the exact separately accepted catalog at the active AML revision. Historical catalog IDs in prior evidence are not operational defaults for the new source.
 
 Independent verification reconstructs every component, compares authoritative successful Build API source/provenance/steps/options/results against the reviewed request, then reads actual registry manifest/config bytes, digests, platform and revision label. A coherent caller-supplied digest with a newly computed identity does not bypass these checks. All eleven members must verify before the separate attestation identity can sign anything. The signer repeats verification and checks occurrence/signature readback for every exact artifact. Existing valid occurrences are reused; partial outcomes never produce `trusted`. Paginated build/occurrence recovery prevents blind resubmission after an uncertain response. Executing trust files must match an immutable canonical-main configuration; unmerged fixes cannot execute under the signer.
 

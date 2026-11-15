@@ -1,0 +1,137 @@
+{
+  "version": 1,
+  "status": "prepared_for_review_no_cloud_execution",
+  "source_revision": "67b6cd85ae01c698bbf86904d953d5145b7b5820",
+  "previous_source_revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
+  "upstream_pull_request": "https://github.com/DimitryZH/application-modernization-lab/pull/28",
+  "intermediate_pull_requests": [
+    "https://github.com/DimitryZH/application-modernization-lab/pull/27"
+  ],
+  "aml_changed_files": [
+    "workloads/online-shop/docs/REDIS.md",
+    "workloads/online-shop/docs/RUNTIME.md",
+    "workloads/online-shop/docs/TELEMETRY.md",
+    "workloads/online-shop/images.lock.json",
+    "workloads/online-shop/kubernetes/online-shop.yaml",
+    "workloads/online-shop/redis.runtime.json",
+    "workloads/online-shop/redis.source-v2.json",
+    "workloads/online-shop/src/recommendationservice/telemetry.py",
+    "workloads/online-shop/src/recommendationservice/test_catalog_deadline.py",
+    "workloads/online-shop/validation/otel/RECOMMENDATION-DEADLINE-VALIDATION.json",
+    "workloads/online-shop/validation/otel/REDIS-SOURCE-VALIDATION.json",
+    "workloads/online-shop/validation/otel/compose.yaml",
+    "workloads/online-shop/validation/otel/redis_assertions.py",
+    "workloads/online-shop/validation/otel/redis_contract.py",
+    "workloads/online-shop/validation/otel/redis_probe.py",
+    "workloads/online-shop/validation/otel/test_redis_contract.py"
+  ],
+  "immutable_contract_decision": {
+    "application_builds_required": 10,
+    "source_input_changes": {
+      "recommendationservice": [
+        "src/recommendationservice/telemetry.py",
+        "src/recommendationservice/test_catalog_deadline.py"
+      ]
+    },
+    "other_application_inputs": "unchanged Git input bytes and Dockerfiles; SOURCE_REVISION changes for every application",
+    "reuse_decision": "No application artifact reuse across source revisions under the existing uniform revision-label and plan/build contracts.",
+    "catalog_stage": "New catalog-v1 build/verification/protected-candidate/separate-signing, then reviewed acceptance before nine complete-flow builds.",
+    "new_build_ids": null,
+    "new_digests": null,
+    "new_occurrences": null
+  },
+  "historical_accepted_catalog": {
+    "status": "historical_only_not_accepted_for_new_source",
+    "source_revision": "89fd1cde8285761cc2a35dfb22d145adb2eed980",
+    "binding": "sdp-dev-v1",
+    "project": "sdp-gcp",
+    "configuration_revision": "a488afee4577ba4387ebad35d6e947140bc186e1",
+    "build_id": "33d43d79-254f-4846-b4e5-231f6ef7aed2",
+    "release_set_id": "sha256:e10107ec7053d03f9938ba615f0db7bb020ba5888405441346cbe669e089677d",
+    "manifest_digest": "sha256:95563e44e82ccf7252363f5ee4e38f4e820da226794c87ecb3293477d9d5d265",
+    "signing_build_id": "b084252b-d124-4603-b93b-a615e44af172",
+    "candidate_generation": "1794403698418204",
+    "candidate_transport_sha256": "sha256:3129312e57e3bd2174b1a159b09c8690dbdec641974e455bc1e667c2f838e762",
+    "occurrence": "projects/sdp-gcp/occurrences/90ee6ad9-4873-413b-b1e3-e6ba0ecf8533"
+  },
+  "supporting_artifacts": {
+    "redis": "Existing v2 selection, source/provenance policy and digest unchanged; fresh full upstream/canonical/destination verification required before reuse.",
+    "collector": "Policy and occurrence unchanged; fresh independent proof/occurrence/signature verification required before reuse."
+  },
+  "runtime": "AML YAML re-extracted with existing loadgenerator exclusion; only source Redis image reference changes. Rendering still uses approved registry digest.",
+  "limits": [
+    "No cloud builds, signatures, uploads, deployment, Terraform or node resume.",
+    "Feature-branch/local checks do not satisfy the merged-main gate.",
+    "Current source profile cannot reinterpret old candidates; use their original immutable verifier/configuration.",
+    "Fresh accepted catalog and complete candidate/signing evidence remain pending."
+  ],
+  "validation": {
+    "tests": 185,
+    "passed": 181,
+    "skips": 4,
+    "suites": [
+      {
+        "suite": "test_online_shop_release.py",
+        "exit_code": 0,
+        "tests": 35,
+        "skips": 0
+      },
+      {
+        "suite": "test_catalog_deployment.py",
+        "exit_code": 0,
+        "tests": 27,
+        "skips": 1
+      },
+      {
+        "suite": "test_complete_shop.py",
+        "exit_code": 0,
+        "tests": 59,
+        "skips": 2
+      },
+      {
+        "suite": "test_release_binding.py",
+        "exit_code": 0,
+        "tests": 5,
+        "skips": 0
+      },
+      {
+        "suite": "test_source_adoption.py",
+        "exit_code": 0,
+        "tests": 6,
+        "skips": 0
+      },
+      {
+        "suite": "test_redis_source.py",
+        "exit_code": 0,
+        "tests": 9,
+        "skips": 1
+      },
+      {
+        "suite": "test_collector_adoption.py",
+        "exit_code": 0,
+        "tests": 44,
+        "skips": 0
+      }
+    ],
+    "skip_limits": [
+      "Three optional native Collector checks: executable not configured.",
+      "One optional replay of saved Redis registry/source bytes: fixture not configured."
+    ],
+    "local_immutable_AML_planner_and_materialization": "catalog and all ten complete contexts passed",
+    "local_catalog_and_complete_plan_CLI": "exit 0; no cloud adapter constructed",
+    "git_diff_check": "passed"
+  },
+  "implementation_hash_format": "SHA-256 of Git-compatible LF-normalized bytes",
+  "implementation_hashes": {
+    "cloudbuild/online-shop/release.py": "897b1104fecc3dd9f47c1478ed01f66b7e0278a63dc68bda86948d6a4a347b2d",
+    "cloudbuild/online-shop/catalog-v1.json": "05fac7cf7f7dd511fcd6d842c8f8c104dc082ce0484e616cde001e315d9c44cf",
+    "cloudbuild/online-shop/candidate-v1.schema.json": "a94ea4d89ed3adb7247815dc9a40bbe9a9716fe66004810e97087d8c4862b203",
+    "cloudbuild/online-shop/complete.py": "03498356804ada7281ce4b7c37bad908927a7822b1294cc9256428bc1403c6bb",
+    "cloudbuild/online-shop/complete-v1.json": "c9a2e2255ad2d72a71f688964f90a6d374bfdc5eae1e44589ea9e39d7e1e6259",
+    "cloudbuild/online-shop/complete-candidate-v1.schema.json": "588c44bb94f966942a2800deda17b9b5b5ade73501d19a3d3cf9ea0ad6f56ec0",
+    "deploy/online-shop/collector.json": "9109d2c92256bdea3e48446aea14078e00f1aa040be633ba3c55fef6d2192148",
+    "deploy/online-shop/complete-runtime-v1.json": "6cd001247d67bb7482b391dcfe8f41728ceb0001603e42b30cb8465ca07082c6",
+    "deploy/online-shop/policy.json": "88678998040f7b9466673c1478454e27e14a20d2115945d88b04fed71d09588a",
+    "scripts/tests/test_source_adoption.py": "8573548bff698f311664342b4508c2bef30030ff8ce5ab4a45aab27ca8f09a9d"
+  }
+}
