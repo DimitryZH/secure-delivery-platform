@@ -20,9 +20,9 @@ All times below are UTC on 2026-11-08. Each edge request, including its recorded
 
 | Method and path | HTTPS client interval | Edge start | Result |
 | --- | --- | --- | --- |
-| GET `/` | 15:09:19.888–15:09:20.309081524 | 15:09:19.967548 | 200 / ACCEPT |
-| GET `/product/OLJCESPC7Z` | 15:09:20.311–15:09:20.368025994 | 15:09:20.313783 | 200 / ACCEPT |
-| GET `/cart` | 15:09:20.370–15:09:20.411008267 | 15:09:20.370640 | 200 / ACCEPT |
+| GET `/` | 15:09:19.888â€“15:09:20.309081524 | 15:09:19.967548 | 200 / ACCEPT |
+| GET `/product/OLJCESPC7Z` | 15:09:20.311â€“15:09:20.368025994 | 15:09:20.313783 | 200 / ACCEPT |
+| GET `/cart` | 15:09:20.370â€“15:09:20.411008267 | 15:09:20.370640 | 200 / ACCEPT |
 
 The match also requires all of the following:
 
@@ -30,17 +30,49 @@ The match also requires all of the following:
 - `sdp-online-shop-synthetic/browse-v1` User-Agent. The source also sends `X-SDP-Synthetic: browse-v1`, but that header and the session cookie are not present in the retained LB records and are not asserted as observed.
 - The same private source IPv4 across all requests, equal to the Armor IP key. This IP is recorded by the edge; independent function-egress/NAT proof isn't available.
 - The reviewed project, global forwarding rule, HTTPS proxy, URL map and frontend backend. Edge `serverIp` matches the independently read Ready frontend Pod; its name also matches application span instance attribution.
-- Policy `shop-dev-edge`, priority 2000, THROTTLE/ACCEPT and `RATE_LIMIT_THRESHOLD_CONFORM` for all three requests.
+- Policy `shop-dev-edge`, priority 2000, THROTTLE/ACCEPT and `RATE_LIMIT_THRESHOLD_CONFORM` for all three requests, from the explicitly reviewed verdict source described below.
 - A complete, unsampled candidate capture: sample rate 1, all Logging API continuation pages exhausted, and exactly one edge candidate per request. Empty continuation pages must still be followed. Missing/extra/ambiguous candidates fail.
 
 Thus the association is unique **within the complete retained candidate set**. It is an operational evidence join, not cryptographic attribution: execution ID isn't recorded at the edge, the User-Agent is stable rather than unique, and an IP can be shared. If simultaneous matching traffic makes it ambiguous, acceptance blocks rather than selecting the nearest entry. Raw IPs, session material and full snapshots stay private.
+
+## Explicit reviewed Armor mode
+
+`--armor-mode preview|enforcement` is mandatory. Obtain the value from independently reviewed
+Terraform inputs and the policy readback for the recorded execution window:
+`shop_edge_enforce_evaluated_rules=false` selects `preview`; `true` selects `enforcement`.
+Retain the plan/readback provenance privately. Do not choose a mode because a log happens to
+pass, read it from the supplied snapshot, or use today's policy to reinterpret an older run.
+This offline CLI checks evidence against the caller's explicit reviewed expectation; it does
+not authenticate that expectation, query the current policy, or approve a policy change.
+
+- **Preview:** each entry must have `previewSecurityPolicy.preview=true`, policy
+  `shop-dev-edge`, priority 2000, THROTTLE/ACCEPT, CONFORM and the exact source-IP key.
+  Its actual `enforcedSecurityPolicy` must be the same policy's default priority 2147483647,
+  ALLOW/ACCEPT, with no rate-limit action and no true preview flag. Preview acceptance is
+  evidence of evaluated rules and allowed traffic, **not enforcement**.
+- **Enforcement:** each entry must have the applied `enforcedSecurityPolicy` at priority
+  2000, THROTTLE/ACCEPT, CONFORM and the exact source-IP key. A preview verdict source or
+  true preview flag is rejected. Historical enforcement evidence keeps these requirements.
+
+All three requests must satisfy the same selected mode. Wrong priorities/actions/outcomes,
+missing/default verdicts, mode mismatches and mixed entries block acceptance. Mode selection
+does not relax source/release/digest binding, native W3C function/client/frontend parenting,
+completion logs, edge identity/timing/pagination, the three-request budget or exact cleanup.
+Output reports `armor_mode`, `armor_verdict_source` and `enforced_armor_priority` separately.
+
+The preview-mode regression was also checked locally against an unchanged recorded scheduled
+execution: three GETs, native correlation and exact-session cleanup pass. Its earlier
+`execution_span_missing` (before delayed spans arrived) and `armor_verdict_mismatch` outcomes
+remain history. This is an offline recheck, not post-merge live acceptance, notification
+delivery or authorization for a controlled incident. After merge, run the merged diagnostic
+with the same protected evidence and independently reviewed mode; no new traffic is needed.
 
 ## Reproducing the recorded diagnostic
 
 Assemble a private snapshot without changing trace/timestamps/logs/metrics: `version=1`, the accepted `candidate`, recorded `release`, `function_logs`, `trace`, `application_logs`, `edge_logs`, reviewed `edge_context`, `edge_capture` and recorded `session_readback`. Context includes the independently read LB resource names/address and backend Pod IP; source-IP consistency comes from the retained edge records. Capture metadata includes its actual query window, sample rate and exhausted-pagination status. Verify aggregate logs against every retained raw page before declaring the capture complete. Record the builder/readback provenance privately; snapshot inputs aren't authenticated by this local CLI.
 
 ```powershell
-python monitoring/online-shop/diagnose-scheduled.py --snapshot <private-snapshot.json> --execution-id bfe368073e0ea55ab311d6afb9615cea --monitor-version a84b3c430f8be229057d88ebac1e3b1fb2f15146def6d9feca43eb9590b3ffb4 --release-set-id sha256:d3ddfc09ec0f0195d38fadfba8a2c31ce290b41bf4211ac4631a5b20039d3891
+python monitoring/online-shop/diagnose-scheduled.py --snapshot <private-snapshot.json> --execution-id bfe368073e0ea55ab311d6afb9615cea --monitor-version a84b3c430f8be229057d88ebac1e3b1fb2f15146def6d9feca43eb9590b3ffb4 --release-set-id sha256:d3ddfc09ec0f0195d38fadfba8a2c31ce290b41bf4211ac4631a5b20039d3891 --armor-mode enforcement
 ```
 
 Exit 0 reports `recorded_execution_acceptance=passed`, strict native W3C correlation, three unique edge matches, `edge_native_trace_id_matches_application=false`, and the previously recorded exact-session `EXISTS=0`/closed-forward evidence. It issues no fresh Redis read and makes no claim about present-day state. Exit 1 blocks incomplete or inconsistent evidence. Preserve the earlier failed diagnostic as history.
