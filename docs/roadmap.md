@@ -21,7 +21,7 @@ This roadmap describes sequence and scope, not proof that every scenario below h
 - Other preflight outcomes and negative cases, review hold/reject scenarios, manual rejection/rollback contracts and rollback eligibility have offline coverage. An executed release rollback and broader performance validation are not yet established.
 - Milestone 8 is in progress. [#87](https://github.com/DimitryZH/secure-delivery-platform/issues/87), [#93](https://github.com/DimitryZH/secure-delivery-platform/issues/93), and [#100](https://github.com/DimitryZH/secure-delivery-platform/issues/100) accepted trusted catalog delivery and then the complete ten-service Online Shop plus Redis in dev, with a separately trusted Collector. Recorded evidence covers source/build/digest verification, eleven-member attestation, protected Cloud Deploy rendering/preflight, full runtime, a bounded checkout journey, negative admission, scoped cleanup and sample-service preservation.
 - The preserved 2026-11-03 journey passed the merged signals validator with its normal independent guard. It demonstrates recorded distributed traces, attributed application/Redis metrics and native correlated logs for all ten application components. This recheck does not establish current runtime health or continuous telemetry. Historical failures, startup export losses, the fixed clock allowance and observation limits remain in the canonical evidence.
-- Recorded [protected endpoint #106](https://github.com/DimitryZH/secure-delivery-platform/issues/106) and [dashboard/PromQL #111](https://github.com/DimitryZH/secure-delivery-platform/issues/111) acceptance is historical, not proof for another active environment. Scheduled monitoring and notification implementation exists under [#115](https://github.com/DimitryZH/secure-delivery-platform/issues/115); its controlled application-failure/recovery acceptance remains open. Repeat the relevant [baseline recovery gates](platform-baseline-recovery.md) before claiming current endpoint, dashboard, synthetic or incident readiness.
+- Recorded [protected endpoint #106](https://github.com/DimitryZH/secure-delivery-platform/issues/106) and [dashboard/PromQL #111](https://github.com/DimitryZH/secure-delivery-platform/issues/111) acceptance is historical, not proof for another active environment. Scheduled monitoring and notification implementation exists under [#115](https://github.com/DimitryZH/secure-delivery-platform/issues/115); the [recorded controlled application-failure/recovery exercise](../monitoring/online-shop/incident-acceptance.md) passed its bounded criteria for review, with an unresolved historical PromQL no-data limitation. Armor enforcement acceptance, a repeated manual stop/resume with permanent workload selectors, and final documentation/release review remain open; milestone 8 is not complete. Repeat the relevant [baseline recovery gates](platform-baseline-recovery.md) before claiming current endpoint, dashboard, synthetic or incident readiness.
 - Governance/security extensions are planned in milestone 9. A subsequent application update, canary, full-workload environment progression, executed rollback and bounded autoscaling/load validation are planned in milestone 10.
 - Automated promotion/rollback, exhaustive instrumentation, production-scale load validation, durable Redis/Collector storage and multi-cluster or multi-region HA are not baseline completion requirements of this roadmap.
 
@@ -275,7 +275,7 @@ The accepted dev integration comprises all ten application services (`frontend`,
 
 Immutable AML application/dependency contracts, component build/verification/signing, complete release identity, dev deployment, the bounded checkout journey and recorded telemetry acceptance are implemented. Loadgenerator is excluded from the steady application set; optional assistant/packaging backends remain disabled. Any future validation image requires explicit verification/admission treatment and a bounded execution scope.
 
-### Remaining scope
+### Integration and acceptance scope
 
 * establish a selected hostname under the platform domain, such as `shop.runtimeplatforms.dev`, using Cloud DNS and scoped subdomain delegation where appropriate; preserve existing domain services
 * expose only the intended frontend through GKE Gateway API and a reviewed external Application Load Balancer, with stable addressing, Certificate Manager TLS and a tested HTTPS path
@@ -287,7 +287,7 @@ Immutable AML application/dependency contracts, component build/verification/sig
 * define monitor network access and endpoint authentication before provisioning an uptime check and a scripted Google Cloud synthetic monitor
 * validate a selected synthetic user journey using isolated test data, bounded frequency/traffic and exact cleanup
 * configure actionable application and synthetic-failure alerts with notification routing; establish a meaningful baseline before choosing latency thresholds and treat missing data as missing evidence
-* exercise one bounded application/dependency availability failure in dev; confirm detection, incident opening, notification receipt, telemetry-based diagnosis, recovery and incident closure
+* exercise one bounded application/dependency availability failure in dev; confirm detection, incident opening, notification receipt, telemetry-based diagnosis, recovery and incident closure (the [recorded exercise](../monitoring/online-shop/incident-acceptance.md) passed its bounded criteria for review; its limits and the remaining milestone gates stay explicit)
 * preserve Online Shop and recheck capacity/artifact protection before separately authorized live changes
 * align public architecture, deployment/access instructions, telemetry inspection, synthetic/incident runbooks, validation limits and sanitized durable evidence
 
@@ -297,7 +297,7 @@ This is an independent SDP path consuming canonical AML source. It does not depe
 
 The complete trusted application is usable through the selected HTTPS hostname. Its bounded normal and synthetic journeys produce attributable signals and useful dashboard results. A controlled dev failure produces a delivered notification and a diagnosable incident, followed by confirmed recovery and closure.
 
-The accepted dev release, endpoint/TLS/protection checks, meaningful dashboard/query results, synthetic executions, incident lifecycle, cleanup and sample health have linked sanitized evidence. Empty dashboards, configuration presence and non-firing alerts alone are insufficient.
+The accepted dev release, endpoint/TLS/protection checks, meaningful dashboard/query results, synthetic executions, incident lifecycle, cleanup and active workload health have linked sanitized evidence. Sample-service is retired and is not a restoration gate. Empty dashboards, configuration presence and non-firing alerts alone are insufficient.
 
 A subsequent application update, full-workload stage/prod progression, canary, release rollback, SLI/SLO-based release evaluation and autoscaling/load experiments belong to milestone 10. Milestone 8 establishes their endpoint and telemetry foundations without implementing those scenarios twice.
 

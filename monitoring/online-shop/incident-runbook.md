@@ -23,7 +23,7 @@ Stop and recover immediately on any of these observations.
 
 ## Preparation and scoped commands
 
-These commands are for later execution. Supply an existing authenticated kubeconfig and retain all output privately. Resolve the project, cluster, location and identities from the current reviewed `deploy/release-binding.json`, cross-check `deploy/environments.json`, then verify the actual project number and selected context's cluster endpoint before any runtime read or mutation. Do not use project identifiers from historical evidence. Confirm namespace, active accepted release and app digests. Compare fresh protected-release references and holds with the current accepted release; #111 is historical guidance only. Confirm the full pre-exercise baseline above, no active rollout, correct email channel, successful delivery and current incident state. Confirm the query/check IDs from current Terraform output and readback.
+These commands are for later execution. Supply an existing authenticated kubeconfig and retain all output privately. Resolve the project, cluster, location and identities from the current reviewed `deploy/release-binding.json`, cross-check `deploy/environments.json`, then verify the actual project number and selected context's cluster endpoint before any runtime read or mutation. Do not use project identifiers from historical evidence. Confirm namespace, active accepted release and app digests. Compare fresh protected-release references and holds with the current accepted release; #111 is historical guidance only. Confirm the full pre-exercise baseline above, no active rollout, correct enabled email channel and current incident state. A matching failure email received by the operator is an acceptance outcome of this exercise, not a required previously received email. If the service reports the channel as `UNVERIFIED`, resolve that separate verification prerequisite before injection; do not infer delivery from channel configuration. Confirm the query/check IDs from current Terraform output and readback.
 
 Capture before/after deployments and health responses for Online Shop. Baseline and final smoke requests are read-only. Resolve any live drift before exercise authorization.
 
@@ -136,3 +136,11 @@ Require the full Online Shop baseline again: one Ready/Available cart replica wi
 Confirm incident closure from actual successful results and the absence of new errors in the following window. Missing samples or an automatically closed incident do not establish recovery. Finally verify Online Shop Ready/Available and expected HTTP health, nodes Ready, original app digests, no unexpected rollout, and no owned port-forward remaining. Leave the issue open until review of the sanitized timeline.
 
 Recovery reserves four minutes after the mutation window. Three attempts each bound GET and scale to five seconds, followed by readiness up to 120 seconds. Conflicts trigger fresh UID/template/replica checks. All other errors and exhausted conflicts transfer immediately to the recovery owner. The pinned Google 5.45.2 provider has no notification_prompts field. Recovery acceptance requires successful scheduled results and observed incident closure; a recovery email is recorded if delivered but is not required.
+
+
+## Recorded acceptance
+
+The [recorded dev exercise](incident-acceptance.md) passed bounded failure/detection/notification/recovery
+criteria with its documented limits. It does not authorize another injection. In particular, the
+historical frontend-alert PromQL reconstruction returned no data and is not a passed query check.
+Milestone 8 remains open pending the gates listed in that record and the roadmap.

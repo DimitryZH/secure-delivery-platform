@@ -178,8 +178,10 @@
     "monitoring/online-shop/synthetic/journey.test.js": "sha256:ef1573352195bb64dd584c9b866c1f99ce15e96d29ed23da75fd078b1314e5b7",
     "monitoring/online-shop/diagnose-scheduled.py": "sha256:a9c18a4da7d9ba63c81d5c718f7f1d9ddf630ef94be924e0331781a42d74d785",
     "monitoring/online-shop/scheduled-correlation.md": "sha256:8607171a926e9c04ac1101628b4c46a3881becc4b174b22e9512b8a561920313",
-    "monitoring/online-shop/README.md": "sha256:13f27ec536ff5768651ffacc42f33cdf82fb35de5624b671456303dc9f995754",
-    "scripts/tests/test_scheduled_correlation.py": "sha256:5dd63f6263b5be0a2dff40f123889131f039eb14aff81a23cb63c7fee0f4db97"
+    "monitoring/online-shop/README.md": "sha256:1fed71a9238bc447801357bd8c5ae46f8dc67760d4ae481da152ec311613a253",
+    "scripts/tests/test_scheduled_correlation.py": "sha256:5dd63f6263b5be0a2dff40f123889131f039eb14aff81a23cb63c7fee0f4db97",
+    "monitoring/online-shop/incident-runbook.md": "sha256:4d7d4b1cec4f4bedade159dbd6b04fa7a87ca1a334e32dd126143ba94d291e22",
+    "monitoring/online-shop/incident-acceptance.md": "sha256:4617bda1f0dd025eb299806af7bba3866ef822c18313855946675fec6b6bf218"
   },
   "live_operations": {
     "provisioning": true,
@@ -404,5 +406,123 @@
       "Preview success is not proof of enforcement.",
       "No notification delivery or incident exercise acceptance claimed."
     ]
+  },
+  "bounded_incident_exercise_20261116": {
+    "status": "bounded_incident_acceptance_passed_for_review_with_limits",
+    "recorded_date_local": "2026-11-15",
+    "local_timezone": "America/Toronto",
+    "timeline_timezone": "UTC",
+    "binding": "sdp-dev-v1",
+    "environment": "dev",
+    "producing_revision": "66b636f074ac9270a5b2617d27d3261ce0ec1872",
+    "deployment_revision": "66b636f074ac9270a5b2617d27d3261ce0ec1872",
+    "validator_revision": "76aba4273028a076d29463104af211bef2763983",
+    "release": "shop-edge-66b636f-f8b585b4",
+    "rollout": "dev-edge-001",
+    "release_set_id": "sha256:f8b585b4334eddb2a7e4962ca54bfbdbc7fb96e7751083c57d3d3924f7459f25",
+    "scope": {
+      "target": "dev/Deployment/cartservice",
+      "replicas": [
+        1,
+        0,
+        1
+      ],
+      "injections": 1,
+      "independent_recovery_session_operator_confirmed": true,
+      "original_uid_template_digest_preserved": true,
+      "other_workload_iam_capacity_armor_changes": false
+    },
+    "timeline": {
+      "T0": "2026-11-16T02:25:45Z",
+      "scale0_success": "2026-11-16T02:25:45.345703Z",
+      "scheduled_failure": "2026-11-16T02:26:01.709845Z",
+      "synthetic_incident_open": "2026-11-16T02:27:30Z",
+      "recovery_start": "2026-11-16T02:27:36.376406Z",
+      "frontend_incident_open": "2026-11-16T02:27:47Z",
+      "cart_ready": "2026-11-16T02:28:06.503394Z",
+      "scheduled_success": "2026-11-16T02:31:03.553570Z",
+      "frontend_incident_closed": "2026-11-16T02:32:09Z",
+      "synthetic_incident_closed": "2026-11-16T02:33:08Z",
+      "email_received_at": null
+    },
+    "notification": {
+      "operator_confirmed_received": true,
+      "matching_policy_check_screenshot_retained_privately": true,
+      "exact_receipt_time_known": false,
+      "screenshot_start_minute_is_not_receipt_time": true,
+      "prior_receipt_required": false,
+      "recovery_email_delivery_claimed": false
+    },
+    "failure": {
+      "execution_id": "11a8d9f87949cf4c49003c458a7bee24",
+      "requests": 1,
+      "step": "catalog",
+      "frontend_GetCart_error_type": "Unavailable",
+      "frontend_http_status": 500,
+      "native_linked_logs": 13,
+      "trace_spans": 11,
+      "cart_server_spans_absent_expected": true,
+      "release_digest_attribution_verified": true,
+      "collateral_failure_observed": false
+    },
+    "incidents": [
+      {
+        "id": "0.of2n3774glet",
+        "policy": "synthetic failure or missing results",
+        "final_state": "CLOSED"
+      },
+      {
+        "id": "0.of2n3fl06tr9",
+        "policy": "frontend server error",
+        "final_state": "CLOSED"
+      }
+    ],
+    "recovery": {
+      "started_within_4_minutes": true,
+      "ready_within_8_minutes": true,
+      "runtime": "passed",
+      "ready_pods": 14,
+      "ready_nodes": 2,
+      "collector_ready": 2,
+      "running_digests_verified": true,
+      "https_tls_valid": true,
+      "frontend_backend": "HEALTHY",
+      "scheduled_execution_id": "f10fe9da97381429054fecea40f8e8cc",
+      "scheduled_requests": 3,
+      "scheduled_preview_diagnostic": "passed",
+      "both_checks_latest_passed": true,
+      "failed_session_exists": 0,
+      "recovered_session_exists": 0,
+      "owned_forward_closed": true
+    },
+    "dashboard": {
+      "cart_desired_and_available_history": [
+        1,
+        0,
+        1
+      ],
+      "frontend_raw_error_counter_positive": true,
+      "historical_frontend_alert_PromQL": {
+        "status": "NOT_RECONSTRUCTED_NO_DATA",
+        "passed": false,
+        "zero_errors_inferred": false,
+        "cause": "UNKNOWN"
+      },
+      "actual_frontend_incident_open_close_verified": true
+    },
+    "limits": [
+      "One bounded exercise, not sustained/load/HA acceptance.",
+      "Exact failure-email receipt time unknown.",
+      "Historical alert PromQL positive evaluation not reconstructed; no-data is not a successful check or zero errors.",
+      "Armor remained preview; no enforcement acceptance in this exercise.",
+      "No repeated stop/resume cycle validated by this exercise."
+    ],
+    "milestone_8": {
+      "status": "in_progress",
+      "armor_enforcement_acceptance": "pending",
+      "repeated_stop_resume_with_selectors": "pending",
+      "final_documentation_release_review": "pending",
+      "platform_v0_2_0_published_by_this_change": false
+    }
   }
 }
