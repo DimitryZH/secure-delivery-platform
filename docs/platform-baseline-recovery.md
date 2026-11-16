@@ -109,7 +109,7 @@ Use [endpoint](../deploy/online-shop/endpoint-README.md),
 [dashboard](../monitoring/dashboards/online-shop-dev/README.md),
 [synthetic](../monitoring/online-shop/README.md) and
 [incident](../monitoring/online-shop/incident-runbook.md) contracts. Any API enablement,
-new scoped IAM grants, provisioning, DNS cutover, sample build/signing, rollout, schedule
+new scoped IAM grants, provisioning, DNS cutover, workload build/signing, rollout, schedule
 activation or failure exercise remains a separately authorized cloud change.
 
 Metric descriptor creation can race across exporters. Record actual errors/dropped-items
@@ -118,7 +118,21 @@ recurrence before making stronger reliability claims. Redis/Collector storage re
 non-durable. Existing artifacts and holds are retained; expired render protection blocks
 a future rollout until the normal protection gate is freshly satisfied.
 
-Only after endpoint, sample health, dashboard and #115 incident acceptance have current
-linked evidence should milestone8 proceed to documentation/release review for v0.2.0.
+Only after endpoint/protection, active workload health, dashboard and #115 incident acceptance
+have sufficient linked evidence should milestone8 proceed to documentation/release review for v0.2.0.
 Governance/hardening in milestone9 and canary/progression/rollback/load in milestone10
 remain subsequent work; no roadmap scenario or release is executed by this document.
+
+
+## Recorded incident checkpoint and remaining gates
+
+The [bounded cartservice exercise](../monitoring/online-shop/incident-acceptance.md) records
+passed failure/detection/operator-confirmed notification/recovery/closure and cleanup for its
+execution. Exact email receipt time is unknown. Its historical frontend-alert PromQL range
+returned no data and is not accepted as a passed query check.
+
+Milestone8 remains in progress: separately validate active-environment Armor enforcement,
+repeat manual stop/resume with permanent selectors and Collector coverage under the reviewed
+monitoring maintenance gate, and complete canonical documentation/evidence/v0.2.0 release
+review. Resolve or explicitly accept the recorded query limit in that final review. These
+gates do not authorize new traffic, lifecycle changes, enforcement, apply or rollout.

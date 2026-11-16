@@ -100,10 +100,21 @@ python monitoring/online-shop/synthetic/package-source.py <new-private-absolute-
 terraform -chdir=terraform/foundation plan -var=shop_edge_enforce_evaluated_rules=true -var=shop_observability_enabled=true -var=shop_observability_schedule_enabled=true -out=<private-saved-plan>
 ```
 
-The new ZIP/hash is recorded in [validation.json](validation.json). Expect a new content-addressed source object and an update of the existing function's pinned source generation and `MONITOR_VERSION` (and any independently reviewed API normalization). Require no changes to IAM, checks/schedules, alert policies, Cloud Armor, workloads or dashboard behavior. Keep the existing source generation available for rollback. Inspect all plan actions and drift; apply is a separate approval. Then verify build/revision/source hash and wait for a scheduled run, without manually generating traffic. Require three GETs, native application correlation, Armor verdicts, exact derived-session `EXISTS=0`, incident recovery and operator evidence before approving the failure exercise. The later approved redeploy completed; its recorded scheduled acceptance is described in [scheduled correlation](scheduled-correlation.md). No controlled failure exercise has been performed.
+The new ZIP/hash is recorded in [validation.json](validation.json). Expect a new content-addressed source object and an update of the existing function's pinned source generation and `MONITOR_VERSION` (and any independently reviewed API normalization). Require no changes to IAM, checks/schedules, alert policies, Cloud Armor, workloads or dashboard behavior. Keep the existing source generation available for rollback. Inspect all plan actions and drift; apply is a separate approval. Then verify build/revision/source hash and wait for a scheduled run, without manually generating traffic. Require three GETs, native application correlation, Armor verdicts, exact derived-session `EXISTS=0`, incident recovery and operator evidence before approving the failure exercise. The later approved redeploy completed; its recorded scheduled acceptance is described in [scheduled correlation](scheduled-correlation.md). No controlled failure exercise had been performed at that historical checkpoint.
 
 
 Scheduled edge diagnostics require an explicit reviewed `--armor-mode preview|enforcement`.
 Use the approved Terraform flag and recorded policy readback, never log-based auto-detection.
 See [mode-specific correlation requirements](scheduled-correlation.md#explicit-reviewed-armor-mode).
 Preview validation does not claim enforcement; post-merge recorded-run acceptance remains a separate gate.
+
+
+## Recorded controlled incident acceptance
+
+The [2026-11-15 local / 2026-11-16 UTC exercise](incident-acceptance.md) records one guarded
+cartservice outage, synthetic and frontend incidents, operator-confirmed failure email,
+bounded recovery, successful scheduled results, closure and exact-session cleanup. Exact email
+receipt time is unknown. The historical frontend-alert PromQL range returned no data: it is
+not a successful query check or zero-error observation. Raw evidence remains private.
+Armor enforcement, repeated stop/resume with permanent workload selectors and final
+documentation/release review remain open Milestone 8 gates; this record does not close the milestone.
