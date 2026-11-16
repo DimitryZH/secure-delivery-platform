@@ -84,9 +84,9 @@ actual deployment revision to make a gate pass.
 For endpoint bootstrap use `shop_edge_enforce_evaluated_rules=false`; preserve the
 reviewed hostname and global Gateway architecture. Do not reuse assigned IPs, nameservers,
 certificate state or enforcement observations from another execution. Subsequent plans
-must retain the explicitly reviewed enforcement input once enabled. Current endpoint
-preflight evaluates preview bootstrap; enforcement-mode deployment needs reviewed handling,
-not a false snapshot claiming preview.
+must retain the explicitly reviewed enforcement input once enabled. Endpoint-on preflight requires an explicit reviewed Armor mode with matching raw rules and
+mode-specific readiness flags; never provide a false snapshot claiming preview for enforcement.
+Deployment source/revision matching remains mandatory.
 
 Provision monitoring with `shop_observability_enabled=true` and
 `shop_observability_schedule_enabled=false`; package source using the canonical
@@ -131,8 +131,8 @@ passed failure/detection/operator-confirmed notification/recovery/closure and cl
 execution. Exact email receipt time is unknown. Its historical frontend-alert PromQL range
 returned no data and is not accepted as a passed query check.
 
-Milestone8 remains in progress: separately validate active-environment Armor enforcement,
-repeat manual stop/resume with permanent selectors and Collector coverage under the reviewed
-monitoring maintenance gate, and complete canonical documentation/evidence/v0.2.0 release
-review. Resolve or explicitly accept the recorded query limit in that final review. These
+Milestone8 remains in progress. The [recorded repeated stop/resume](milestone-8-technical-review.md)
+passed with permanent selectors, Collector coverage and monitoring maintenance handling.
+Active-environment Armor enforcement and final documentation/evidence/v0.2.0 release review
+remain pending in [#133](https://github.com/DimitryZH/secure-delivery-platform/issues/133). Resolve or explicitly accept the recorded query limit in that final review. These
 gates do not authorize new traffic, lifecycle changes, enforcement, apply or rollout.

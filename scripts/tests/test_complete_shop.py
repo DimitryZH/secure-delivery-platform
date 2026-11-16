@@ -341,6 +341,50 @@ class CompleteTests(unittest.TestCase):
             for target in ('http://shop.runtimeplatforms.dev/cart','https://foreign.invalid/cart','https://user@shop.runtimeplatforms.dev/cart','https://shop.runtimeplatforms.dev/cart#fragment'):
                 with self.assertRaises(ValueError):state['redirect'].redirect_request(None,None,302,'redirect',{},target)
 
+    def test_endpoint_modes_are_explicit_and_mixed_rules_fail(self):
+        now,snapshot=self.preflight_fixture(REV)
+        edge=snapshot['endpoint']
+        self.assertTrue(w.endpoint_evidence(edge,now,'preview'))
+        enforced=copy.deepcopy(edge)
+        for rule in enforced['armor']['rules']:
+            if rule['priority'] in (1000,2000):rule['preview']=False
+        self.assertTrue(w.endpoint_evidence(enforced,now,'enforcement'))
+        for item,mode in ((edge,'enforcement'),(enforced,'preview'),(edge,'auto')):
+            with self.subTest(mode=mode),self.assertRaises(ValueError):w.endpoint_evidence(item,now,mode)
+        mixed=copy.deepcopy(enforced);mixed['armor']['rules'][1]['preview']=True
+        for mode in ('preview','enforcement'):
+            with self.assertRaises(ValueError):w.endpoint_evidence(mixed,now,mode)
+        for mutation in (lambda e:e['armor']['rules'][1].update(action='allow'),
+                         lambda e:e['armor']['rules'][2]['rateLimitOptions']['rateLimitThreshold'].update(count=3),
+                         lambda e:e['ssl_policy'].update(minTlsVersion='TLS_1_0'),
+                         lambda e:e.update(project='unreviewed-project')):
+            broken=copy.deepcopy(enforced);mutation(broken)
+            with self.assertRaises(ValueError):w.endpoint_evidence(broken,now,'enforcement')
+
+    def test_enforcement_preflight_requires_mode_specific_evidence_and_dry_run(self):
+        now,snapshot=self.preflight_fixture(REV)
+        snapshot['target'].pop('armor_preview_policy_ready')
+        snapshot['target']['armor_enforcement_policy_ready']=True
+        for rule in snapshot['endpoint']['armor']['rules']:
+            if rule['priority'] in (1000,2000):rule['preview']=False
+        with patch.object(c,'redis_admission'),patch.object(w,'gateway_dry_run') as dry:
+            self.assertEqual(w.evaluate(snapshot,self.record,REV,self.refs,RESOURCE,now,armor_mode='enforcement')['decision'],'READY')
+            self.assertEqual(w.preflight(snapshot,self.record,REV,self.refs,RESOURCE,object(),armor_mode='enforcement')['decision'],'READY')
+            dry.assert_called_once()
+            self.assertEqual(w.evaluate(snapshot,self.record,REV,self.refs,RESOURCE,now,armor_mode='preview')['decision'],'BLOCKED')
+            snapshot['target']['armor_preview_policy_ready']=True
+            self.assertEqual(w.evaluate(snapshot,self.record,REV,self.refs,RESOURCE,now,armor_mode='enforcement')['decision'],'BLOCKED')
+            snapshot['target'].pop('armor_preview_policy_ready')
+            dry.side_effect=ValueError('gateway_dry_run_http_409')
+            self.assertEqual(w.preflight(snapshot,self.record,REV,self.refs,RESOURCE,object(),armor_mode='enforcement')['decision'],'BLOCKED')
+
+    def test_endpoint_preflight_cli_missing_mode_stops_before_cloud_guard(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            candidate=Path(tmp)/'candidate.json';candidate.write_text(json.dumps(self.record))
+            args=['complete.py','preflight','--candidate',str(candidate),'--deployment-revision',REV,'--clouddeploy-release',RESOURCE]
+            with patch.object(sys,'argv',args),patch('sys.stdout',new_callable=io.StringIO),patch.object(w,'reviewed') as reviewed:
+                self.assertEqual(w.main(),3);reviewed.assert_not_called()
+
     def test_endpoint_readbacks_fail_closed(self):
         now,snapshot=self.preflight_fixture(REV)
         with patch.object(c,'redis_admission'):
@@ -953,6 +997,7 @@ class CompleteTests(unittest.TestCase):
             for action in ('prepare','preflight'):
                 args=['complete.py',action,'--candidate',str(candidate),'--deployment-revision',deployment,
                       '--clouddeploy-release',RESOURCE,'--output-dir',str(root/'bundle'),'--snapshot',str(snapshot_path)]
+                if action=='preflight':args += ['--armor-mode','preview']
                 with self.subTest(action=action),patch.object(sys,'argv',args),patch('sys.stdout',new_callable=io.StringIO) as stdout,\
                      patch.object(w.c,'reviewed') as reviewed,self.producer_sources(w.c),\
                      patch.object(w.c,'plans',return_value=self.plans),patch.object(w.c,'references',return_value=self.refs),\

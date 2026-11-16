@@ -557,14 +557,15 @@
     "new_rollout_created_during_fix_review": false
   },
   "implementation_hashes": {
-    "deploy/online-shop/complete-README.md": "sha256:e15910623beadd15d4ba79fc59d1e19b5a2458ee8d18ebd9342e2bcb27a2d6ff",
+    "deploy/online-shop/complete-README.md": "sha256:ecd02764161ab95e878c47f54a019fd1c357a1cc7a2c22badd75d2c3bf14af89",
     "deploy/online-shop/complete-acceptance.py": "sha256:755ac5256965bd1129417bcf163685b0202c035508e873c7a8c5485c9bf4da11",
-    "deploy/online-shop/complete.py": "sha256:698f37d4f0bb333ac36c11b25fb24a06db30120f1f034ab90282ac22cd663d11",
-    "docs/roadmap.md": "sha256:51fcf8d10230efa8bc9021412ad580c6b9e901e052fe008a226a25ce2ee5c18e",
-    "scripts/tests/test_complete_shop.py": "sha256:8af25b6573bd8616f6ec936a080c848dc915a6069bf31e1a0d87f848aad2dd99",
+    "deploy/online-shop/complete.py": "sha256:9a25e1b86d9690e3433a275379dcdf7f7c88c7d7f467a3657cf28b880e86727b",
+    "docs/roadmap.md": "sha256:db44d615e671c4b6dd133f6d35fdfb130d65fde4a5491d5d8b03a7262736c15a",
+    "scripts/tests/test_complete_shop.py": "sha256:80a339083589aa430e6f7a7c6cd983bb699a8a6b35914258fc1bea0faa5cca63",
     "terraform/foundation/gke.tf": "sha256:ef0aeee981ef6101856a53e3e058c89fc948dc4e559b8a94e79279c8c0fd5372",
-    "deploy/online-shop/endpoint-README.md": "sha256:7fea50d9a12d14599ec2a0bfebb273dfaa3c4d70bb21dd9677b9cfd5842afa94",
-    "terraform/foundation/shop-endpoint.tf": "sha256:f04a295db090bf0ab81cc2440ca8e72504eec0ee47d5fd45fd55d24840120b9b"
+    "deploy/online-shop/endpoint-README.md": "sha256:75709b4a0da5602fdfb15699f220b5c50e9ca9b6571406826769fc5848d849ad",
+    "terraform/foundation/shop-endpoint.tf": "sha256:f04a295db090bf0ab81cc2440ca8e72504eec0ee47d5fd45fd55d24840120b9b",
+    "deploy/online-shop/armor-acceptance.md": "sha256:0400e2abb520761dc209ad95a5d541cc6d7b4fc12cb60502663ff595d17041f3"
   },
   "implementation_review_live_operations": {
     "apply": 0,
@@ -573,5 +574,79 @@
     "application_traffic": 0,
     "build_signing": 0,
     "iam_grants": 0
+  },
+  "milestone8_enforcement_preparation": {
+    "status": "prepared_not_executed",
+    "base_revision": "c1a0af7785d9df64920299df5e872d8ffe5b5506",
+    "live_armor_mode": "preview",
+    "desired_private_input": "shop_edge_enforce_evaluated_rules=true; pending separate apply",
+    "plan": {
+      "create": 0,
+      "update": 1,
+      "delete": 0,
+      "replace": 0,
+      "import": 0,
+      "resource": "google_compute_security_policy.shop_edge",
+      "output": "shop_edge_operator.evaluated_rules_enforced",
+      "rule_previews": {
+        "1000": [
+          true,
+          false
+        ],
+        "2000": [
+          true,
+          false
+        ]
+      },
+      "unused_throttle_ban_duration_normalization": [
+        0,
+        null
+      ],
+      "sha256": "78e69e44e57e29ef5421c775b0201c9430a808bc7613bf396dc34ba4f925271d",
+      "workload_iam_capacity_changes": false,
+      "drift": "Computed cluster embedded node_pool counts/initial counts0->1 from completed resume; not planned pool actions."
+    },
+    "preview_evidence": {
+      "waf_priority1000_matches_last24h": 0,
+      "waf_query_complete": true,
+      "rate_priority2000_captured_entries": 10000,
+      "rate_capture_complete": false,
+      "rate_observed_outcomes": [
+        "ACCEPT"
+      ],
+      "controlled_WAF_denial_preview": "MISSING; separate bounded proof/review before apply"
+    },
+    "validator": {
+      "explicit_CLI_armor_mode_required_for_endpoint_preflight": true,
+      "mode_specific_target_flags": true,
+      "mixed_mode_rejected": true,
+      "source_inventory_admission_capacity_gateway_protection_guards_preserved": true,
+      "live_use_after_merge_only": true,
+      "existing_release_references_must_not_be_relabelled": true
+    },
+    "future_request_budgets": {
+      "preview_if_missing": 5,
+      "post_enforcement_https_waf": 5,
+      "scoped_throttle_total_GET": 15,
+      "scoped_throttle_series_max": 12,
+      "temporary_rule_priority": 1500,
+      "temporary_threshold_count": 3,
+      "interval_seconds": 60,
+      "temporary_rule_match": "exact IPv4/32 AND GET /_healthz AND unique header marker",
+      "cleanup": "Conditional current-policy update removing only exact owned rule; readback baseline restored,HTTP200,HEALTHY backend",
+      "actual_2000_threshold_verification": "NOT_CONFIRMED; no1200/60 load series proposed"
+    },
+    "tests": {
+      "suite_run": 263,
+      "passed": 256,
+      "skipped": 7,
+      "focused_complete_shop_run": 62,
+      "focused_passed": 59,
+      "focused_skipped": 3,
+      "terraform_fmt_validate": "passed",
+      "live_traffic": "not performed"
+    },
+    "follow_up_issue": 133,
+    "milestone_complete": false
   }
 }
