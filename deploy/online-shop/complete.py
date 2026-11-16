@@ -369,8 +369,10 @@ def prepare(record, revision, refs, value, release, output, cloud):
     (output/"preparation.json").write_text(json.dumps(result,indent=2),encoding="utf-8")
     return result
 
-def endpoint_evidence(item, now):
-    """Reviewed readbacks, not labels or unbound readiness assertions."""
+def endpoint_evidence(item, now, armor_mode="preview"):
+    """Reviewed readbacks checked against an expected mode, never inferred from rules."""
+    require(armor_mode in ("preview", "enforcement"), "unreviewed_armor_mode")
+    expected_preview = armor_mode == "preview"
     require(now-timedelta(minutes=5)<=legacy.sample.utc(item["observed_at"])<=now+timedelta(seconds=30)
         and bool(item["evidence_ref"]),"endpoint_evidence_stale")
     require(item["project"]==c.r.policy()["project"] and item["hostname"]==ENDPOINT_HOST
@@ -395,19 +397,20 @@ def endpoint_evidence(item, now):
     require(rules[100]["action"]=="deny(403)" and not rules[100].get("preview",False)
         and rules[100]["match"]=={"expr":{"expression":"request.path == '/__sdp_edge_probe__'"}},"endpoint_probe_policy")
     waf="evaluatePreconfiguredWaf('sqli-v33-stable', {'sensitivity': 1}) || evaluatePreconfiguredWaf('xss-v33-stable', {'sensitivity': 1})"
-    require(rules[1000]["action"]=="deny(403)" and rules[1000].get("preview") is True
-        and rules[1000]["match"]=={"expr":{"expression":waf}},"endpoint_waf_preview")
+    require(rules[1000]["action"]=="deny(403)" and rules[1000].get("preview",False) is expected_preview
+        and rules[1000]["match"]=={"expr":{"expression":waf}},"endpoint_waf_mode")
     any_ip={"versionedExpr":"SRC_IPS_V1","config":{"srcIpRanges":["*"]}}
-    require(rules[2000]["action"]=="throttle" and rules[2000].get("preview") is True
+    require(rules[2000]["action"]=="throttle" and rules[2000].get("preview",False) is expected_preview
         and rules[2000]["match"]==any_ip and rules[2000]["rateLimitOptions"]=={
             "conformAction":"allow","exceedAction":"deny(429)","enforceOnKey":"IP",
-            "rateLimitThreshold":{"count":1200,"intervalSec":60}},"endpoint_rate_preview")
+            "rateLimitThreshold":{"count":1200,"intervalSec":60}},"endpoint_rate_mode")
     require(rules[2147483647]["action"]=="allow" and not rules[2147483647].get("preview",False)
         and rules[2147483647]["match"]==any_ip,"endpoint_default_policy")
     return True
 
 
-def evaluate(snapshot, record, revision, refs, release, now=None):
+def evaluate(snapshot, record, revision, refs, release, now=None, *, armor_mode="preview"):
+    require(armor_mode in ("preview", "enforcement"), "unreviewed_armor_mode")
     c.validate_candidate(record,record["configuration_revision"],refs)
     now=now or datetime.now(timezone.utc);checks=[]
     def check(name,ok):checks.append({"id":name,"status":"PASS" if ok else "FAIL"})
@@ -416,6 +419,11 @@ def evaluate(snapshot, record, revision, refs, release, now=None):
         "admission":["cluster_enforced","exact_attestor_required","no_bypass"],
         "target":["snapshot_matches_current","capacity_bin_packing_passed","metadata_and_wif_ready","all_stdout_exclusions_ready","no_duplicate_sinks","no_rollout_conflict","sample_baseline_preserved","gateway_api_ready","endpoint_infrastructure_reviewed","dns_delegation_reviewed","certificate_active","armor_preview_policy_ready","frontend_only_exposure"],
         "caller":["rollout_create","deployment_act_as"],"review":["continue"]}
+    if endpoint_enabled() and armor_mode == "enforcement":
+        required["target"][required["target"].index("armor_preview_policy_ready")] = "armor_enforcement_policy_ready"
+    if endpoint_enabled():
+        opposite = "armor_enforcement_policy_ready" if armor_mode == "preview" else "armor_preview_policy_ready"
+        check("target_armor_mode_unambiguous", opposite not in snapshot.get("target",{}))
     if not endpoint_enabled():
         required["target"] = [x for x in required["target"] if x not in (
             "gateway_api_ready", "endpoint_infrastructure_reviewed", "dns_delegation_reviewed",
@@ -430,7 +438,7 @@ def evaluate(snapshot, record, revision, refs, release, now=None):
         try:
             edge=snapshot.get("endpoint",{})
             require(edge.get("release_set_id")==record["release_set_id"] and edge.get("deployment_revision")==revision,"endpoint_release_binding")
-            check("endpoint_readbacks",endpoint_evidence(edge,now))
+            check("endpoint_readbacks",endpoint_evidence(edge,now,armor_mode))
         except (ValueError,KeyError,TypeError,AttributeError):check("endpoint_readbacks",False)
     try:c.redis_admission();approved=True
     except ValueError:approved=False
@@ -534,8 +542,8 @@ def gateway_dry_run(gateway, cloud):
         require(bool(statuses) and all(status in (200, 201) for status in statuses), "gateway_dry_run_failed")
 
 
-def preflight(snapshot, record, revision, refs, release, cloud):
-    result = evaluate(snapshot, record, revision, refs, release)
+def preflight(snapshot, record, revision, refs, release, cloud, *, armor_mode="preview"):
+    result = evaluate(snapshot, record, revision, refs, release, armor_mode=armor_mode)
     if result["decision"] != "READY":
         return result
     if not endpoint_enabled():
@@ -550,7 +558,7 @@ def preflight(snapshot, record, revision, refs, release, cloud):
         result["reason"] = reason if reason in ("gateway_dry_run_http_409", "gateway_dry_run_tools_unavailable") else "gateway_dry_run_failed"
         return result
     # The admission request can outlast the snapshot's freshness window.
-    result = evaluate(snapshot, record, revision, refs, release)
+    result = evaluate(snapshot, record, revision, refs, release, armor_mode=armor_mode)
     result["checks"].append({"id": "gateway_server_dry_run", "status": "PASS"})
     return result
 
@@ -559,9 +567,13 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action",choices=("prepare","preflight"))
     for name in ("candidate","deployment-revision","clouddeploy-release","output-dir","snapshot"):parser.add_argument("--"+name,required=name in ("candidate","deployment-revision","clouddeploy-release"))
+    parser.add_argument("--armor-mode",choices=("preview","enforcement"),
+                        help="Required for endpoint preflight; select from reviewed Terraform input, not observed logs")
     args=parser.parse_args()
     try:
         record=c.r.read(args.candidate)
+        if args.action=="preflight" and endpoint_enabled():
+            require(args.armor_mode is not None,"explicit_armor_mode_required")
         reviewed(record,args.deployment_revision)
         with c.r.fetched(c.r.AML,c.r.REVISION) as source:value=c.plans(source);refs=c.references(source,value)
         c.validate_candidate(record,record["configuration_revision"],refs)
@@ -569,7 +581,7 @@ def main():
         else:
             cloud = c.r.Cloud()
             c.verify(record,record["configuration_revision"],value,refs,cloud)
-            result=preflight(c.r.read(args.snapshot),record,args.deployment_revision,refs,args.clouddeploy_release,cloud)
+            result=preflight(c.r.read(args.snapshot),record,args.deployment_revision,refs,args.clouddeploy_release,cloud,armor_mode=args.armor_mode or "preview")
         print(json.dumps(result,sort_keys=True));return 3 if result.get("decision")=="BLOCKED" else 0
     except (OSError,ValueError,KeyError,TypeError,AttributeError,subprocess.SubprocessError):
         print(json.dumps({"decision":"BLOCKED","reason":"complete_policy_or_evidence_check_failed","mutation_performed":False}));return 3

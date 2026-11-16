@@ -159,12 +159,12 @@
     "cloudbuild/online-shop/complete-v1.json": "sha256:3fc00dee52b0829f98c36c9d1fd2d7c6a34a3f3c405648138eb07d555460b6dc",
     "cloudbuild/online-shop/complete-candidate-v1.schema.json": "sha256:36b4ab8c1b19d19bbd4139a8e923fb204c1e2d952954fe57775600a34e52678a",
     "cloudbuild/online-shop/redis-policy-v1.json": "sha256:c3e35a722662e7695df196e3141b77cb27a31def336a7c01a505c0e3f2519dea",
-    "deploy/online-shop/complete.py": "sha256:40350f8968703963baf70868e4bfe02aca5c933929b3b5eebf402a607bc6b3ff",
+    "deploy/online-shop/complete.py": "sha256:9a25e1b86d9690e3433a275379dcdf7f7c88c7d7f467a3657cf28b880e86727b",
     "deploy/online-shop/complete-acceptance.py": "sha256:5144cb3ff00e02516f9b20dfde952a170bc4ea6c645a475620a7dd71df7893fb",
     "deploy/online-shop/complete-runtime-v1.json": "sha256:97f3d3b3adf1b6334c727274d6bf4f1d969afdd0f01300796bb9bfc132d632c2",
     "deploy/online-shop/complete-skaffold.yaml": "sha256:088ae75361550b1911cd655b286c2da07f35f6dbc74c380beb7cbc34efcb7d3a",
-    "deploy/online-shop/complete-README.md": "sha256:d58f3a6d0251eaf1f0e3bb85c39a56327ef3f1c1d90abc505bd1d474245b7625",
-    "scripts/tests/test_complete_shop.py": "sha256:b582a00acbdadbe2a00a7b6268a035aaab9b40b6def6352e0eb38666f496cf5c",
+    "deploy/online-shop/complete-README.md": "sha256:ecd02764161ab95e878c47f54a019fd1c357a1cc7a2c22badd75d2c3bf14af89",
+    "scripts/tests/test_complete_shop.py": "sha256:80a339083589aa430e6f7a7c6cd983bb699a8a6b35914258fc1bea0faa5cca63",
     "terraform/foundation/complete-shop.tf": "sha256:96c3cdadcf258605d0d946268b14314482842026ce0c018f645c25fdcee29e84",
     "cloudbuild/online-shop/redis.py": "sha256:d1687b1551e3b5a8fbdb603b30d98b303e2d69e4aacdb0ced0438688c21011d0",
     "cloudbuild/online-shop/redis-policy-v2.json": "sha256:8ad0587ef4fdd1298be088440f25a229edf15f5ce87caabf2de79335bdaf1925",
@@ -1906,5 +1906,19 @@
     "scope": "acceptance of preserved journey only; not current runtime health",
     "historical_failures_preserved": true,
     "private_evidence_directory": ".local-validation/issue100-recorded-signals-55e6706"
+  },
+  "enforcement_preflight_review": {
+    "explicit_mode_required": true,
+    "preview_and_enforcement_unit_positive": true,
+    "wrong_or_mixed_modes_rejected": true,
+    "Gateway_dry_run_in_enforcement_preserved": true,
+    "HTTP409_blocks": true,
+    "source_and_candidate_contracts_unchanged": true,
+    "future_live_check": "pending merge and source-matched protected release; no trust gate bypass",
+    "suite": {
+      "run": 263,
+      "passed": 256,
+      "skipped": 7
+    }
   }
 }

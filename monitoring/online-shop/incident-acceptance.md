@@ -83,7 +83,7 @@ consumed; another injection requires new authorization.
 The [roadmap](../../docs/roadmap.md#online-shop-integration) and
 [baseline gates](../../docs/platform-baseline-recovery.md) remain authoritative.
 
-| Remaining gate | Status and required evidence |
+| Gate at the incident checkpoint | Status and required evidence |
 | --- | --- |
 | Armor enforcement acceptance | Pending. This execution validated preview only. Review the active environment's preview results and a separate full enforcement plan/apply, then bounded allowed traffic and attributed WAF 403/rate 429 results. Distinguish the actual priority-2000 1200/60s/IP threshold from a temporary scoped mechanism test; do not reuse another environment's historical proof. |
 | Repeated manual stop/resume with permanent selectors | Pending. Confirm monitoring maintenance handling before a separately authorized cycle, preserve artifacts/state, then demonstrate automatic placement of application workloads on their pool and Collector 2/2 without ad hoc eviction/cordon, followed by runtime/HTTPS/scheduled readiness. No lifecycle schedule is introduced. |
@@ -92,3 +92,10 @@ The [roadmap](../../docs/roadmap.md#online-shop-integration) and
 No milestone/issue closure or platform release is performed by this documentation update.
 Governance/security extensions and canary/progression/rollback/load scenarios remain in their
 roadmap milestones; they are not added to this incident's acceptance scope.
+
+
+Later checkpoint: [the repeated manual stop/resume passed recorded acceptance](../../docs/milestone-8-technical-review.md).
+The [PromQL read-only analysis](promql-incident-limit.md) explains the retained constant-counter
+replay while preserving the unconfirmed historical positive evaluation. Final disposition and
+v0.2.0 publication remain in [#133](https://github.com/DimitryZH/secure-delivery-platform/issues/133);
+Armor enforcement is still pending. Earlier checkpoint statuses above are historical.

@@ -178,10 +178,11 @@
     "monitoring/online-shop/synthetic/journey.test.js": "sha256:ef1573352195bb64dd584c9b866c1f99ce15e96d29ed23da75fd078b1314e5b7",
     "monitoring/online-shop/diagnose-scheduled.py": "sha256:a9c18a4da7d9ba63c81d5c718f7f1d9ddf630ef94be924e0331781a42d74d785",
     "monitoring/online-shop/scheduled-correlation.md": "sha256:8607171a926e9c04ac1101628b4c46a3881becc4b174b22e9512b8a561920313",
-    "monitoring/online-shop/README.md": "sha256:1fed71a9238bc447801357bd8c5ae46f8dc67760d4ae481da152ec311613a253",
+    "monitoring/online-shop/README.md": "sha256:1c8dcb8af318c07fc3abe53851afb6079fb2df940c39f7bace4e2c5bf3ea38a0",
     "scripts/tests/test_scheduled_correlation.py": "sha256:5dd63f6263b5be0a2dff40f123889131f039eb14aff81a23cb63c7fee0f4db97",
     "monitoring/online-shop/incident-runbook.md": "sha256:4d7d4b1cec4f4bedade159dbd6b04fa7a87ca1a334e32dd126143ba94d291e22",
-    "monitoring/online-shop/incident-acceptance.md": "sha256:4617bda1f0dd025eb299806af7bba3866ef822c18313855946675fec6b6bf218"
+    "monitoring/online-shop/incident-acceptance.md": "sha256:52848af29db2f9901ee8e431563c738fa1b46e964ba0061fd43b541477cc0782",
+    "monitoring/online-shop/promql-incident-limit.md": "sha256:509b422cf3087fd5e6bcb71ae859a8c8023aaa56f9064bed9a2a0bd94f253734"
   },
   "live_operations": {
     "provisioning": true,
@@ -524,5 +525,58 @@
       "final_documentation_release_review": "pending",
       "platform_v0_2_0_published_by_this_change": false
     }
+  },
+  "historical_promql_readonly_analysis": {
+    "status": "NOT_RECONSTRUCTED_PROPOSED_BOUNDED_LIMIT",
+    "query_template": "monitoring/online-shop/frontend-errors.promql.tftpl",
+    "query_unchanged": true,
+    "UTC_start": "2026-11-16T02:23:45Z",
+    "UTC_end": "2026-11-16T02:34:00Z",
+    "step_seconds": [
+      15,
+      30
+    ],
+    "exact_positive_condition_result": "empty",
+    "without_final_positive_comparison": {
+      "series": 1,
+      "points": 32,
+      "all_rates": 0
+    },
+    "raw": {
+      "metric_kind": "CUMULATIVE",
+      "value_type": "INT64",
+      "series": 1,
+      "points": 84,
+      "all_values": 1,
+      "first_point": "2026-11-16T02:26:09.439269Z",
+      "last_point": "2026-11-16T02:39:59.439495Z",
+      "startTime": "2026-11-15T20:40:39.438857Z",
+      "zero_point_observed": false,
+      "full_cumulative_interval_checked": true
+    },
+    "replay_empty_reason": "Retained constant counter gives zero retrospective rate; >0 removes zero results. No missing raw metric or zero errors inferred.",
+    "not_established": "Original positive live evaluator result cannot be reconstructed; internal live/retrospective evaluation mechanism not proven.",
+    "repeat_incident_or_traffic": false,
+    "proposed_disposition": "Explicit bounded limitation acceptance in issue133, or scoped investigation; not marked passed."
+  },
+  "repeat_stop_resume_recorded": {
+    "status": "recorded_acceptance_passed_for_review",
+    "date_local": "2026-11-16",
+    "ready_nodes": 2,
+    "ready_pods": 14,
+    "workload_templates_with_permanent_selector": 12,
+    "collector_coverage": "2/2",
+    "ad_hoc_eviction_or_cordon": false,
+    "rollout_or_build": false,
+    "artifacts_and_state_preserved": true,
+    "runtime_https_natural_scheduled_results": "passed",
+    "maintenance_ended_only_after_readiness": "2026-11-16T13:18:43Z",
+    "maintenance_closure_is_not_incident_recovery_proof": true,
+    "control_plan": "No changes",
+    "milestone_complete": false,
+    "remaining": [
+      "Armor enforcement acceptance",
+      "final documentation/evidence/release review133"
+    ]
   }
 }
