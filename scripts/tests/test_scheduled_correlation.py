@@ -21,7 +21,7 @@ EXECUTION = "recorded-test-execution"
 VERSION = "a" * 64
 
 
-def fixture():
+def fixture(armor_mode="enforcement"):
     c = d.c
     accepted = accepted_policy(c.r)["accepted_release"]
     rows = []
@@ -80,6 +80,12 @@ def fixture():
                 "statusDetails": "response_sent_by_backend", "enforcedSecurityPolicy": {"name": "shop-dev-edge",
                     "priority": 2000, "outcome": "ACCEPT", "configuredAction": "THROTTLE",
                     "rateLimitAction": {"outcome": "RATE_LIMIT_THRESHOLD_CONFORM", "key": context["source_ip"]}}}})
+    if armor_mode == "preview":
+        for edge in edges:
+            payload = edge["jsonPayload"]
+            payload["previewSecurityPolicy"] = {**payload["enforcedSecurityPolicy"], "preview": True}
+            payload["enforcedSecurityPolicy"] = {"name": "shop-dev-edge", "priority": 2147483647,
+                                                  "configuredAction": "ALLOW", "outcome": "ACCEPT"}
     spans.append({"spanId": "31", "parentSpanId": "21", "kind": "RPC_SERVER", "labels": labels("currencyservice"),
                   "startTime": stamp(20), "endTime": stamp(60)})
     for identity, span in (("frontend", 21), ("currencyservice", 31)):
@@ -97,14 +103,74 @@ class CorrelationTests(unittest.TestCase):
         guard=patch.object(d.c.legacy,"policy",return_value=accepted_policy(d.c.r))
         guard.start();self.addCleanup(guard.stop)
 
-    def run_diagnostic(self, value):
-        return d.diagnose(value, EXECUTION, VERSION, value["candidate"]["release_set_id"])
+    def run_diagnostic(self, value, armor_mode="enforcement"):
+        return d.diagnose(value, EXECUTION, VERSION, value["candidate"]["release_set_id"], armor_mode)
 
     def test_independent_lb_ids_are_allowed_with_unique_operational_binding(self):
         result = self.run_diagnostic(fixture())
         self.assertEqual(result["recorded_execution_acceptance"], "passed")
         self.assertFalse(result["edge_native_trace_id_matches_application"])
         self.assertEqual(len(result["edge_bijection"]), 3)
+
+    def test_explicit_preview_and_enforcement_positive_cases(self):
+        for mode in ("preview", "enforcement"):
+            with self.subTest(mode=mode):
+                result = self.run_diagnostic(fixture(mode), mode)
+                self.assertEqual(result["recorded_execution_acceptance"], "passed")
+                self.assertEqual(result["armor_mode"], mode)
+                self.assertEqual(result["enforced_armor_priority"], 2147483647 if mode == "preview" else 2000)
+
+    def test_wrong_reviewed_mode_cannot_be_inferred_from_logs_or_snapshot(self):
+        for mode in ("preview", "enforcement"):
+            data = fixture(mode)
+            data["armor_mode"] = mode
+            with self.assertRaises((ValueError, KeyError)):
+                self.run_diagnostic(data, "enforcement" if mode == "preview" else "preview")
+        for mode in (None, "auto", "", True):
+            with self.subTest(mode=mode), self.assertRaisesRegex(ValueError, "unreviewed_armor_mode"):
+                self.run_diagnostic(fixture(), mode)
+
+    def test_policy_priority_action_outcome_and_ip_fail_in_both_modes(self):
+        for mode in ("preview", "enforcement"):
+            key = "previewSecurityPolicy" if mode == "preview" else "enforcedSecurityPolicy"
+            for path, value in [( ["name"], "other-policy"), (["priority"], 1000),
+                    (["priority"], 2000.0), (["configuredAction"], "ALLOW"), (["outcome"], "DENY"),
+                    (["rateLimitAction", "outcome"], "RATE_LIMIT_THRESHOLD_EXCEED"),
+                    (["rateLimitAction", "key"], "192.0.2.9")]:
+                with self.subTest(mode=mode, path=path):
+                    data = fixture(mode); target = data["edge_logs"]["entries"][0]["jsonPayload"][key]
+                    for field in path[:-1]: target = target[field]
+                    target[path[-1]] = value
+                    with self.assertRaises(ValueError): self.run_diagnostic(data, mode)
+
+    def test_preview_requires_actual_default_allow_and_true_preview_flag(self):
+        for field, value in [("priority", 2000), ("name", "other-policy"),
+                ("configuredAction", "THROTTLE"), ("outcome", "DENY"),
+                ("preview", True), ("rateLimitAction", {})]:
+            with self.subTest(field=field):
+                data = fixture("preview")
+                data["edge_logs"]["entries"][0]["jsonPayload"]["enforcedSecurityPolicy"][field] = value
+                with self.assertRaises(ValueError): self.run_diagnostic(data, "preview")
+        for flag in (False, "true", None):
+            data = fixture("preview")
+            data["edge_logs"]["entries"][0]["jsonPayload"]["previewSecurityPolicy"]["preview"] = flag
+            with self.assertRaises(ValueError): self.run_diagnostic(data, "preview")
+        data = fixture("preview")
+        del data["edge_logs"]["entries"][0]["jsonPayload"]["previewSecurityPolicy"]
+        with self.assertRaises(KeyError): self.run_diagnostic(data, "preview")
+
+    def test_mixed_entries_and_duplicate_verdict_sources_fail(self):
+        for mode in ("preview", "enforcement"):
+            data = fixture(mode)
+            other = fixture("enforcement" if mode == "preview" else "preview")
+            data["edge_logs"]["entries"][1] = other["edge_logs"]["entries"][1]
+            with self.assertRaises((ValueError, KeyError)): self.run_diagnostic(data, mode)
+        data = fixture()
+        payload = data["edge_logs"]["entries"][0]["jsonPayload"]
+        payload["previewSecurityPolicy"] = {**payload["enforcedSecurityPolicy"], "preview": True}
+        with self.assertRaisesRegex(ValueError, "mixed_armor_mode_evidence"): self.run_diagnostic(data)
+        data = fixture();data["edge_logs"]["entries"][0]["jsonPayload"]["enforcedSecurityPolicy"]["preview"] = True
+        with self.assertRaises(ValueError): self.run_diagnostic(data)
 
     def test_wrong_time_url_method_marker_ip_and_backend_fail(self):
         changes = [(["timestamp"], "2026-11-08T15:09:24Z"),
@@ -143,19 +209,37 @@ class CorrelationTests(unittest.TestCase):
                 if mode == "digest": data["trace"]["spans"][2]["labels"]["component_digest"] = "sha256:"+"0"*64
                 with self.assertRaises(ValueError): self.run_diagnostic(data)
 
+    def test_preview_retains_native_release_pagination_and_cleanup_guards(self):
+        for failure in ("trace", "parent", "digest", "source", "logs", "pages", "sampling", "cleanup"):
+            with self.subTest(failure=failure):
+                data = fixture("preview")
+                if failure == "trace": data["trace"]["traceId"] = "2"*32
+                if failure == "parent": data["trace"]["spans"][2]["parentSpanId"] = "99"
+                if failure == "digest": data["trace"]["spans"][2]["labels"]["component_digest"] = "sha256:"+"0"*64
+                if failure == "source": data["release"]["source_sha256"] = "b"*64
+                if failure == "logs": data["application_logs"]["entries"][0]["trace"] = "foreign"
+                if failure == "pages": data["edge_capture"]["pagination_complete"] = False
+                if failure == "sampling": data["edge_capture"]["sample_rate"] = .5
+                if failure == "cleanup": data["session_readback"]["exists"] = 1
+                with self.assertRaises(ValueError): self.run_diagnostic(data, "preview")
+
     def test_candidate_identity_reconstruction_and_reviewed_identity_are_required(self):
         data = fixture(); old = data["candidate"]["release_set_id"]
         data["candidate"]["components"][0]["digest"] = "sha256:"+"0"*64
-        with self.assertRaises(ValueError): d.diagnose(data, EXECUTION, VERSION, old)
+        with self.assertRaises(ValueError): d.diagnose(data, EXECUTION, VERSION, old, "enforcement")
         data["candidate"]["release_set_id"] = d.c.r.fingerprint({k:v for k,v in data["candidate"].items() if k!="release_set_id"})
-        with self.assertRaises(ValueError): d.diagnose(data, EXECUTION, VERSION, old)
+        with self.assertRaises(ValueError): d.diagnose(data, EXECUTION, VERSION, old, "enforcement")
 
     def test_cli_requires_explicit_execution_and_uses_only_snapshot(self):
         data = fixture()
         with tempfile.TemporaryDirectory() as directory:
             snapshot = Path(directory)/"snapshot.json";snapshot.write_text(json.dumps(data), encoding="utf-8")
             args = [sys.executable, str(SCRIPT), "--snapshot", str(snapshot), "--execution-id", EXECUTION,
-                    "--monitor-version", VERSION, "--release-set-id", data["candidate"]["release_set_id"]]
+                    "--monitor-version", VERSION, "--release-set-id", data["candidate"]["release_set_id"],
+                    "--armor-mode", "enforcement"]
+            omitted = subprocess.run(args[:-2], capture_output=True, timeout=20)
+            self.assertEqual(omitted.returncode, 2)
+            self.assertIn(b"--armor-mode", omitted.stderr)
             # The real CLI must not reinterpret fixture evidence as accepted state.
             result = subprocess.run(args, capture_output=True, timeout=20)
             self.assertEqual(result.returncode, 1)

@@ -27,12 +27,13 @@ def sid(value):
     return format(int(value), "016x")
 
 
-def edge_matches(clients, entries, context, coverage):
+def edge_matches(clients, entries, context, coverage, armor_mode):
     """Require a unique bijection within an exhaustively collected evidence window.
 
     LB native IDs are recorded separately, never used as the application identity.
     The stable User-Agent/IP are operational correlation, not authentication.
     """
+    require(armor_mode in ("preview", "enforcement"), "unreviewed_armor_mode")
     require(coverage["pagination_complete"] is True and coverage["sample_rate"] == 1,
             "incomplete_edge_capture")
     require(len(clients) == len(entries) == 3, "edge_request_budget")
@@ -76,8 +77,21 @@ def edge_matches(clients, entries, context, coverage):
         payload = entry["jsonPayload"]
         require(payload["backendTargetProjectNumber"] == "projects/" + context["project_number"]
                 and payload["statusDetails"] == "response_sent_by_backend", "edge_backend_binding")
-        policy = payload["enforcedSecurityPolicy"]
-        require(policy["name"] == "shop-dev-edge" and policy["priority"] == 2000
+        enforced = payload["enforcedSecurityPolicy"]
+        if armor_mode == "preview":
+            require(enforced["name"] == "shop-dev-edge"
+                    and type(enforced["priority"]) is int and enforced["priority"] == 2147483647
+                    and enforced["configuredAction"] == "ALLOW" and enforced["outcome"] == "ACCEPT"
+                    and enforced.get("preview", False) is False
+                    and "rateLimitAction" not in enforced, "armor_default_allow_mismatch")
+            policy = payload["previewSecurityPolicy"]
+            require(policy.get("preview") is True, "armor_preview_flag_mismatch")
+        else:
+            require("previewSecurityPolicy" not in payload
+                    and enforced.get("preview", False) is False, "mixed_armor_mode_evidence")
+            policy = enforced
+        require(policy["name"] == "shop-dev-edge" and type(policy["priority"]) is int
+                and policy["priority"] == 2000
                 and policy["outcome"] == "ACCEPT" and policy["configuredAction"] == "THROTTLE"
                 and policy["rateLimitAction"]["outcome"] == "RATE_LIMIT_THRESHOLD_CONFORM"
                 and policy["rateLimitAction"]["key"] == context["source_ip"], "armor_verdict_mismatch")
@@ -91,7 +105,8 @@ def edge_matches(clients, entries, context, coverage):
     return matches
 
 
-def diagnose(snapshot, execution_id, monitor_version, release_set_id):
+def diagnose(snapshot, execution_id, monitor_version, release_set_id, armor_mode):
+    require(armor_mode in ("preview", "enforcement"), "unreviewed_armor_mode")
     require(type(snapshot.get("version")) is int and snapshot["version"] == 1, "snapshot_version")
     record = snapshot["candidate"]
     require(record["release_set_id"] == release_set_id, "unreviewed_release_set")
@@ -186,13 +201,16 @@ def diagnose(snapshot, execution_id, monitor_version, release_set_id):
     require(not edge.get("nextPageToken"), "edge_logs_incomplete")
     require(snapshot["edge_context"]["project_id"] == project
             and snapshot["edge_context"]["hostname"] == acceptance.w.ENDPOINT_HOST, "unreviewed_edge_target")
-    matches = edge_matches(clients, edge.get("entries", []), snapshot["edge_context"], snapshot["edge_capture"])
+    matches = edge_matches(clients, edge.get("entries", []), snapshot["edge_context"], snapshot["edge_capture"], armor_mode)
     state = snapshot["session_readback"]
     require(state["execution_id"] == execution_id and state["exists"] == 0
             and state["owned_forward_closed"] is True, "exact_session_cleanup_unproven")
     return {"recorded_execution_acceptance": "passed", "execution_id": execution_id,
             "requests": 3, "native_w3c_correlation": "passed", "edge_bijection": matches,
             "same_source_ip_and_backend": True, "armor_priority": 2000, "armor_outcome": "ACCEPT",
+            "armor_mode": armor_mode,
+            "armor_verdict_source": "previewSecurityPolicy" if armor_mode == "preview" else "enforcedSecurityPolicy",
+            "enforced_armor_priority": 2147483647 if armor_mode == "preview" else 2000,
             "edge_native_trace_id_matches_application": all(x.get("trace") == native for x in edge["entries"]),
             "edge_binding_limit": "unique within complete recorded candidates; not an authenticated execution marker",
             "redis_exists": 0, "owned_forward_closed": True}
@@ -204,10 +222,12 @@ def main():
     parser.add_argument("--execution-id", required=True)
     parser.add_argument("--monitor-version", required=True)
     parser.add_argument("--release-set-id", required=True)
+    parser.add_argument("--armor-mode", required=True, choices=("preview", "enforcement"),
+                        help="Explicit reviewed mode from approved Terraform inputs; never inferred from logs")
     args = parser.parse_args()
     try:
         print(json.dumps(diagnose(json.loads(args.snapshot.read_bytes()), args.execution_id,
-                                  args.monitor_version, args.release_set_id), sort_keys=True))
+                                  args.monitor_version, args.release_set_id, args.armor_mode), sort_keys=True))
         return 0
     except (ValueError, KeyError, TypeError, OSError) as error:
         # Inputs contain private sessions/addresses. Do not print their values.

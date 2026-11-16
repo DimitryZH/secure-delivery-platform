@@ -176,10 +176,10 @@
     "monitoring/online-shop/synthetic/test/tls-cert.pem": "sha256:41fd80c23bea4a42cca87c09de0fe422b5ef7273c83d5c7e52391765307923ef",
     "monitoring/online-shop/synthetic/test/tls-key.pem": "sha256:e7903cdc9d0134250edf63dd31df5c922e410d1ad1a9ea5eba805010143aa5e5",
     "monitoring/online-shop/synthetic/journey.test.js": "sha256:ef1573352195bb64dd584c9b866c1f99ce15e96d29ed23da75fd078b1314e5b7",
-    "monitoring/online-shop/diagnose-scheduled.py": "sha256:4b0e003ef2e4a758341172f667ae4b95d7d7f9713694cbe7e7d7eb1dd634ade0",
-    "monitoring/online-shop/scheduled-correlation.md": "sha256:53e33a41466a7bfd77c624f3850497191f2b5c8d77c6139737e46c20b3d0f347",
-    "monitoring/online-shop/README.md": "sha256:f6dd565bec23726afe98b1fd9bab963c631242b2e1348d863a995f6759693b1f",
-    "scripts/tests/test_scheduled_correlation.py": "sha256:cbca9819a28eab3416c239df1a1361a9b26840b62ecbe292f00e2068dd4948a5"
+    "monitoring/online-shop/diagnose-scheduled.py": "sha256:a9c18a4da7d9ba63c81d5c718f7f1d9ddf630ef94be924e0331781a42d74d785",
+    "monitoring/online-shop/scheduled-correlation.md": "sha256:8607171a926e9c04ac1101628b4c46a3881becc4b174b22e9512b8a561920313",
+    "monitoring/online-shop/README.md": "sha256:13f27ec536ff5768651ffacc42f33cdf82fb35de5624b671456303dc9f995754",
+    "scripts/tests/test_scheduled_correlation.py": "sha256:5dd63f6263b5be0a2dff40f123889131f039eb14aff81a23cb63c7fee0f4db97"
   },
   "live_operations": {
     "provisioning": true,
@@ -361,6 +361,48 @@
     "references": [
       "https://docs.cloud.google.com/load-balancing/docs/https#target-proxies",
       "https://docs.cloud.google.com/load-balancing/docs/distributed-tracing-overview"
+    ]
+  },
+  "armor_mode_review": {
+    "scope": "Offline diagnostic only; no cloud mutations, new traffic, notification test or controlled failure.",
+    "reviewed_mode_source": "Required --armor-mode argument selected from independently reviewed Terraform input and recorded policy readback; not inferred from logs or snapshot.",
+    "preview": "previewSecurityPolicy=true, priority2000 THROTTLE/ACCEPT/CONFORM and exact source-IP key; actual same-policy default2147483647 ALLOW/ACCEPT with no rateLimitAction.",
+    "enforcement": "Applied priority2000 THROTTLE/ACCEPT/CONFORM with exact source-IP key; preview verdict/true flag rejected.",
+    "tests": {
+      "correlation": {
+        "passed": 12,
+        "skipped": 0
+      },
+      "synthetic": {
+        "passed": 2,
+        "skipped": 0
+      },
+      "negative_cases": [
+        "wrong or unknown explicit mode",
+        "wrong priority/action/outcome/IP/policy",
+        "missing preview flag or default ALLOW",
+        "mixed requests and duplicate verdict sources",
+        "native trace/parent/source/digest/log/pagination/sampling/cleanup substitutions"
+      ]
+    },
+    "recorded_execution_local_recheck": {
+      "preview_exit_code": 0,
+      "enforcement_exit_code": 1,
+      "snapshot_bytes_unchanged": true,
+      "requests": 3,
+      "native_w3c_correlation": "passed",
+      "exact_session_exists": 0,
+      "owned_forward_closed": true,
+      "earlier_failures_preserved": [
+        "execution_span_missing before delayed function spans arrived",
+        "armor_verdict_mismatch under enforcement-only diagnostic"
+      ],
+      "post_merge_acceptance": "pending; recheck same evidence using merged validator; no new traffic needed"
+    },
+    "limits": [
+      "Explicit expected mode and snapshot provenance require independent review; offline CLI does not authenticate supplied evidence.",
+      "Preview success is not proof of enforcement.",
+      "No notification delivery or incident exercise acceptance claimed."
     ]
   }
 }
