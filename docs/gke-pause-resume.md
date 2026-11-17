@@ -125,5 +125,6 @@ still occur while the control plane is retained.
 
 The [locked Google 5.45.2 provider documentation](https://github.com/hashicorp/terraform-provider-google/blob/v5.45.2/website/docs/r/container_node_pool.html.markdown)
 defines pool `node_count` per instance group and warns against combining it with
-autoscaling. Complete teardown/recreation and lifecycle decomposition are separate
-future work.
+autoscaling. Complete teardown/recreation has a separate
+[cold recovery and retirement procedure](cold-recovery-and-teardown.md).
+Preparing its recovery kit or destroy previews does not authorize teardown.
