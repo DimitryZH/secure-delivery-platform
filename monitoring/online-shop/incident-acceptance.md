@@ -71,14 +71,14 @@ exact-session/forward cleanup.
 **no data** and did not reconstruct its positive evaluation. This is not zero errors and is not
 a successful PromQL check. The actual OPEN/CLOSED incident, positive raw counter and HTTP 500
 trace remain separate positive evidence. The query discrepancy's cause is unresolved; no extra
-traffic was generated to force a result. Final observability review must explicitly resolve or
-accept this bounded limitation before milestone release review.
+traffic was generated to force a result. The later documentation review explicitly accepts this bounded reconstruction limitation;
+that disposition does not turn this historical query check into a pass.
 
 This exercise does not prove continuous reliability, load/HA behavior, lossless export, Redis
 durability, recovery-email delivery or Armor enforcement. The one-injection authorization was
 consumed; another injection requires new authorization.
 
-## Milestone 8 remains in progress
+## Historical checkpoint and subsequent review
 
 The [roadmap](../../docs/roadmap.md#online-shop-integration) and
 [baseline gates](../../docs/platform-baseline-recovery.md) remain authoritative.
@@ -94,8 +94,10 @@ Governance/security extensions and canary/progression/rollback/load scenarios re
 roadmap milestones; they are not added to this incident's acceptance scope.
 
 
-Later checkpoint: [the repeated manual stop/resume passed recorded acceptance](../../docs/milestone-8-technical-review.md).
+Later checkpoint: [the repeated manual stop/resume passed recorded acceptance](../../docs/online-shop-acceptance.md).
 The [PromQL read-only analysis](promql-incident-limit.md) explains the retained constant-counter
 replay while preserving the unconfirmed historical positive evaluation. Final disposition and
 v0.2.0 publication remain in [#133](https://github.com/DimitryZH/secure-delivery-platform/issues/133);
-Armor enforcement is still pending. Earlier checkpoint statuses above are historical.
+WAF enforcement subsequently passed; 429 verification and historical PromQL reconstruction
+are explicitly accepted limitations in the [consolidated review](../../docs/online-shop-acceptance.md).
+Earlier checkpoint statuses above are historical.

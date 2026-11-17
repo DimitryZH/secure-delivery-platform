@@ -104,4 +104,6 @@ Direct `429` verification of the live rule `2000` at 1200 requests per 60 second
 
 ## Validation limits
 
-The historical live evidence covers its recorded frontend/rollout only. Endpoint-on preflight now requires an explicit reviewed `--armor-mode preview|enforcement`; mode-specific flags and raw rule checks reject mixed evidence. See the [bounded enforcement acceptance plan](armor-acceptance.md). No new enforcement or traffic result is claimed by preparing that plan.
+The historical live evidence covers its recorded frontend/rollout only. Endpoint-on preflight now requires an explicit reviewed `--armor-mode preview|enforcement`; mode-specific flags and raw rule checks reject mixed evidence. See the [bounded enforcement acceptance plan](armor-acceptance.md). The [consolidated acceptance](../../docs/online-shop-acceptance.md) records later WAF403
+verification and the accepted 429 deferral for the active binding. Earlier dev-full-003
+results above remain historical and are not substituted for that binding.

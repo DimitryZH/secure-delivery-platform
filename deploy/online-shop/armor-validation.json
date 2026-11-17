@@ -1,0 +1,64 @@
+{
+  "recorded_date": "2026-11-16",
+  "reviewed_revision": "fc68b3760408941d0db709e7a1d43c546ff4a6de",
+  "binding": "sdp-dev-v1",
+  "status": "recorded_waf_acceptance_with_429_verification_deferred",
+  "preview": {
+    "normal_gets": 3,
+    "sqli_xss_gets": 2,
+    "actual_http": 200,
+    "normal_preview_priority": 2000,
+    "waf_preview_priority": 1000,
+    "waf_preview_outcome": "DENY"
+  },
+  "enforcement": {
+    "rules_1000_2000_preview": false,
+    "normal_gets_200": 3,
+    "sqli": {
+      "http": 403,
+      "priority": 1000,
+      "outcome": "DENY",
+      "rule_id": "owasp-crs-v030301-id942100-sqli"
+    },
+    "xss": {
+      "http": 403,
+      "priority": 1000,
+      "outcome": "DENY",
+      "rule_id": "owasp-crs-v030301-id941100-xss"
+    }
+  },
+  "rate_attempts": [
+    {
+      "series_requests": 12,
+      "series_http_200": 12,
+      "observed_priority": 2000,
+      "observed_rate_outcome": "RATE_LIMIT_THRESHOLD_CONFORM",
+      "rate_phase_total_gets": 14,
+      "temporary_rule_removed": true
+    },
+    {
+      "readiness_probe_requests": 1,
+      "wait_after_operation_seconds": 180,
+      "observed_priority": 2000,
+      "series_started": false,
+      "rate_phase_total_gets": 3,
+      "temporary_rule_removed": true
+    }
+  ],
+  "rate429": "DEFERRED_NOT_CONFIRMED",
+  "real_1200_per_60s_ip_threshold_429": "NOT_CONFIRMED",
+  "cause_of_scoped_match_failure": "unresolved; local header delivery is not edge visibility proof",
+  "cleanup": {
+    "temporary_1500_absent": true,
+    "baseline_enforced_rules_restored": true,
+    "recovery_http": 200,
+    "control_plan": "No changes"
+  },
+  "observed_post_cleanup_health": {
+    "ready_pods": 14,
+    "collector_agents_ready": 2,
+    "frontend_backend": "HEALTHY",
+    "natural_https_synthetic_checks": "passed"
+  },
+  "scope": "retained observations only; no new traffic or health verification for documentation review"
+}
