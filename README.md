@@ -1,105 +1,85 @@
 # Secure Delivery Platform
 
-A Google-native trusted delivery platform for **Online Shop**: ten application services,
-ephemeral Redis and a separately trusted OpenTelemetry Collector in dev. Independent
-verification, signing and deployment authority remain separate; Binary Authorization
-checks trusted digests at admission.
+A delivery platform that connects immutable artifacts, independent verification, separate signing and controlled deployment to Kubernetes. Implemented on **Google Cloud**, it keeps build, signing and deployment authority separate and uses **Binary Authorization** to enforce digest-bound trust at admission.
 
-This repository contains implementation and **recorded acceptance**, not a live status page.
-Nodes are paused. [Integration acceptance](docs/online-shop-acceptance.md) and
-[draft v0.2.0 notes](docs/releases/v0.2.0.md) are under review in
-[#133](https://github.com/DimitryZH/secure-delivery-platform/issues/133); no release is published
-by this documentation. Sample-service is [retired](docs/sample-service-retirement.md).
+The platform combines **Cloud Build, Artifact Registry, Cloud KMS, Cloud Deploy, GKE and Terraform**, with OpenTelemetry and Cloud Monitoring for operational visibility. Workloads exercise the platform: a small sample service established controlled promotion, and Online Shop extends the implementation to a microservices application.
 
-## Architecture
+## Explore the platform
 
-![Online Shop service dependencies, with cartservice and ephemeral Redis highlighted](docs/images/online-shop/service-dependencies.png)
+| Documentation | What it covers |
+| --- | --- |
+| [Architecture overview](docs/architecture/overview.md) · [Diagrams](docs/diagrams/README.md) | Platform components and boundaries |
+| [Release model](docs/architecture/release-model.md) · [Trusted delivery](docs/trusted-delivery.md) | Immutable artifacts, verification, signing and admission |
+| [IAM model](docs/iam-model.md) · [Environment policies](docs/architecture/environment-policies.md) | Identities, permissions and target contracts |
+| [Operator runbook](docs/operator-runbook.md) | Deployment and operational procedures |
+| [Observability](docs/observability.md) · [Incident runbook](monitoring/online-shop/incident-runbook.md) | Signals, monitoring and recovery |
+| [Integration acceptance](docs/online-shop-acceptance.md) · [Roadmap](docs/roadmap.md) | Recorded results, limitations and future scope |
 
-Application call dependencies; cartservice and ephemeral Redis are highlighted as the
-controlled incident scope. Arrows show client-to-service calls, not a strict execution
-sequence. Only cartservice was scaled during the exercise; Redis was not stopped.
-No load generator, assistant or packaging backend is part of this SDP composition.
+## Platform capabilities
 
-See [Online Shop architecture](docs/architecture/online-shop.md) for the pinned runtime
-contract, observability diagram and editable diagram sources. Online Shop is adapted from
-[Google Online Boutique](https://github.com/GoogleCloudPlatform/microservices-demo) through
-[Application Modernization Lab](https://github.com/DimitryZH/application-modernization-lab).
+- **Immutable delivery:** pinned source revisions and image digests identify what is built and deployed; promotion reuses existing artifacts.
+- **Independent trust checks:** verification and a separate KMS-backed signer establish digest-bound attestations before deployment.
+- **Enforced admission:** Binary Authorization checks the required attestor before admitting application images.
+- **Controlled deployment:** Cloud Deploy orchestrates releases with protected source/render artifacts and explicit preflight checks.
+- **Infrastructure as code:** Terraform execution roots separate bootstrap, cloud foundation and Kubernetes state ownership.
+- **Operational visibility:** attributed traces, metrics and correlated logs connect application behavior to a workload release; scheduled checks and alerts support incident response.
 
 ## Trusted delivery
 
 ```mermaid
-flowchart LR
-    Source[Pinned source] --> Build[Cloud Build]
-    Build --> Registry[Immutable image digest]
-    Registry --> Verify[Independent verification]
-    Verify --> Sign[Separate signer and KMS]
-    Sign --> Deploy[Protected Cloud Deploy release]
-    Deploy --> Admission{Binary Authorization}
-    Admission -->|trusted| Runtime[Online Shop dev]
-    Admission -->|denied| Blocked[Admission blocked]
+flowchart TB
+    Source["Pinned source revision"] --> Build["Cloud Build: image build"]
+    Build --> Registry["Artifact Registry: immutable digest"]
+    Registry --> Verify["Independent verification"]
+    Verify --> Sign["Separate signer: Cloud KMS attestation"]
+    Sign --> Deploy["Cloud Deploy: protected release and render"]
+    Deploy --> Admission{"Binary Authorization"}
+    Admission -->|"Trusted digest"| GKE["GKE: target namespace"]
+    Admission -->|"Untrusted digest"| Blocked["Pod admission blocked"]
+    GKE --> Workload["Selected workload: Online Shop in dev"]
 ```
 
-Cloud Deploy consumes existing trusted artifacts; it does not rebuild on promotion.
-Preflight checks independently reviewed evidence for eligibility, not permission to execute.
-Every future action still requires fresh guards and its own authorization. Stage/prod Shop
-progression, canary and executed rollback remain future work.
+Build, verification, signing and deployment are distinct stages. Cloud Deploy consumes existing trusted artifacts; it does not rebuild them during promotion. Preflight establishes deployment eligibility, while action authorization and target approval remain separate controls.
 
-## Recorded delivery evidence
+## Delivery lifecycle foundation — v0.1.0
 
-![Cloud Deploy lists successful Online Shop rollouts to dev, including dev-edge-001](docs/images/online-shop/cloud-deploy-rollouts.png)
+The initial sample-service demonstrated the full **dev → stage → prod** controlled promotion path using the same verified and attested artifact, without rebuilding or replacing it.
 
-Recorded successful Online Shop rollouts include `shop-edge-66b636f-f8b585b4 / dev-edge-001`
-on November 15, 2026. Screenshot captured November 17, 2026; account controls/navigation
-were cropped from the publication copy. This is historical deployment evidence, not current
-runtime availability or a reliability statistic. The aggregate 0% failure panel is not an
-acceptance claim.
+![Historical sample-service controlled promotion across dev, stage and prod](docs/images/controlled-promotion/03-promotion-complete.png)
 
-Recorded checks cover a protected 45-resource render, exact-digest runtime, one bounded
-checkout with exact Redis-session cleanup, ten-service signals and six dashboard queries.
-See [consolidated acceptance](docs/online-shop-acceptance.md) and the
-[controlled incident record](monitoring/online-shop/incident-acceptance.md) for detection,
-operator-confirmed failure notification, bounded recovery and incident closure. Email evidence
-belongs with that record rather than a gallery in this README.
+This recorded execution established the platform's promotion workflow. The sample-service is now retired; the screenshot preserves historical delivery evidence and does not describe the current Online Shop topology.
 
-## Observability and accepted limits
+[Historical validation](docs/historical/sample-service/README.md) · [Retirement scope](docs/sample-service-retirement.md)
 
-OTLP traces/metrics and separately collected stdout logs retain service, environment, version
-and release attribution. Scheduled HTTPS/synthetic checks and alert policies support the
-recorded incident scenario. [Architecture](docs/architecture/online-shop.md#observability)
-and [monitoring procedures](monitoring/online-shop/README.md) describe the signal paths.
+## Microservices workload integration — v0.2.0
 
-- **429 verification deferred:** WAF SQLi/XSS 403 is confirmed, but neither the scoped throttle
-  mechanism nor the real 1200/60s/IP threshold has a confirmed 429 in this environment.
-- **Historical PromQL NO_DATA:** the original positive alert evaluation cannot be reconstructed
-  from retained samples. No data is not zero errors or a passed query.
-- Redis and Collector buffers are ephemeral. Recorded journeys and manual stop/resume do not
-  prove sustained reliability, HA, lossless export or cold recovery.
+**Online Shop** exercises the platform with ten application services, ephemeral Redis and a separately trusted OpenTelemetry Collector. The application is adapted from [Google Online Boutique](https://github.com/GoogleCloudPlatform/microservices-demo) through [Application Modernization Lab](https://github.com/DimitryZH/application-modernization-lab).
 
-A cold-recovery kit outside the GCP project and full cloud-resource removal are the
-[next unexecuted stage](docs/online-shop-acceptance.md#next-stage-cold-recovery-and-full-cloud-removal--not-performed).
-Neither is completed by a node pause or this documentation.
+Recorded integration covers trusted artifacts, a protected 45-resource deployment to **dev**, HTTPS with Cloud Armor WAF enforcement, a bounded checkout journey, ten-service telemetry and incident detection/recovery. Manual node stop/resume restored workload placement and Collector coverage automatically. Online Shop stage/prod progression remains future work.
+
+![Recorded successful Online Shop rollouts to dev in Cloud Deploy](docs/images/online-shop/cloud-deploy-rollouts.png)
+
+Cloud Deploy records successful Online Shop rollouts to dev. This evidence complements the earlier sample-service promotion path; it does not establish Online Shop promotion to stage or prod.
+
+[Service architecture and observability diagrams](docs/architecture/online-shop.md) · [Deployment guide](deploy/online-shop/complete-README.md) · [HTTPS endpoint](deploy/online-shop/endpoint-README.md) · [Incident and email evidence](monitoring/online-shop/incident-acceptance.md)
+
+## Scope and operating state
+
+Worker nodes are currently paused; screenshots and acceptance records describe completed executions rather than live availability. The platform is a portfolio implementation, with the following boundaries:
+
+
+- Historical incident PromQL reconstruction returned no data; this is not interpreted as zero errors.
+- Redis and Collector buffers are ephemeral. HA, sustained-load reliability and executed release rollback are not claimed.
+- Namespace routing is not strong IAM/RBAC isolation. Cold recovery and full cloud-resource removal are planned separately.
+
+See the [acceptance record](docs/online-shop-acceptance.md) for evidence and detailed limits.
 
 ## Repository structure
 
 | Area | Responsibility |
 | --- | --- |
-| `cloudbuild/` | Immutable builds, independent verification and separate signing |
-| `deploy/` | Release contracts, rendering, preflight and bounded acceptance |
-| `terraform/` | Infrastructure with isolated execution roots and explicit state ownership |
-| `monitoring/` | Collector, dashboard, synthetic checks, alerts and incident procedures |
-| `docs/` | Architecture, trust/access model, operating limits and recorded evidence |
-
-## Documentation
-
-- [Online Shop architecture](docs/architecture/online-shop.md)
-- [Architecture overview](docs/architecture/overview.md) and [release model](docs/architecture/release-model.md)
-- [Trusted delivery](docs/trusted-delivery.md) and [IAM model](docs/iam-model.md)
-- [Complete workload deployment](deploy/online-shop/complete-README.md) and [HTTPS endpoint](deploy/online-shop/endpoint-README.md)
-- [Operator runbook](docs/operator-runbook.md) and [environment policies](docs/architecture/environment-policies.md)
-- [Observability](docs/observability.md) and [incident runbook](monitoring/online-shop/incident-runbook.md)
-- [Acceptance checklist](docs/online-shop-acceptance.md), [draft release notes](docs/releases/v0.2.0.md) and [roadmap](docs/roadmap.md)
-- [Architecture diagrams](docs/diagrams/README.md)
-- [Historical controlled sample promotion](docs/trusted-delivery.md#controlled-promotion-validation)
-
-One project/cluster and retained namespaces keep the platform small; namespace routing is not
-strong IAM/RBAC isolation. Historical sample promotion is not proof of current Shop progression.
+| `cloudbuild/` | Image builds, verification and separate signing |
+| `deploy/` | Release contracts, rendering, preflight and deployment acceptance |
+| `terraform/` | Infrastructure and explicit state ownership |
+| `monitoring/` | Collector, dashboards, scheduled checks, alerts and incident procedures |
+| `docs/` | Architecture, access model, operations and recorded evidence |
