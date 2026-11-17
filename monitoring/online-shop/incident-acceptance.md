@@ -31,23 +31,29 @@ traces, screenshots, session material and operator details remain private.
 | Successful scheduled journey | 02:31:03.553570 | Execution `f10fe9da97381429054fecea40f8e8cc`: three GETs, HTTP 200 |
 | Frontend incident closed | 02:32:09 | Actual API readback |
 | Synthetic incident closed | 02:33:08 | Actual API readback after successful scheduled results |
-| Failure email received | **Exact receipt time unknown** | Operator confirmation and matching notification screenshot retained privately |
+| Firing/recovered emails received | **Exact receipt times unknown** | Operator-supplied matching notification screenshots; event times are not receipt times |
 
 The email screenshot's 02:27 UTC value is the alert start minute, **not** the receipt timestamp.
-Notification delivery is confirmed for the matching synthetic policy/check; no recovery-email
-claim is made. Delivery was an acceptance outcome, not a prerequisite for starting the exercise.
+The operator supplied matching firing and recovered emails for the same synthetic policy/check.
+Exact receipt times are unknown. Delivery was an acceptance outcome, not a prerequisite for
+starting the exercise.
 
-## Recorded synthetic email
+## Recorded synthetic firing and recovered emails
 
-<img src="../../docs/images/online-shop/synthetic-alert-firing.png" width="520" alt="Google Cloud synthetic alert firing for sdp-gcp, policy Online Shop dev synthetic failure or missing results, November 16 2026 at 02:27 UTC">
+| Alert firing | Alert recovered |
+| --- | --- |
+| <img src="../../docs/images/online-shop/synthetic-alert-firing.png" width="440" alt="Synthetic alert firing for sdp-gcp, Online Shop dev synthetic failure or missing results, check online-shop-dev-browse-journey-2o-9McY6QKo, November 16 2026 at 02:27 UTC"> | <img src="../../docs/images/online-shop/synthetic-alert-recovered.png" width="440" alt="Matching synthetic alert recovered for sdp-gcp, same policy and check, Uptime Monitoring closed, displayed duration 5 minutes 37 seconds"> |
 
-The publication crop removes mailbox/account controls while preserving the policy, project,
-check ID, firing status and alert start time. The operator confirmed receipt; the exact
-receipt time is unknown. The 02:27 UTC start minute is not the email receipt timestamp.
+Recorded synthetic firing and recovery notifications during the controlled cartservice outage
+on November 16, 2026. Both show project `sdp-gcp`, policy **Online Shop dev synthetic failure or
+missing results**, check `online-shop-dev-browse-journey-2o-9McY6QKo` and start 02:27 UTC.
+The recovered email displays **5 mins 37 secs**: this is the alert duration, not application
+outage duration or email delivery latency. The operator supplied the pair as receipt evidence;
+exact receipt times remain unknown. Alert event timestamps are not receipt timestamps.
 
-Only the firing notification receipt is evidenced here. Recovery is established by successful
-scheduled results and the incident API closure in the timeline; recovery-email delivery is
-not claimed. No frontend-warning email is used as synthetic recovery evidence.
+The supplied publication images contain no mailbox/account controls or recipient address.
+No email was reconstructed and no frontend-warning notification is substituted. Successful
+scheduled results and incident API closure remain independent recovery evidence in the timeline.
 
 ## Failure, recovery and cleanup evidence
 
@@ -87,7 +93,7 @@ traffic was generated to force a result. The later documentation review explicit
 that disposition does not turn this historical query check into a pass.
 
 This exercise does not prove continuous reliability, load/HA behavior, lossless export, Redis
-durability, recovery-email delivery or Armor enforcement. The one-injection authorization was
+durability, notification delivery guarantees or Armor enforcement. The one-injection authorization was
 consumed; another injection requires new authorization.
 
 ## Historical checkpoint and subsequent review

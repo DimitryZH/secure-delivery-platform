@@ -28,7 +28,8 @@ Logical signal paths, not every exporter, receiver or infrastructure component. 
 stdout logs are collected separately from OTLP traces/metrics. No Redis SERVER spans are
 claimed. Collector agents cover both worker nodes when running; the diagram does not imply
 current availability while nodes are paused. The firing/recovered email labels describe
-notification paths, not proof of receipt for both message types.
+notification paths; the incident record contains one matching operator-supplied email pair,
+not a notification-delivery guarantee.
 
 [SVG](../images/online-shop/observability.svg) ·
 [Graphviz source](observability.dot) · [Mermaid source](observability.mmd).
