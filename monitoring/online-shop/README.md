@@ -116,7 +116,8 @@ cartservice outage, synthetic and frontend incidents, operator-confirmed failure
 bounded recovery, successful scheduled results, closure and exact-session cleanup. Exact email
 receipt time is unknown. The historical frontend-alert PromQL range returned no data: it is
 not a successful query check or zero-error observation. Raw evidence remains private.
-The [recorded repeat stop/resume](../../docs/milestone-8-technical-review.md) subsequently passed.
-Armor enforcement and final documentation/release review remain open Milestone8 gates;
-this record does not close the milestone. See the [historical PromQL analysis](promql-incident-limit.md)
+The [recorded repeat stop/resume](../../docs/online-shop-acceptance.md) subsequently passed.
+WAF enforcement subsequently passed recorded acceptance. 429 verification is deferred and
+historical PromQL NO_DATA is an accepted limitation; final documentation/release review remains
+open. This record does not close the integration milestone. See the [historical PromQL analysis](promql-incident-limit.md)
 and [release-review follow-up](https://github.com/DimitryZH/secure-delivery-platform/issues/133).

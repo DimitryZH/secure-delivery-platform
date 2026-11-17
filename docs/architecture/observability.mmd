@@ -1,0 +1,22 @@
+flowchart TB
+    Apps["10 application services"]
+    MetricsCollector["Metrics / traces Collector"]
+    Agents["Collector agents: both nodes"]
+    Checks["Scheduled HTTPS / synthetic checks"]
+    Shop["Shop HTTPS endpoint"]
+    Trace["Cloud Trace"]
+    Monitoring["Cloud Monitoring"]
+    Logging["Cloud Logging"]
+    Policies["Alert policies"]
+    Email["Email: firing / recovered"]
+    Redis["Redis"]
+    Apps -->|"OTLP traces / metrics"| MetricsCollector
+    Redis -->|"Redis metrics"| MetricsCollector
+    Apps -->|"stdout logs"| Agents
+    MetricsCollector -->|"traces"| Trace
+    MetricsCollector -->|"metrics"| Monitoring
+    Agents -->|"logs"| Logging
+    Checks -->|"HTTPS requests"| Shop
+    Checks -->|"check results"| Monitoring
+    Monitoring -->|"conditions"| Policies
+    Policies -->|"firing / recovered"| Email

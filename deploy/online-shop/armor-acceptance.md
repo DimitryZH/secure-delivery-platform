@@ -1,10 +1,11 @@
 # Bounded Armor enforcement acceptance
 
-**Prepared, not executed.** Reuse the trusted Shop release and artifacts. This procedure does
-not authorize apply, temporary rules or traffic. The live policy still has WAF/rate preview;
-a desired enforcement input and a saved plan do not change that fact.
+**Recorded acceptance with 429 verification deferred.** The reviewed enforcement apply and
+bounded WAF checks completed; see [sanitized results](armor-validation.json) and the
+[consolidated review](../../docs/online-shop-acceptance.md). The sections below preserve the
+pre-apply findings and repeatable procedure; they do not authorize new traffic or mutations.
 
-## Read-only findings and apply gate
+## Historical pre-apply findings and repeatable apply gate
 
 The active frontend backend references `shop-dev-edge` with logging sample rate 1. Rules are:
 100 `deny(403)` probe; 1000 sensitivity-1 SQLi/XSS `deny(403)` in preview; 2000 IP throttle
@@ -92,7 +93,11 @@ errors, unexpected rule/action, identity mismatch or an operator stop request.
    normally unlogged request header was observed. Review the complete expression before create.
 4. After separate authorization, conditional full-policy PATCH includes the fresh fingerprint
    and current rules plus exactly this rule. Wait for operation success; read back exact scope.
-   An ambiguous response/412 requires read-only recovery, never blind recreation.
+   An ambiguous response/412 requires read-only recovery, never blind recreation. Operation
+   DONE and a correct policy readback do not prove edge match. Reserve a request inside the
+   existing15GET budget for an attributed1500/CONFORM readiness check; if it fails, stop before
+   the series and clean up. Wait a full60s counter window after a successful readiness request;
+   reduce the series budget to keep all GETs within15. Do not assume a fixed wait proves propagation.
 5. Send at most12markedGETs within60s; stop at first429 or unexpected status. Match429 to
    policy 1500, DENY and RATE_LIMIT_THRESHOLD_EXCEED with the exact IP key and request identity.
    A low threshold is not a guarantee of the fourth response: limits are
@@ -113,5 +118,6 @@ Only an attributed actual429 proves the mechanism. This test does **not** prove 
 priority 2000 threshold1200/60s: retain that result separately as NOT_CONFIRMED unless matching
 existing/live evidence proves it. No 1220-request series is included here.
 
-All requests/operations/cleanup remain pending. Review/publication of platform v0.2.0 is tracked
+The recorded enforcement/WAF observations and cleanup passed; 429 verification is deferred,
+not passed. No temporary rule remains in the recorded final readback. Review/publication of platform v0.2.0 is tracked
 separately in [#133](https://github.com/DimitryZH/secure-delivery-platform/issues/133), not performed here.

@@ -42,9 +42,9 @@ query replay is empty; it does not establish how the live alert evaluator handle
 observation. No evaluator implementation defect, export loss or precise streaming-versus-
 retrospective mechanism is claimed without additional evidence.
 
-## Explicit proposed disposition
+## Accepted bounded limitation
 
-Accept this as a bounded historical reconstruction limit **subject to final review**:
+The operator accepts this as a bounded historical reconstruction limit for documentation review:
 actual frontend incident OPEN 02:27:47/CLOSED 02:32:09, positive raw counter, native frontend
 HTTP 500/GetCart Unavailable, synthetic failure/email and subsequent successful recovery remain
 independent evidence. Do not label the historical query check passed or infer zero errors.
@@ -53,6 +53,5 @@ incident merely to obtain a chart. The six dashboard queries and the selected al
 unchanged. An additional failure requires its own justified scope/authorization.
 
 The unresolved part is reconstruction of the original positive live evaluation from the
-retained samples; it is not a missing-metric or healthy-zero observation. The proposed limit
-must be explicitly accepted or investigated in [release review#133](https://github.com/DimitryZH/secure-delivery-platform/issues/133).
-This document does not close Milestone 8 or publishv0.2.0.
+retained samples; it is not a missing-metric or healthy-zero observation. The limit remains explicitly recorded in [release review #133](https://github.com/DimitryZH/secure-delivery-platform/issues/133).
+This document does not close the integration milestone or publish v0.2.0.

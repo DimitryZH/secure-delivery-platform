@@ -1,0 +1,29 @@
+digraph G {
+graph [rankdir=TB, bgcolor="#ffffff", pad="0.5", nodesep="0.35", ranksep="0.8", fontname="DejaVu Sans", labelloc=t, label="Online Shop | Service Dependencies", fontsize=26, splines=polyline];
+node [shape=box, style="rounded,filled", fillcolor="#EFF6FF", color="#93B4D8", fontname="DejaVu Sans", fontsize=15, margin="0.18,0.13"];
+edge [color="#63758A", arrowsize=0.7];
+frontend [fillcolor="#DDEAFE", color="#2862A2", penwidth=2];
+checkoutservice [fillcolor="#E8E1FC",color="#8E77BF"];
+cartservice [fillcolor="#FFF0ED",color="#C14837",penwidth=2];
+Redis [shape=cylinder, label="Redis
+Ephemeral carts",fillcolor="#FFF0ED",color="#C14837"];
+subgraph cluster_cart {label="Controlled failure and recovery"; color="#EDB8AE"; style=rounded; fontname="DejaVu Sans"; fontsize=14; cartservice;Redis;}
+"frontend" -> "checkoutservice";
+"frontend" -> "recommendationservice";
+"frontend" -> "productcatalogservice";
+"frontend" -> "adservice";
+"frontend" -> "currencyservice";
+"frontend" -> "shippingservice";
+"frontend" -> "cartservice";
+"recommendationservice" -> "productcatalogservice";
+"checkoutservice" -> "productcatalogservice";
+"checkoutservice" -> "currencyservice";
+"checkoutservice" -> "shippingservice";
+"checkoutservice" -> "paymentservice";
+"checkoutservice" -> "emailservice";
+"checkoutservice" -> "cartservice";
+"cartservice" -> "Redis";
+{rank=same;cartservice;productcatalogservice;currencyservice;shippingservice;}
+{rank=same;paymentservice;emailservice;}
+productcatalogservice -> paymentservice [style=invis]; currencyservice -> emailservice [style=invis];
+}

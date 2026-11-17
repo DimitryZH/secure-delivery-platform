@@ -31,11 +31,34 @@ traces, screenshots, session material and operator details remain private.
 | Successful scheduled journey | 02:31:03.553570 | Execution `f10fe9da97381429054fecea40f8e8cc`: three GETs, HTTP 200 |
 | Frontend incident closed | 02:32:09 | Actual API readback |
 | Synthetic incident closed | 02:33:08 | Actual API readback after successful scheduled results |
-| Failure email received | **Exact receipt time unknown** | Operator confirmation and matching notification screenshot retained privately |
+| Firing email received | **02:27 (minute precision)** | Operator-reported mailbox time: Nov 15, 21:27 America/Montreal (EST, UTC-05:00) |
+| Recovered email received | **02:33 (minute precision)** | Operator-reported mailbox time: Nov 15, 21:33 America/Montreal (EST, UTC-05:00) |
 
 The email screenshot's 02:27 UTC value is the alert start minute, **not** the receipt timestamp.
-Notification delivery is confirmed for the matching synthetic policy/check; no recovery-email
-claim is made. Delivery was an acceptance outcome, not a prerequisite for starting the exercise.
+The operator supplied matching firing and recovered emails for the same synthetic policy/check.
+Mailbox receipt times were subsequently supplied by the operator: **2026-11-15 21:27 and
+21:33 America/Montreal (EST, UTC-05:00)**, equivalent to **2026-11-16 02:27 and 02:33 UTC**.
+The UTC timeline uses the latter. Mailbox display precision is one minute; seconds and exact
+delivery latency are unknown. The shared 02:27 minute does not make alert start and receipt
+the same event. Delivery was an acceptance outcome, not a prerequisite for starting the exercise.
+
+## Recorded synthetic firing and recovered emails
+
+| Alert firing | Alert recovered |
+| --- | --- |
+| <img src="../../docs/images/online-shop/synthetic-alert-firing.png" width="440" alt="Synthetic alert firing for sdp-gcp, Online Shop dev synthetic failure or missing results, check online-shop-dev-browse-journey-2o-9McY6QKo, November 16 2026 at 02:27 UTC"> | <img src="../../docs/images/online-shop/synthetic-alert-recovered.png" width="440" alt="Matching synthetic alert recovered for sdp-gcp, same policy and check, Uptime Monitoring closed, displayed duration 5 minutes 37 seconds"> |
+
+Recorded synthetic firing and recovery notifications during the controlled cartservice outage
+on November 16, 2026. Both show project `sdp-gcp`, policy **Online Shop dev synthetic failure or
+missing results**, check `online-shop-dev-browse-journey-2o-9McY6QKo` and start 02:27 UTC.
+The recovered email displays **5 mins 37 secs**: this is the alert duration, not application
+outage duration or email delivery latency. The operator supplied the pair and mailbox receipt
+minutes recorded above. Alert event timestamps and mailbox receipt times remain separate;
+no second-level receipt precision or exact delivery latency is inferred.
+
+The supplied publication images contain no mailbox/account controls or recipient address.
+No email was reconstructed and no frontend-warning notification is substituted. Successful
+scheduled results and incident API closure remain independent recovery evidence in the timeline.
 
 ## Failure, recovery and cleanup evidence
 
@@ -71,14 +94,14 @@ exact-session/forward cleanup.
 **no data** and did not reconstruct its positive evaluation. This is not zero errors and is not
 a successful PromQL check. The actual OPEN/CLOSED incident, positive raw counter and HTTP 500
 trace remain separate positive evidence. The query discrepancy's cause is unresolved; no extra
-traffic was generated to force a result. Final observability review must explicitly resolve or
-accept this bounded limitation before milestone release review.
+traffic was generated to force a result. The later documentation review explicitly accepts this bounded reconstruction limitation;
+that disposition does not turn this historical query check into a pass.
 
 This exercise does not prove continuous reliability, load/HA behavior, lossless export, Redis
-durability, recovery-email delivery or Armor enforcement. The one-injection authorization was
+durability, notification delivery guarantees or Armor enforcement. The one-injection authorization was
 consumed; another injection requires new authorization.
 
-## Milestone 8 remains in progress
+## Historical checkpoint and subsequent review
 
 The [roadmap](../../docs/roadmap.md#online-shop-integration) and
 [baseline gates](../../docs/platform-baseline-recovery.md) remain authoritative.
@@ -94,8 +117,10 @@ Governance/security extensions and canary/progression/rollback/load scenarios re
 roadmap milestones; they are not added to this incident's acceptance scope.
 
 
-Later checkpoint: [the repeated manual stop/resume passed recorded acceptance](../../docs/milestone-8-technical-review.md).
+Later checkpoint: [the repeated manual stop/resume passed recorded acceptance](../../docs/online-shop-acceptance.md).
 The [PromQL read-only analysis](promql-incident-limit.md) explains the retained constant-counter
 replay while preserving the unconfirmed historical positive evaluation. Final disposition and
 v0.2.0 publication remain in [#133](https://github.com/DimitryZH/secure-delivery-platform/issues/133);
-Armor enforcement is still pending. Earlier checkpoint statuses above are historical.
+WAF enforcement subsequently passed; 429 verification and historical PromQL reconstruction
+are explicitly accepted limitations in the [consolidated review](../../docs/online-shop-acceptance.md).
+Earlier checkpoint statuses above are historical.

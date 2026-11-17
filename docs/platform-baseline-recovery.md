@@ -131,7 +131,7 @@ passed failure/detection/operator-confirmed notification/recovery/closure and cl
 execution. Exact email receipt time is unknown. Its historical frontend-alert PromQL range
 returned no data and is not accepted as a passed query check.
 
-Milestone8 remains in progress. The [recorded repeated stop/resume](milestone-8-technical-review.md)
+Milestone8 remains in progress. The [recorded repeated stop/resume](online-shop-acceptance.md)
 passed with permanent selectors, Collector coverage and monitoring maintenance handling.
 Active-environment Armor enforcement and final documentation/evidence/v0.2.0 release review
 remain pending in [#133](https://github.com/DimitryZH/secure-delivery-platform/issues/133). Resolve or explicitly accept the recorded query limit in that final review. These

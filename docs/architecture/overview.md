@@ -1,5 +1,8 @@
 # Architecture Overview
 
+See [Online Shop diagrams and pinned runtime contract](online-shop.md) for application
+dependencies and logical telemetry paths.
+
 ## Component responsibilities
 
 One project, one GKE cluster and three retained namespaces support the active Online Shop workload in dev. Sample-service is retired and has no recovery or preservation requirement. Terraform manages infrastructure rather than orchestrating releases.
