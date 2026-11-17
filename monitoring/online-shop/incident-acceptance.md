@@ -37,6 +37,18 @@ The email screenshot's 02:27 UTC value is the alert start minute, **not** the re
 Notification delivery is confirmed for the matching synthetic policy/check; no recovery-email
 claim is made. Delivery was an acceptance outcome, not a prerequisite for starting the exercise.
 
+## Recorded synthetic email
+
+<img src="../../docs/images/online-shop/synthetic-alert-firing.png" width="520" alt="Google Cloud synthetic alert firing for sdp-gcp, policy Online Shop dev synthetic failure or missing results, November 16 2026 at 02:27 UTC">
+
+The publication crop removes mailbox/account controls while preserving the policy, project,
+check ID, firing status and alert start time. The operator confirmed receipt; the exact
+receipt time is unknown. The 02:27 UTC start minute is not the email receipt timestamp.
+
+Only the firing notification receipt is evidenced here. Recovery is established by successful
+scheduled results and the incident API closure in the timeline; recovery-email delivery is
+not claimed. No frontend-warning email is used as synthetic recovery evidence.
+
 ## Failure, recovery and cleanup evidence
 
 The failed trace contains frontend `CartService/GetCart` CLIENT error `Unavailable`, followed

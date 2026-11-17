@@ -2,6 +2,12 @@
 
 Visual summaries of [Architecture Overview](../architecture/overview.md), [Release Model](../architecture/release-model.md), [Environment Policies](../architecture/environment-policies.md), and [IAM Model](../iam-model.md), without redefining contracts.
 
+## Online Shop
+
+[Service dependencies and observability](../architecture/online-shop.md) include PNG/SVG
+exports and editable Graphviz/Mermaid sources, pinned to the reviewed runtime contract.
+These are logical diagrams, not live availability evidence.
+
 ## Trusted delivery
 
 ```mermaid

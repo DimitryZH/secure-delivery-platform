@@ -1,0 +1,26 @@
+digraph G {
+graph [rankdir=TB, bgcolor="#ffffff", pad="0.5", nodesep="0.55", ranksep="0.7", fontname="DejaVu Sans", labelloc=t, label="Online Shop | Observability and Alerting", fontsize=26];
+node [shape=box,style="rounded,filled",fillcolor="#EFF6FF",color="#93B4D8",fontname="DejaVu Sans",fontsize=15,margin="0.18,0.13"];
+edge [color="#63758A",fontcolor="#536276",fontname="DejaVu Sans",fontsize=11,arrowsize=0.7];
+Apps [label="10 application services"];
+Redis [shape=cylinder,label="Redis"];
+MetricsCollector [label="Metrics / traces Collector",fillcolor="#E8E1FC"];
+Agents [label="Collector agents
+Both worker nodes",fillcolor="#E8E1FC"];
+Trace [label="Cloud Trace"]; Monitoring [label="Cloud Monitoring"]; Logging [label="Cloud Logging"];
+Checks [label="Scheduled HTTPS / synthetic checks"];
+Shop [label="Shop HTTPS endpoint"];
+Policies [label="Alert policies"];
+Email [label="Email notifications
+Firing / recovered",fillcolor="#E6F4EA",color="#68A379"];
+Apps -> MetricsCollector [label="OTLP traces / metrics"];
+Redis -> MetricsCollector [label="Redis metrics"];
+Apps -> Agents [label="stdout logs"];
+MetricsCollector -> Trace [label="traces"];
+MetricsCollector -> Monitoring [label="metrics"];
+Agents -> Logging [label="logs"];
+Checks -> Shop [label="HTTPS requests"];
+Checks -> Monitoring [label="check results"];
+Monitoring -> Policies [label="conditions"];
+Policies -> Email [label="firing / recovered"];
+}

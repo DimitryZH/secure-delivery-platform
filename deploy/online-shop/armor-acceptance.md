@@ -97,10 +97,6 @@ errors, unexpected rule/action, identity mismatch or an operator stop request.
    DONE and a correct policy readback do not prove edge match. Reserve a request inside the
    existing15GET budget for an attributed1500/CONFORM readiness check; if it fails, stop before
    the series and clean up. Wait a full60s counter window after a successful readiness request;
-   reduce the series budget to keep all GETs within15. Do not assume a fixed wait proves propagation. Operation
-   DONE and a correct policy readback do not prove edge match. Reserve a request inside the
-   existing15GET budget for an attributed1500/CONFORM readiness check; if it fails, stop before
-   the series and clean up. Wait a full60s counter window after a successful readiness request;
    reduce the series budget to keep all GETs within15. Do not assume a fixed wait proves propagation.
 5. Send at most12markedGETs within60s; stop at first429 or unexpected status. Match429 to
    policy 1500, DENY and RATE_LIMIT_THRESHOLD_EXCEED with the exact IP key and request identity.
