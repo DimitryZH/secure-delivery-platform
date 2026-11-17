@@ -36,7 +36,7 @@ not a notification-delivery guarantee.
 See [monitoring](../../monitoring/online-shop/README.md),
 [scheduled correlation](../../monitoring/online-shop/scheduled-correlation.md) and
 [incident acceptance](../../monitoring/online-shop/incident-acceptance.md) for native correlation,
-notification evidence and the unknown exact email receipt time.
+notification evidence and UTC-normalized mailbox receipt minutes (seconds unknown).
 
 ## Evidence boundaries
 

@@ -31,12 +31,16 @@ traces, screenshots, session material and operator details remain private.
 | Successful scheduled journey | 02:31:03.553570 | Execution `f10fe9da97381429054fecea40f8e8cc`: three GETs, HTTP 200 |
 | Frontend incident closed | 02:32:09 | Actual API readback |
 | Synthetic incident closed | 02:33:08 | Actual API readback after successful scheduled results |
-| Firing/recovered emails received | **Exact receipt times unknown** | Operator-supplied matching notification screenshots; event times are not receipt times |
+| Firing email received | **02:27 (minute precision)** | Operator-reported mailbox time: Nov 15, 21:27 America/Montreal (EST, UTC-05:00) |
+| Recovered email received | **02:33 (minute precision)** | Operator-reported mailbox time: Nov 15, 21:33 America/Montreal (EST, UTC-05:00) |
 
 The email screenshot's 02:27 UTC value is the alert start minute, **not** the receipt timestamp.
 The operator supplied matching firing and recovered emails for the same synthetic policy/check.
-Exact receipt times are unknown. Delivery was an acceptance outcome, not a prerequisite for
-starting the exercise.
+Mailbox receipt times were subsequently supplied by the operator: **2026-11-15 21:27 and
+21:33 America/Montreal (EST, UTC-05:00)**, equivalent to **2026-11-16 02:27 and 02:33 UTC**.
+The UTC timeline uses the latter. Mailbox display precision is one minute; seconds and exact
+delivery latency are unknown. The shared 02:27 minute does not make alert start and receipt
+the same event. Delivery was an acceptance outcome, not a prerequisite for starting the exercise.
 
 ## Recorded synthetic firing and recovered emails
 
@@ -48,8 +52,9 @@ Recorded synthetic firing and recovery notifications during the controlled carts
 on November 16, 2026. Both show project `sdp-gcp`, policy **Online Shop dev synthetic failure or
 missing results**, check `online-shop-dev-browse-journey-2o-9McY6QKo` and start 02:27 UTC.
 The recovered email displays **5 mins 37 secs**: this is the alert duration, not application
-outage duration or email delivery latency. The operator supplied the pair as receipt evidence;
-exact receipt times remain unknown. Alert event timestamps are not receipt timestamps.
+outage duration or email delivery latency. The operator supplied the pair and mailbox receipt
+minutes recorded above. Alert event timestamps and mailbox receipt times remain separate;
+no second-level receipt precision or exact delivery latency is inferred.
 
 The supplied publication images contain no mailbox/account controls or recipient address.
 No email was reconstructed and no frontend-warning notification is substituted. Successful
