@@ -10,14 +10,69 @@ Use the [isolated foundation procedure](../terraform/foundation/README.md),
 [manual capacity procedure](gke-pause-resume.md). Environment IDs, operator details,
 exact commands, raw plans and operational results belong in ignored private files.
 
+## Minimal retained-project path
+
+For the current scoped teardown, use the existing local kit. Do not create another
+copy or encrypt it as part of this task. An independent copy is an optional operator
+choice, not an execution gate for this approved scope. Accept the single-workstation
+loss risk explicitly. Do not repeat general tests, full-project asset discovery or
+checks of organization, billing, parent DNS and unrelated/default networking.
+
+The minimum sequence is controller cleanup, Kubernetes-root destroy,
+foundation-root destroy, and bootstrap-root destroy **last**. Preparation does not
+authorize any of them. Generate a fresh full destroy plan immediately before each
+approved phase, using existing isolation/freshness/execution guards and normal locking.
+Review and apply that exact saved binary once; never replay a kit's old plan.
+
+Before execution, review these narrow exceptions:
+
+- Retain the project, human administrative bindings, organization, billing account,
+  main domain/parent DNS, default/shared network and Google-managed service agents.
+  APIs remain enabled under the existing `disable_on_destroy=false` declarations.
+- Retain the existing KMS ring, signing key and enabled key version for this minimal
+  same-project recovery path. This leaves the signing-version cost but avoids changing
+  the pinned authority, destroying version 1 or requiring a new trust profile.
+  Before foundation destruction, explicitly approve forgetting **only** the two
+  retained `google_kms_key_ring.attestation` and `google_kms_crypto_key.attestation`
+  state bindings with `terraform state rm`. This is intentional retention, not a
+  way to delete a protected object. Do not run a normal apply after forgetting them;
+  reimport both survivors before any future normal foundation plan. The full destroy
+  plan must contain no action on the retained key/ring or key version. IAM grants
+  for retired machine signers may be removed while the key itself remains.
+- Remove `prevent_destroy` only for the cluster and two pools before the foundation
+  phase, and for the backend bucket only at the final bootstrap phase. Keep the KMS
+  protection. Prepare these edits for review; do not alter canonical protections
+  merely to produce an unblocked preview.
+- Delete HTTPRoutes/Gateway and the frontend Service through Kubernetes first.
+  Wait for the exact controller-owned load balancer/NEG/firewall resources to vanish
+  while the cluster exists; never force-remove finalizers or resume workers silently.
+- Release only the inventoried held object generations; empty the SDP source/render
+  buckets including noncurrent objects after retention permits deletion. Do not enable
+  `force_destroy` or weaken bucket retention/soft-delete policies. Empty and remove
+  the backend only after both other roots have finished and no lock/operation remains.
+- Cloud Deploy pipeline deletion may cascade to its archived releases through the
+  locked provider. Name that cascade in the reviewed scope and ensure no active work;
+  otherwise stop. Connection/repository/OAuth-secret and service-created source-bucket
+  cleanup are explicit non-Terraform exceptions, restricted to recorded SDP IDs.
+
+The short private command sheet must list those IDs, the four protection edits,
+the two retained KMS state bindings, and the existing kit path. No project deletion,
+blanket IAM cleanup, full-project scan or new environment profile is needed for this
+retained-project path. Cold recovery uses the saved source/inputs, fresh backend
+state for deleted resources, reimports the two retained KMS resources, imports the
+unchanged image graph, and reestablishes saved attestations before a separately
+authorized deployment. The longer sections below describe broader alternatives;
+they are not additional gates on this minimal path.
+
 ## Recovery kit and offline checks
 
 Store the kit outside the project that will be retired: a local private directory
 or independently controlled storage with no dependency on that project's IAM,
 KMS, registry or billing. Local storage outside GCP satisfies the location boundary;
-it is not an independently tested off-site backup. Before deletion, make and verify
-a second encrypted copy on an independent medium. Preserve its decryption/recovery
-material outside the project and outside the encrypted archive itself.
+it is not an independently tested off-site backup. For a broader disaster-recovery
+scope, an operator can separately choose an encrypted independent copy and keep its
+decryption material outside the archive. The minimal retained-project path above
+explicitly uses the existing local kit without new copies or encryption.
 
 Restrict access before collecting files. Raw Terraform state and inputs are secrets;
 state can include short-lived provider tokens even when no credential file was
@@ -154,8 +209,8 @@ expected part of cold recovery, with separate authorization for those mutations.
 
 ## Ordered teardown proposal
 
-Before deletion, require published-release identity, verified independent recovery
-copies, a reviewed complete inventory, a reviewed exact deletion allowlist and fresh
+For the broader retirement alternative, require published-release identity, the
+chosen recovery-copy policy, a reviewed inventory, an exact deletion allowlist and fresh
 plans. Recheck operator/organization/billing/domain preservation at every phase.
 The private deletion ledger must give actual resource IDs, state addresses, owners,
 dependencies, retention/hold status and readback criteria. API pagination must be
