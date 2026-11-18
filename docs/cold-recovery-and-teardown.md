@@ -39,10 +39,10 @@ Before execution, review these narrow exceptions:
   reimport both survivors before any future normal foundation plan. The full destroy
   plan must contain no action on the retained key/ring or key version. IAM grants
   for retired machine signers may be removed while the key itself remains.
-- Remove `prevent_destroy` only for the cluster and two pools before the foundation
-  phase, and for the backend bucket only at the final bootstrap phase. Keep the KMS
-  protection. Prepare these edits for review; do not alter canonical protections
-  merely to produce an unblocked preview.
+- After explicit teardown approval, remove `prevent_destroy` only for the cluster and
+  two pools before the foundation phase, and for the backend bucket only at the final
+  bootstrap phase. Keep the KMS protection. This is a source-level gate; a fresh,
+  complete plan remains required before any apply.
 - Delete HTTPRoutes/Gateway and the frontend Service through Kubernetes first.
   Wait for the exact controller-owned load balancer/NEG/firewall resources to vanish
   while the cluster exists; never force-remove finalizers or resume workers silently.
