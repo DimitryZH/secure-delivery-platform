@@ -30,7 +30,7 @@ resource "google_container_cluster" "platform" {
   }
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
     precondition {
       condition = !var.gke_create_separate_default_pool || (
         var.gke_initial_node_count == 1 &&
@@ -70,7 +70,7 @@ resource "google_container_node_pool" "existing_default" {
   }
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
     precondition {
       condition     = var.gke_create_separate_default_pool ? var.gke_capacity_mode != null : var.gke_capacity_mode != "paused"
       error_message = "Separate-pool roots require explicit gke_capacity_mode in private inputs; paused is unsupported for historical default-pool adoption."
