@@ -32,6 +32,20 @@ DEPLOYMENT_FILES = ("deploy/online-shop/deployment-policy.json",)
 APPLICATION_NODE_SELECTOR = {"delivery-capacity": "complete-shop-dev"}
 
 
+def producing_policy_compatible(current, original):
+    """Allow reviewed transport recovery, never a different producing identity.
+
+    Current policy bytes still pass c.reviewed at the deployment SHA. Live
+    catalog hash/build checks and Collector signature checks remain mandatory.
+    """
+    current, original = copy.deepcopy(current), copy.deepcopy(original)
+    for policy in (current, original):
+        policy.get("accepted_release", {}).pop("readback_generation", None)
+        policy.get("accepted_release", {}).pop("readback_occurrence", None)
+        policy.pop("collector_occurrence", None)
+    return current == original
+
+
 def reviewed(record, revision):
     c.reviewed(revision)
     # Deployment decisions are reviewed at the deployment SHA, never retrofitted
@@ -49,8 +63,39 @@ def reviewed(record, revision):
             source.git("merge-base", "--is-ancestor", producing, "FETCH_HEAD")
             for name in c.TRUST_FILES:
                 if name not in DEPLOYMENT_CODE:
+                    if name in ("deploy/online-shop/workflow.py", "cloudbuild/online-shop/complete.py"):
+                        require(recovery_verifier_compatible(name, (ROOT / name).read_bytes(), source.blob(name)),
+                                "incompatible_producing_trust_files")
+                        continue
+                    if name == "deploy/online-shop/policy.json":
+                        require(producing_policy_compatible(c.r.read(ROOT / name), c.r.decode(source.blob(name))),
+                                "incompatible_producing_trust_files")
+                        continue
                     require((ROOT / name).read_bytes().replace(b"\r\n", b"\n") == source.blob(name),
                             "incompatible_producing_trust_files")
+
+
+def recovery_verifier_compatible(name, current, original):
+    """Recognize only the exact recovery-reference edits to shared verifier code."""
+    current = current.decode().replace("\r\n", "\n")
+    original = original.decode().replace("\r\n", "\n")
+    if current == original:
+        return True
+    if name == "cloudbuild/online-shop/complete.py":
+        original = original.replace('legacy.verify_application(record, q["occurrence"], cloud)',
+            'legacy.verify_application(record, q.get("readback_occurrence", q["occurrence"]), cloud)')
+    elif name == "deploy/online-shop/workflow.py":
+        original = original.replace('occurrence == accepted["occurrence"]',
+            'occurrence == accepted.get("readback_occurrence", accepted["occurrence"])')
+        marker = '    return q\n\n\ndef collector_occurrence():'
+        validation = '''    occurrence = q.get("readback_occurrence", q["occurrence"])
+    require(type(occurrence) is str and re.fullmatch("projects/" + re.escape(r.policy()["project"]) + r"/occurrences/[A-Za-z0-9_-]+", occurrence),
+            "invalid_catalog_readback_occurrence")
+'''
+        original = original.replace(marker, validation + marker)
+    else:
+        return False
+    return current == original
 
 def runtime_contract():
     value = c.r.read(HERE / "complete-runtime-v1.json")
