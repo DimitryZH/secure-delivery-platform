@@ -197,7 +197,7 @@ def catalog_candidate(cloud):
     q = legacy.accepted_catalog()
     raw = legacy.catalog_bytes(cloud)
     record = r.decode(raw)
-    legacy.verify_application(record, q["occurrence"], cloud)
+    legacy.verify_application(record, q.get("readback_occurrence", q["occurrence"]), cloud)
     return record
 
 def observe_candidate(revision, build_ids, value, refs, cloud):

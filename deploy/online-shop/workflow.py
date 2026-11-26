@@ -52,6 +52,9 @@ def accepted_catalog():
     require(type(q.get("occurrence")) is str and re.fullmatch("projects/" + re.escape(r.policy()["project"]) + r"/occurrences/[A-Za-z0-9_-]+", q["occurrence"]), "accepted_catalog_occurrence_mismatch")
     generation = q.get("readback_generation", q["candidate_generation"])
     require(type(generation) is str and re.fullmatch(r"[1-9][0-9]*", generation), "invalid_catalog_readback_generation")
+    occurrence = q.get("readback_occurrence", q["occurrence"])
+    require(type(occurrence) is str and re.fullmatch("projects/" + re.escape(r.policy()["project"]) + r"/occurrences/[A-Za-z0-9_-]+", occurrence),
+            "invalid_catalog_readback_occurrence")
     return q
 
 
@@ -128,7 +131,7 @@ def trust(cloud, artifact, occurrence):
 
 def verify_application(record, occurrence, cloud):
     accepted = accepted_catalog()
-    require(occurrence == accepted["occurrence"], "unaccepted_catalog_occurrence")
+    require(occurrence == accepted.get("readback_occurrence", accepted["occurrence"]), "unaccepted_catalog_occurrence")
     with r.fetched(r.AML, r.REVISION) as source:
         plan = source.plan()
         ref = r.plan_reference(source, plan)

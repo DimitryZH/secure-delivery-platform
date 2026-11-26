@@ -11,6 +11,8 @@
     "manifest_digest": "sha256:5cc30b0c5b560356539ca1f0aa3e080ab88de74fb21d3f2700cb599c43a0a646",
     "signing_build_id": "0325b6fd-dd40-48ce-ac94-7a2a0783d028",
     "candidate_generation": "1794752722454652",
+    "readback_generation": "1795710838311591",
+    "readback_occurrence": "projects/sdp-gcp/occurrences/1c8d888b-6d11-4dbe-82f6-2194f77e8d68",
     "candidate_transport_sha256": "sha256:3b7f24eadaa35e12077fc262e48811025d271683676e39f37e2b1c249d30b41c",
     "occurrence": "projects/sdp-gcp/occurrences/9976df80-2079-40e3-8c18-46ff89b66e4b"
   },
@@ -26,5 +28,5 @@
     "certificate_oidc_issuer": "https://token.actions.githubusercontent.com"
   },
   "binding": "sdp-dev-v1",
-  "collector_occurrence": "projects/sdp-gcp/occurrences/9a8dedba-fd25-467a-b90f-4d6069bc41d0"
+  "collector_occurrence": "projects/sdp-gcp/occurrences/1d3e5f04-4d2e-47ef-a41d-7f9b18af2388"
 }

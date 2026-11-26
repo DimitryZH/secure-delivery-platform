@@ -29,6 +29,35 @@ REV='d'*40
 RESOURCE='projects/'+c.r.policy()['project']+'/locations/us-central1/deliveryPipelines/catalog-dev/releases/complete-review-1'
 CONTEXT={'release_resource':RESOURCE,'target_resource':'projects/'+c.r.policy()['project']+'/locations/us-central1/targets/dev'}
 
+class RecoveryBindingCompatibilityTests(unittest.TestCase):
+    def test_only_transport_and_collector_reference_can_change(self):
+        original = w.c.r.read(ROOT/'deploy/online-shop/policy.json')
+        recovered = copy.deepcopy(original)
+        recovered['accepted_release']['readback_generation'] = '123456'
+        recovered['accepted_release']['readback_occurrence'] = 'projects/fixture/occurrences/recovered'
+        recovered['collector_occurrence'] = 'projects/fixture/occurrences/recovered'
+        self.assertTrue(w.producing_policy_compatible(recovered, original))
+        self.assertNotEqual(recovered, original)
+        for field in ('candidate_generation', 'candidate_transport_sha256', 'configuration_revision',
+                      'build_id', 'manifest_digest', 'release_set_id', 'occurrence'):
+            changed = copy.deepcopy(recovered)
+            changed['accepted_release'][field] = 'changed'
+            with self.subTest(field=field):
+                self.assertFalse(w.producing_policy_compatible(changed, original))
+        changed = copy.deepcopy(recovered)
+        changed['collector']['manifest_digest'] = 'changed'
+        self.assertFalse(w.producing_policy_compatible(changed, original))
+        changed = copy.deepcopy(recovered)
+        changed['unknown_recovery_override'] = True
+        self.assertFalse(w.producing_policy_compatible(changed, original))
+
+    def test_shared_verifier_exception_rejects_other_code_changes(self):
+        for name in ('deploy/online-shop/workflow.py', 'cloudbuild/online-shop/complete.py'):
+            original = subprocess.check_output(['git', 'show', '66b636f074ac9270a5b2617d27d3261ce0ec1872:' + name], cwd=ROOT)
+            current = (ROOT/name).read_bytes()
+            self.assertTrue(w.recovery_verifier_compatible(name, current, original))
+            self.assertFalse(w.recovery_verifier_compatible(name, current + b'\n# unrelated change\n', original))
+
 class CleanupScopeTests(unittest.TestCase):
     def test_scope_uses_approved_environment_without_historical_project_literal(self):
         environment={"project":"fixture-project","location":"us-central1-a","cluster":"secure-delivery-platform"}
