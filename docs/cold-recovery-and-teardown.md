@@ -132,7 +132,8 @@ external access and end-to-end recoverability remain unproven.
 
 ## Restore in the same retained project
 
-1. Verify the independent kit copy and manifest anchor before authenticating.
+1. Verify the existing local kit and manifest anchor before authenticating. The minimal
+   restore path requires no additional copy or encryption.
    Reestablish the human operator through the existing organization and billing
    administrators/MFA recovery, then check project identity and billing linkage.
    Preserve their administrative assignments; do not replace authoritative IAM
@@ -218,7 +219,7 @@ complete. A disabled inventory API is a recorded gap, not proof of absence.
 
 | Phase | Proposed work and gate |
 | --- | --- |
-| 0 | Freeze release/build/deploy work; verify paused pools, no active operations, kit completeness, independent copy, access recovery and exact deletion scope. |
+| 0 | Freeze release/build/deploy work; verify paused pools, no active operations, existing local kit completeness, access recovery and exact deletion scope. |
 | 1 | Separately authorize removal of application checks/alerts and the synthetic function/its service resources. A maintenance snooze does not stop checks or their costs. Do not turn expected pause failures into healthy evidence. |
 | 2 | Remove application HTTPRoutes/Gateway and relevant policies/Services through the Kubernetes owner while the cluster and required identities still exist. Wait for controller cleanup of forwarding rules, proxies, URL maps, backend services, health checks, NEGs and related firewall rules. Inventory resources by identity/ownership, not a broad name-prefix deletion. |
 | 3 | Reconcile finalizers and inspect controller logs/status without forced finalizer removal. If paused capacity prevents reconciliation, stop: a temporary resume requires a separate decision. Only after exact owned load-balancer resources are gone may namespaces and cluster be retired. |
@@ -228,7 +229,7 @@ complete. A disabled inventory API is a recorded gap, not proof of absence.
 | 7 | Remove archived registry images, occurrences/notes/attestors, project-owned machine IAM/accounts and custom roles. Preserve human project/organization/billing administrative bindings. Deleting an impersonation grant on a retired machine identity must be distinguished from changing human administrative rights. Remove only project-owned secrets/connection resources. |
 | 8 | Release only reviewed object generations' holds, wait for retention expiration, then empty all live/noncurrent objects and owned source/render buckets. Check soft-deleted versions and remaining retention/costs; never set force_destroy as a shortcut. Locked retention cannot be shortened. Include service-created source buckets/repositories outside Terraform. |
 | 9 | After signature/access evidence is safe, separately review KMS version destruction and its waiting period. Key rings/crypto-key containers are not ordinary deletable resources. A provider state removal is not proof that their API resources disappeared. |
-| 10 | Pull final states/checksums and operation results to independent storage. Delete the backend bucket **last**, after all other roots, pending operations, holds/retention and post-teardown reconciliation are complete. Bootstrap state is local; preserve it outside the bucket. Review its prevent_destroy separately. |
+| 10 | Record operation results privately using the existing local kit as the recovery source; no additional copy is required for the minimal path. Delete the backend bucket **last**, after all other roots, pending operations, holds/retention and post-teardown reconciliation are complete. Bootstrap state is local; preserve it outside the bucket. Review its prevent_destroy separately. |
 | 11 | Audit residual resources/costs with service APIs and an approved complete asset inventory. Existing declarations intentionally use disable_on_destroy=false, so enabled APIs can remain. Preserve operator, organization, billing account and parent domain. |
 
 Fresh destroy previews must use the normal isolated guard, refresh and locking. Never

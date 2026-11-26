@@ -32,7 +32,7 @@ resource "google_container_node_pool" "complete_shop" {
   }
 
   lifecycle {
-    prevent_destroy = false
+    prevent_destroy = true
   }
 }
 
