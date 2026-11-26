@@ -2,7 +2,7 @@
 # Cloud Build IAM is project-scoped; do not grant list, create, update or cancel.
 resource "google_project_iam_custom_role" "catalog_build_evidence_reader" {
   project     = var.project_id
-  role_id     = "catalogBuildEvidenceReader"
+  role_id     = "catalogBuildEvidenceReaderV2"
   title       = "Read catalog build evidence"
   description = "Read producing Cloud Build executions for independent catalog release verification."
   permissions = [

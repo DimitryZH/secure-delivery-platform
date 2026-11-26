@@ -99,7 +99,7 @@ resource "google_container_analysis_note_iam_member" "attestation_inspector" {
 # Creation and inspection only; no occurrence update/delete or note management.
 resource "google_project_iam_custom_role" "attestation_occurrences" {
   project = var.project_id
-  role_id = "attestationOccurrences"
+  role_id = "attestationOccurrencesV2"
   title   = "Create and inspect release attestations"
   permissions = [
     "containeranalysis.occurrences.create",
