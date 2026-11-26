@@ -101,7 +101,11 @@ load scenarios remain in milestones9–10. No platform tag or milestone closure 
 - [ ] Prepare and validate a cold-recovery kit outside the GCP project.
 - [ ] Separately review and authorize complete cloud-resource removal after that recovery gate.
 
-## Next stage: cold recovery and full cloud removal — not performed
+## Historical next-stage proposal at v0.2.0
+
+The proposal below records the state at release preparation. The subsequent
+retained-project teardown and successful cold recovery are documented in
+[the verified recovery result](cold-recovery-and-teardown.md#verified-retained-project-recovery).
 
 Prepare an independently accessible, integrity-checked kit outside the project: source/pins,
 provider locks, environment/backend reconstruction instructions, protected Terraform state

@@ -254,6 +254,27 @@ rights. Resolve this explicitly at review. A later rebuild then uses a **new** p
 project undelete windows are not the recovery strategy. Do not unlink billing or delete
 the organization, billing account, registrar account or main domain.
 
+## Verified retained-project recovery
+
+The retained-project cold recovery was completed on 26 November 2026 for #138.
+The backend and foundation were rebuilt with fresh state, retained KMS resources
+were imported, and all 24 archived images were restored with their original
+digests and complete layer graphs. Original signatures were verified and their
+current-note associations restored without application rebuilds or new signing.
+
+A protected 45-resource release passed READY preflight and one dev rollout
+succeeded. Runtime acceptance confirmed 14 Ready Pods and Collector coverage on
+both nodes. HTTPS and one checkout with scoped Redis cleanup passed. Scheduled
+HTTPS/synthetic executions and fresh telemetry were confirmed after monitoring
+was enabled; the final full foundation plan reported **No changes**.
+
+Recovery required reviewed IAM role-ID and evidence-reference updates, manual DNS
+delegation and GitHub OAuth authorization, and removal of temporary setup grants.
+This is a verified manually operated recovery, not a fully automated restore or a
+guarantee of future capacity or recovery time. Exact commands, identities, plans
+and evidence remain in the private sequential operator runbook. No incident
+exercise was repeated as part of this recovery.
+
 ## Review outcome
 
 The private report states what was actually saved and verified, exact kit location and
