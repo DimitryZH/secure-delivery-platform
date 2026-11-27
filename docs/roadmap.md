@@ -1,54 +1,39 @@
 # Roadmap
 
-Online Shop is the active workload. Sample-service is retired with no restoration planned; earlier sample validation and preservation observations are historical only.
-
 ## Roadmap principle
 
-The Secure Delivery Platform is organized around a trusted software delivery path.
+Secure Delivery Platform provides a trusted software delivery path: immutable artifacts, independent verification, separate signing, enforced admission, controlled promotion and verified rollback. Google Cloud services support these outcomes within a focused, cost-aware learning platform.
 
-The implementation sequence follows the release trust model: define release identity and trust boundaries, establish the executable foundation, enforce deployment trust, introduce controlled promotion, connect runtime evidence to release decisions, and turn those decisions into executable platform controls. After the core MVP, integrate Online Shop as a representative workload, strengthen platform governance and security, then validate controlled updates, recovery and resource efficiency.
-
-Google Cloud services are implementation tools for these outcomes. Each addition has a bounded operational scenario, an explicit owner and acceptance evidence. The platform remains focused on secure delivery rather than becoming a generic CI/CD framework, Terraform framework or broad SRE platform.
-
----
+The core delivery foundation and Microservices Workload Integration are complete. The remaining plan covers infrastructure lifecycle and recovery alongside trusted release promotion and rollback. The final delivery milestone produces platform v0.3.0.
 
 ## Current implementation and validation boundaries
 
-This roadmap describes sequence and scope, not proof that every scenario below has been executed. Canonical procedures and limits remain in [Trusted Delivery](trusted-delivery.md), [Observability](observability.md), [Operator Runbook](operator-runbook.md), and the [complete workload integration](../deploy/online-shop/complete-README.md).
+- The core MVP delivered trusted release contracts, executable build/verification/signing, admission, historical sample-service dev → stage → prod promotion, operational visibility and fail-closed release controls. [Platform v0.1.0](https://github.com/DimitryZH/secure-delivery-platform/releases/tag/v0.1.0) is published.
+- Microservices Workload Integration is complete and [platform v0.2.0](https://github.com/DimitryZH/secure-delivery-platform/releases/tag/v0.2.0) is published. [Recorded acceptance](online-shop-acceptance.md) covers the complete Online Shop in dev, HTTPS/WAF, attributed telemetry, synthetic/incident validation and manual stop/resume. 429 verification remains deferred; historical PromQL NO_DATA remains an accepted reconstruction limitation.
+- [Retained-project cold recovery](cold-recovery-and-teardown.md#verified-retained-project-recovery) is complete as a verified manual procedure. Persistent application-data recovery and repeatability of a subsequent lifecycle cycle remain future work.
+- Online Shop is the active workload. Sample-service is retired with no restoration or health gate; its [historical results](historical/sample-service/README.md) remain part of the platform's delivery history.
+- Recorded acceptance describes bounded executions, not continuous live health. Online Shop stage/prod promotion and an executed release rollback remain unproven. Stage/prod are learning-platform environments in a shared cluster, not production readiness, HA or independent failure domains.
 
-- Milestones 1–7 delivered the core MVP and published platform release [v0.1.0](https://github.com/DimitryZH/secure-delivery-platform/releases/tag/v0.1.0).
-- Historical core validation includes immutable trusted delivery and controlled promotion; structured logging, bounded health metrics, dashboard rendering, healthy-state availability alert inspection, and release review. Read-only validation for #80 produced a representative `READY / 0`, then retention-driven `BLOCKED / 3` when source/rendered-artifact protection fell below 75 minutes. These observations do not establish current eligibility or authorize a future action.
-- Other preflight outcomes and negative cases, review hold/reject scenarios, manual rejection/rollback contracts and rollback eligibility have offline coverage. An executed release rollback and broader performance validation are not yet established.
-- Microservices Workload Integration has recorded technical acceptance with two accepted limitations; final review remains open in #133. [#87](https://github.com/DimitryZH/secure-delivery-platform/issues/87), [#93](https://github.com/DimitryZH/secure-delivery-platform/issues/93), and [#100](https://github.com/DimitryZH/secure-delivery-platform/issues/100) accepted trusted catalog delivery and then the complete ten-service Online Shop plus Redis in dev, with a separately trusted Collector. Recorded evidence covers source/build/digest verification, eleven-member attestation, protected Cloud Deploy rendering/preflight, full runtime, a bounded checkout journey, negative admission, scoped cleanup and sample-service preservation.
-- The preserved 2026-11-03 journey passed the merged signals validator with its normal independent guard. It demonstrates recorded distributed traces, attributed application/Redis metrics and native correlated logs for all ten application components. This recheck does not establish current runtime health or continuous telemetry. Historical failures, startup export losses, the fixed clock allowance and observation limits remain in the canonical evidence.
-- Recorded [protected endpoint #106](https://github.com/DimitryZH/secure-delivery-platform/issues/106) and [dashboard/PromQL #111](https://github.com/DimitryZH/secure-delivery-platform/issues/111) acceptance is historical, not proof for another active environment. Scheduled monitoring and notification implementation exists under [#115](https://github.com/DimitryZH/secure-delivery-platform/issues/115); the [recorded controlled application-failure/recovery exercise](../monitoring/online-shop/incident-acceptance.md) passed its bounded criteria for review, with the accepted historical PromQL NO_DATA reconstruction limitation. The [repeated manual stop/resume checkpoint](online-shop-acceptance.md) passed recorded acceptance with permanent workload selectors. WAF enforcement passed recorded acceptance; 429 verification is explicitly deferred. [Final documentation/release review](https://github.com/DimitryZH/secure-delivery-platform/issues/133) remains open; no milestone closure or platform release is claimed. The [acceptance checklist and next cold-recovery/removal stage](online-shop-acceptance.md#review-checklist) distinguish completed observations from future work. Repeat the relevant [baseline recovery gates](platform-baseline-recovery.md) before claiming current endpoint, dashboard, synthetic or incident readiness.
-- Governance/security extensions are planned in milestone 9. A subsequent application update, canary, full-workload environment progression, executed rollback and bounded autoscaling/load validation are planned in milestone 10.
-- Automated promotion/rollback, exhaustive instrumentation, production-scale load validation, durable Redis/Collector storage and multi-cluster or multi-region HA are not baseline completion requirements of this roadmap.
-
-Preflight evaluates a fresh, independently reviewed, operator-supplied evidence snapshot. It does not collect cloud data, authorize or execute an action. Review, eligibility, action authorization, target approval and execution remain separate boundaries; READY is eligibility only.
-
----
+[Trusted Delivery](trusted-delivery.md), [Observability](observability.md), the [Operator Runbook](operator-runbook.md) and the [complete workload procedure](../deploy/online-shop/complete-README.md) define the implemented contracts and operating limits. Preflight evaluates fresh, independently reviewed, operator-supplied evidence; review, eligibility, action authorization, target approval and execution remain separate. READY establishes eligibility only.
 
 ## Milestone and release sequence
 
-| Milestone | Name | Platform release checkpoint |
+| Milestone | Status | Platform release checkpoint |
 | --- | --- | --- |
-| 1 | Trusted Release Model | |
-| 2 | Executable Foundation | |
-| 3 | Trusted Delivery Path | |
-| 4 | Controlled Promotion | |
-| 5 | Operational Visibility | |
-| 6 | Platform Release Controls | |
-| 7 | MVP Release | v0.1.0 published |
-| 8 | Online Shop Integration | [v0.2.0 draft notes](releases/v0.2.0.md); final review/publication pending |
-| 9 | Platform Governance & Hardening | Internal completion checkpoint; no required separate release |
-| 10 | Controlled Delivery & Reliability | v0.3.0 planned after acceptance and documentation |
+| [Trusted Release Model](#trusted-release-model) | Complete | Core MVP foundation |
+| [Executable Foundation](#executable-foundation) | Complete | Core MVP foundation |
+| [Trusted Delivery Path](#trusted-delivery-path) | Complete | Core MVP foundation |
+| [Controlled Promotion](#controlled-promotion) | Complete | Core MVP foundation |
+| [Operational Visibility](#operational-visibility) | Complete | Core MVP foundation |
+| [Platform Release Controls](#platform-release-controls) | Complete | Core MVP foundation |
+| [MVP Release](#mvp-release) | Complete | v0.1.0 published |
+| [Microservices Workload Integration](#microservices-workload-integration) | Complete | v0.2.0 published |
+| [Infrastructure Lifecycle, Backup & Recovery](#infrastructure-lifecycle-backup--recovery) | Manual cold recovery complete; lifecycle/data work planned | Separate lifecycle completion |
+| [Trusted Release Promotion & Rollback](#trusted-release-promotion--rollback) | Planned | v0.3.0 |
 
-GitHub milestone 8 retains the public name **Microservices Workload Integration**; its roadmap section remains **Online Shop Integration**.
+The future lifecycle and application-data backup/restore work is independent of the v0.3.0 release checkpoint.
 
-Platform versions identify the platform implementation and contracts. Application release-set identities and image digests are separate records. Publishing a platform tag neither rebuilds nor automatically promotes an application.
-
-For v0.2.0 and v0.3.0, complete the relevant milestone acceptance, align canonical documentation, record changes and known limits, and link the accepted sanitized evidence before publication. Reuse sufficient existing evidence; repeat scenarios only where changed behavior, missing evidence or unresolved failures require it. Neither future release is published by this roadmap update.
+Platform versions identify implementation and contracts; application release-set identities and image digests are separate records. Publishing a platform tag neither rebuilds nor promotes an application.
 
 ---
 
@@ -265,158 +250,80 @@ The first MVP release has been published, packaging a coherent end-to-end platfo
 
 ---
 
-## Online Shop Integration
+<a id="online-shop-integration"></a>
 
-**Goal:** Complete the instrumented Online Shop integration with a usable HTTPS endpoint, application observability and repeatable synthetic/incident validation.
+## Microservices Workload Integration
 
-### Accepted integration baseline
+**Status:** Complete; platform [v0.2.0 published](https://github.com/DimitryZH/secure-delivery-platform/releases/tag/v0.2.0).
 
-The accepted dev integration comprises all ten application services (`frontend`, `productcatalogservice`, `cartservice`, `currencyservice`, `recommendationservice`, `adservice`, `checkoutservice`, `shippingservice`, `paymentservice`, and `emailservice`), the explicit `redis-cart` dependency, and Collector support under its separate image policy.
+**Goal:** Integrate a representative microservices workload through the trusted delivery path with protected HTTPS and attributable operational signals.
 
-Immutable AML application/dependency contracts, component build/verification/signing, complete release identity, dev deployment, the bounded checkout journey and recorded telemetry acceptance are implemented. Loadgenerator is excluded from the steady application set; optional assistant/packaging backends remain disabled. Any future validation image requires explicit verification/admission treatment and a bounded execution scope.
+### Delivered scope and outcome
 
-### Integration and acceptance scope
+The accepted dev integration includes ten Online Shop application services, ephemeral Redis and a separately trusted Collector. Recorded results cover immutable component/release identity, independent verification and signing, protected deployment and admission, a bounded checkout journey, HTTPS and WAF enforcement, application telemetry and dashboards, scheduled synthetic checks, a controlled availability incident and repeated manual stop/resume.
 
-* establish a selected hostname under the platform domain, such as `shop.runtimeplatforms.dev`, using Cloud DNS and scoped subdomain delegation where appropriate; preserve existing domain services
-* expose only the intended frontend through GKE Gateway API and a reviewed external Application Load Balancer, with stable addressing, Certificate Manager TLS and a tested HTTPS path
-* select the Gateway/LB configuration with future Cloud Deploy canary and IAP compatibility in mind; record regional/global choice, access boundaries and recurring costs
-* configure a bounded Cloud Armor baseline, including evaluated WAF rules and rate limiting; verify allowed and denied requests before enforcing selected rules
-* adapt queries and dashboards to actual Online Shop semantics: request activity, errors, latency, availability and component/version/environment/release attribution
-* integrate Google Cloud Managed Service for Prometheus and PromQL where appropriate, using an explicitly owned collection/export path and avoiding duplicate ingestion of the same series
-* retain cross-service propagation and native trace/log correlation; explicitly filter health traffic, control metric cardinality and preserve the accepted source/build/digest relationship
-* define monitor network access and endpoint authentication before provisioning an uptime check and a scripted Google Cloud synthetic monitor
-* validate a selected synthetic user journey using isolated test data, bounded frequency/traffic and exact cleanup
-* configure actionable application and synthetic-failure alerts with notification routing; establish a meaningful baseline before choosing latency thresholds and treat missing data as missing evidence
-* exercise one bounded application/dependency availability failure in dev; confirm detection, incident opening, notification receipt, telemetry-based diagnosis, recovery and incident closure (the [recorded exercise](../monitoring/online-shop/incident-acceptance.md) passed its bounded criteria for review; its limits and the remaining milestone gates stay explicit)
-* preserve Online Shop and recheck capacity/artifact protection before separately authorized live changes
-* align public architecture, deployment/access instructions, telemetry inspection, synthetic/incident runbooks, validation limits and sanitized durable evidence
-
-This is an independent SDP path consuming canonical AML source. It does not depend on the separate AML → CI Build Platform → Container Platform → SRE Platform integration. Application fixes/instrumentation remain owned by AML; delivery, environment and collection configuration remain owned by SDP.
-
-### Target outcome and acceptance
-
-The complete trusted application is usable through the selected HTTPS hostname. Its bounded normal and synthetic journeys produce attributable signals and useful dashboard results. A controlled dev failure produces a delivered notification and a diagnosable incident, followed by confirmed recovery and closure.
-
-The accepted dev release, endpoint/TLS/protection checks, meaningful dashboard/query results, synthetic executions, incident lifecycle, cleanup and active workload health have linked sanitized evidence. Sample-service is retired and is not a restoration gate. Empty dashboards, configuration presence and non-firing alerts alone are insufficient.
-
-A subsequent application update, full-workload stage/prod progression, canary, release rollback, SLI/SLO-based release evaluation and autoscaling/load experiments belong to milestone 10. Milestone 8 establishes their endpoint and telemetry foundations without implementing those scenarios twice.
-
-### Platform release checkpoint
-
-After milestone 8 acceptance and canonical documentation alignment, publish **platform v0.2.0**. Release notes link the accepted integration/observability evidence and state its limits. Publication is a separate action and does not imply production hardening, HA or completion of milestones 9–10.
+[Consolidated acceptance](online-shop-acceptance.md) records the executions and accepted 429/PromQL limitations. [Workload architecture](architecture/online-shop.md), the [deployment guide](../deploy/online-shop/complete-README.md) and [incident evidence](../monitoring/online-shop/incident-acceptance.md) retain the technical detail. This milestone establishes the endpoint and telemetry foundations for subsequent trusted release promotion and rollback.
 
 ---
 
-## Platform Governance & Hardening
+## Infrastructure Lifecycle, Backup & Recovery
 
-**Goal:** Strengthen infrastructure ownership, build isolation, supply-chain evidence, access control and auditability before advanced delivery and scaling exercises.
+**Status:** Verified manual cold recovery complete; lifecycle simplification and persistent-data validation planned.
+
+**Goal:** Make infrastructure lifecycle operations repeatable and verify recovery of infrastructure, artifacts and selected persistent application data.
 
 ### Scope
 
-* introduce Infrastructure Manager for a selected real Terraform module using supported runtime/provider versions, explicit execution identity and managed state ownership; review preview/apply behavior and document compatibility
-* keep full-foundation migration a separate decision based on that experience; the same resources must not be actively managed by both the existing Terraform state and Infrastructure Manager
-* implement a Cloud Build Private Pool scenario with a concrete private-connectivity requirement, reviewed dependency egress and least-privilege execution; verify the intended network boundary and cost
-* preserve distinct build, verification/signing and deployment authority, and continue source/configuration/build/plan/digest verification when adapting execution environments
-* establish Artifact Analysis vulnerability inspection and SBOM records for selected release artifacts; define how findings enter explicit release review and how exceptions are bounded
-* record and validate applicable native Cloud Build provenance, keeping it distinct from platform admission attestations; claim a SLSA assurance level only where the actual build/input path supports it
-* use Policy Troubleshooter for a real access problem, Policy Simulator for a proposed IAM change where supported, and IAM Recommender as input to reviewed permission reduction; preserve required operational/recovery access
-* demonstrate versioned Secret Manager consumption, least-privilege access, rotation and restoration of a previous version for a real platform integration; reuse workload identity rather than introducing long-lived service-account keys
-* synchronize selected cluster/platform configuration through Config Sync, with explicit ownership for namespaces, RBAC, quotas and policy resources
-* introduce Policy Controller with scoped audit/dry-run evaluation followed by tested enforcement of selected constraints; review necessary narrow exceptions for supporting infrastructure
-* validate NetworkPolicy boundaries against actual service dependencies, including allowed consumers of Redis, before enforcing selected restrictions
-* establish IAP access for an appropriate dev/stage endpoint, with explicit user/service identities, approved access and denied-access evidence; retain the intended public demonstration path
-* use Cloud Asset Inventory to review the project's resource and IAM inventory and investigate a representative unexpected change
-* build an operational audit trail using Cloud Audit Logs and focused SQL analysis; select Data Access logging scope, retention and volume deliberately, and verify a useful sensitive-change alert
-* tighten environment-specific trust and access policies, improve verification/admission denial diagnostics, remove unnecessary permissions and temporary implementation exceptions, and validate release metadata consistency
-* document ownership, recovery procedures, accepted configuration and evidence in focused runbooks without turning each service into a separate delivery framework
+- Build on the prepared local recovery kit, completed teardown preserving the project and agreed resources, and successful retained-project cold recovery. Infrastructure/state, immutable images, trust associations, Online Shop, HTTPS and monitoring were restored through a verified manual procedure.
+- Simplify and systematize the proven teardown/recovery steps, making required manual actions and continuation after partial execution explicit.
+- Verify repeatability and measure recovery time during the next planned lifecycle cycle.
+- Execute one bounded persistent application-data backup/restore scenario, checking integrity and measuring RPO/RTO.
 
-Config Sync owns only the declared platform resources. Cloud Deploy continues to own application release resources. Policy Controller constraints and infrastructure policies complement Binary Authorization; they do not replace image admission trust. The current dev/stage/prod namespaces share a cluster and are not independent failure domains.
+### Outcome and completion
 
-### Target outcome and acceptance
-
-A selected infrastructure module is managed through Infrastructure Manager with one clear state owner. Private Pool networking and execution identities satisfy their reviewed scenario. Selected artifacts have usable vulnerability/SBOM/provenance evidence, and release review states how that evidence affects eligibility.
-
-Permission changes, secret-version changes, policy synchronization/enforcement, network restrictions and IAP access have bounded successful/denied test results. Operators can identify resources and trace representative sensitive actions through inventory and audit records. Existing Online Shop delivery remains compatible.
-
-Every adopted capability has a defined scenario, owner, cost boundary, acceptance result and documented limitation. Broader organization/fleet rollouts, automatic application GitOps and an unconditional migration of the full foundation are outside this milestone.
-
-### Completion checkpoint
-
-Milestone 9 has its own reviewed completion/evidence checkpoint. **No separate platform release is required after milestone 9**; its results are packaged with milestone 10 in v0.3.0.
+A documented, repeatable lifecycle procedure and one verified application-data restore have measured results and clear limits. The [completed cold recovery](cold-recovery-and-teardown.md#verified-retained-project-recovery) does not establish full automation, success of the next cycle or persistent application-data recovery; historical application data, logs and metrics were outside that execution.
 
 ---
 
-## Controlled Delivery & Reliability
+## Trusted Release Promotion & Rollback
 
-**Goal:** Demonstrate safe application updates, environment progression, recovery and resource efficiency using the governed platform.
+**Status:** Planned; final milestone of the core delivery path, packaged in platform v0.3.0.
 
-### Delivery and release scope
+**Goal:** Complete the trusted delivery cycle for an updated application workload release and demonstrate controlled promotion and rollback.
 
-* select a subsequent immutable AML application revision and produce its traceable complete application image set using the established build/release interfaces; reuse compatible artifacts explicitly and preserve component-specific identity
-* adapt exact inventory, metadata and runtime checks for reviewed stable/canary resources and bounded replica ranges while retaining digest, membership and admission enforcement
-* implement a Cloud Deploy canary for a selected stateless component with explicit stable/canary routing, phase weights, controlled traffic and component/version-aware telemetry
-* define one useful SLI/SLO and error-budget view; establish baseline/error/latency measurements and an explicit decision when evidence is absent or insufficient
-* connect deployment verification or analysis to real observed metrics, documenting success/failure criteria and operator decisions; metric collection alone is not an automatic promotion gate
-* progress the same trusted application image set through dev → stage → prod after environment-specific capacity, configuration, admission and protected-artifact review, without rebuilding between environments
-* execute a bounded failed-update scenario and a controlled rollback to an eligible previous trusted release; verify running digests, recovery, telemetry attribution and Online Shop health
-* perform a small blue-green comparison after the canary baseline, recording switching/recovery behavior and temporary resource cost; canary remains the primary progressive delivery strategy
+### Scope
 
-### Scaling and cost scope
+- **Updated workload release:** Pin a new application revision and use the existing build → independent verification → signing → admission path. Preserve component, source, build, digest and release-set identities; explicitly reuse compatible supporting artifacts where appropriate.
+- **Environment progression:** Promote the same trusted application image set through dev → stage → prod without rebuilding. Review environment-specific configuration and capacity, apply required approvals and existing preflight controls, preserve release identity and verify actual running digests.
+- **Failed update and rollback:** Execute one bounded failed-update scenario and roll back to an eligible previous trusted release. Verify restored digests, runtime health and telemetry attribution, then clean up scoped test data and temporary resources.
+- **Health evaluation:** Define clear success/failure criteria using existing health, telemetry and synthetic interfaces to assess promotion and recovery.
+- **Focused supply-chain evidence:** Inspect vulnerabilities, record SBOMs and applicable native Cloud Build provenance for selected release artifacts. Use findings in release review and record accepted exceptions, without an unsupported SLSA-level claim or a universal zero-vulnerability requirement.
 
-* introduce HPA for a selected stateless workload with bounded min/max replicas, explicit metric ownership and a measured scale-out/scale-in scenario
-* deploy VPA in recommendation mode, evaluate its resource recommendations, and treat any automatic application as a separately reviewed bounded experiment compatible with HPA
-* exercise Cluster Autoscaler where node capacity must follow workload scaling, with reviewed limits, quotas, scheduling constraints and a bounded cost envelope
-* define ownership for replica counts and resource requests so HPA, VPA, Cloud Deploy, Config Sync and Terraform do not continuously overwrite one another
-* run limited-duration load tests with isolated data, a known traffic budget, observable scaling/recovery and exact cleanup; do not extrapolate results into production-scale capacity
-* use Billing budgets, cost attribution and Google Cloud Recommender to evaluate resource sizing, idle capacity and observability costs; budget notifications are not hard spending caps
-* retain the resulting configuration or remove temporary experimental resources according to the reviewed operating/cost decision
+### Outcome and completion
 
-### Target outcome and acceptance
-
-A new application version traverses the existing trusted delivery interfaces. A canary is evaluated using real attributed telemetry; one rejected/failed update has an executed recovery path. The same accepted image set reaches the reviewed environments without rebuild. Release-set/source/build/digest identities remain distinguishable from environment configuration and validator versions.
-
-HPA behavior, VPA recommendations, the selected node-scaling scenario and limited load test have measured results within their defined bounds. The blue-green comparison and resource/cost decisions have linked evidence. Application and sample health, synthetic data cleanup and temporary-resource cleanup are verified after the exercises.
-
-Canonical architecture, operator/deployment/recovery/scaling instructions, change history and validation limits are aligned with the final implementation. Production-scale throughput, durable Redis/Collector state, automatic promotion/rollback and multi-cluster/multi-region HA remain outside baseline acceptance.
-
-### Platform release checkpoint
-
-After milestone 10 acceptance and final documentation alignment, publish **platform v0.3.0**, packaging the accepted results of milestones 9 and 10. Include release notes, repeatable operator entry points, evidence references and remaining limitations. No additional live exercise is required solely to create a tag when sufficient accepted evidence already exists.
+Sanitized acceptance evidence demonstrates that the updated trusted image set traverses all three environments without rebuild and that an eligible trusted release is restored after a failed update. Canonical documentation, operator entry points and remaining limitations agree with the accepted behavior. Final release review and publication of **platform v0.3.0** complete this milestone; sufficient accepted evidence can be reused for publication.
 
 ---
 
-## Cross-milestone execution and ownership
+## Cross-milestone ownership
 
-- Milestone 8 owns endpoint/telemetry foundations and the application availability incident. Milestone 9 owns governance, access/security boundaries and their enforcement checks. Milestone 10 owns changed-release progression, rollback and scaling behavior.
-- Select Gateway/routing and metric collection interfaces in milestone 8 with canary, IAP and autoscaling compatibility in mind. Extend them later rather than introducing parallel paths.
-- Use one active owner per resource/field and one intended collection path per metric/log stream. State or controller ownership changes require an explicit transition.
-- Group implementation into coherent issues and reviewable changes. A service name alone is not a requirement for its own issue or pipeline.
-- Infrastructure changes, public access, failure exercises, load/scaling bounds and deployment mutations use their reviewed scope and separate authorization. Runtime health, a successful build and READY eligibility do not authorize a mutation.
-- Preserve accepted historical records and clearly distinguish implementation tests, recorded-run acceptance and current live observations.
-
----
+- SDP owns artifact trust, controlled promotion and rollback. Advanced SLO-driven delivery, scaling and reliability experiments sit within SRE Platform's scope.
+- Application Modernization Lab owns application changes and instrumentation. SDP consumes an updated application workload release and owns its delivery, environment and collection configuration.
+- Infrastructure Lifecycle, Backup & Recovery owns lifecycle repeatability and the bounded data-restore scenario. Trusted Release Promotion & Rollback owns changed-release progression, failed-update recovery and the v0.3.0 checkpoint.
+- Preserve least-privilege IAM and administrative/recovery access, separate build/verification/signing/deployment authority, Workload Identity, existing Secret Manager usage, Binary Authorization, Cloud Armor, source/digest/evidence verification, execution guards and destruction protections. Keep one active owner per resource/field and one intended collection path per signal.
+- Preserve historical evidence and distinguish implementation coverage, recorded-run acceptance and fresh live observations. Automated promotion/rollback, production readiness and HA are outside baseline completion.
 
 ## Completion criteria
 
-The roadmap is complete when linked evidence demonstrates that:
+The core delivery path is complete when linked acceptance evidence demonstrates:
 
-1. a source revision produces a uniquely traceable release candidate;
-2. the resulting artifacts are identified by immutable image digests;
-3. independent verification determines whether candidates can receive the required trust signal;
-4. deployment policy prevents untrusted images from running where admission is enforced;
-5. the same trusted image set progresses through dev → stage → prod without rebuild;
-6. running workloads remain correlated with their component source/build/digest and release identity;
-7. useful operational health, application telemetry and synthetic results are available for release review;
-8. promotion and rollback eligibility are evaluated by deterministic, executable, fail-closed controls;
-9. release review, eligibility, authorization, target approval and execution remain separate boundaries;
-10. failed verification, denied deployment, rejected/failed release actions and recovery have explicit diagnosable outcomes;
-11. build, signing, infrastructure and deployment responsibilities retain clear least-privilege boundaries;
-12. the complete Online Shop workload is usable through its reviewed HTTPS endpoint, with explicit application/dependency/supporting inventory and trust treatment;
-13. a bounded normal/synthetic journey has attributable distributed traces, application metrics and native correlated logs, without duplicate ingestion in the validated window;
-14. a controlled application failure demonstrates notification receipt, diagnosis, recovery and incident closure;
-15. selected managed infrastructure, private-build networking, supply-chain evidence, secrets and cluster/access policies have explicit ownership and accepted operating scenarios;
-16. inventory and audit records support investigation of representative resource/IAM and release-related actions;
-17. a subsequent application update demonstrates canary, controlled environment progression and eligible rollback with preserved release correlation;
-18. bounded autoscaling/load observations and resource/cost analysis substantiate the chosen operating limits;
-19. canonical documentation and sanitized durable evidence describe the implemented behavior and its limits;
-20. platform v0.2.0 is published after milestone 8, and platform v0.3.0 after milestone 10; milestone 9 has a completion checkpoint without a required separate release.
+1. The completed foundation and workload integration retain traceable immutable artifacts, independent verification, separate signing, admission enforcement and attributable operational signals.
+2. An updated application workload release preserves component/source/build/digest/release-set identity, including explicit compatible supporting-artifact reuse.
+3. The same trusted image set progresses through dev → stage → prod without rebuild, with environment configuration/capacity review, required approvals, preflight eligibility and actual-digest verification.
+4. One bounded failed update is followed by an executed rollback to an eligible previous trusted release, with restored digests, runtime health, attributed telemetry and scoped cleanup.
+5. Existing health, telemetry and synthetic interfaces provide clear success/failure criteria for promotion and recovery; missing evidence is treated explicitly.
+6. Selected release artifacts have vulnerability inspection, SBOM and applicable native build-provenance evidence; findings and accepted exceptions are recorded in release review.
+7. Review, eligibility, authorization, target approval and execution retain their separate trust and least-privilege boundaries.
+8. Canonical documentation, operator entry points, sanitized evidence and accepted limits align, and platform v0.3.0 is published after final release review.
+
+The separate lifecycle milestone is complete when its next planned cycle demonstrates repeatability with measured recovery time and its bounded persistent application-data restore demonstrates integrity with measured RPO/RTO.

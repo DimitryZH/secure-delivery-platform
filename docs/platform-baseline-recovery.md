@@ -28,6 +28,9 @@ Missing/unknown metadata still blocks acceptance. Never remove live annotations 
 
 ## Staged cloud change proposal
 
+This ordered technical reference remains available for a future restoration. The completed
+integration and retained-project recovery are linked below; this is not a pending-work checklist.
+
 These are dependency-ordered resource sets, not an applied plan or asserted Terraform
 counts. Review a fresh full saved plan before each apply. Existing node pools, human
 administrative grants, trust identities, registry artifacts and evidence holds are preserved.
@@ -37,7 +40,7 @@ administrative grants, trust identities, registry artifacts and evidence holds a
 | Endpoint foundation | Foundation state: `google_project_service.shop_edge`, global address, child DNS zone, two DNS records, Certificate Manager authorization/certificate/map/entry, SSL policy and Armor policy from `shop-endpoint.tf` | Reviewed full plan; ten non-API resources plus three API ownership records if not already managed; no node-pool or unrelated changes |
 | DNS/TLS | Operator changes only the reviewed child delegation/authorization at the actual external DNS provider | Actual assigned nameservers, authoritative/public DNS, no conflicting AAAA/DS, appropriate CAA, unchanged parent website/mail, certificate ACTIVE |
 | Endpoint workload | Cloud Deploy owns Gateway, two HTTPRoutes and three policies; Gateway controller owns ALB/NEGs/forwarding/backend resources | Protected release/server render of 45 resources, fresh preflight and separate rollout authorization; observed-generation Gateway readiness, healthy frontend backend and valid HTTPS/HTTP301 |
-| Endpoint protection | Existing Armor policy rules: priority100 probe, priority1000 WAF, priority2000 throttle1200/60s/IP | Fresh allowed/denied preview evidence, separate enforcement plan/apply; bounded actual403/429 proof with rule/log attribution; temporary test rules removed |
+| Endpoint protection | Existing Armor policy rules: priority100 probe, priority1000 WAF, priority2000 throttle1200/60s/IP | Fresh allowed/denied preview evidence, separate enforcement plan/apply; bounded allowed/WAF403 proof with rule/log attribution; retain the accepted429 deferral; temporary test rules removed |
 | Dashboard | Existing `google_monitoring_dashboard.online_shop_dev`, six reviewed PromQL queries and the existing Collector exporter path | Fresh query results for a bounded checkout, native trace/log linkage, probe exclusion, zero-versus-no-data and single ingestion through the existing Collector-to-Cloud-Monitoring path/PromQL bridge; no duplicate scrape path |
 | Synthetic provisioning | `shop-observability.tf`: source bucket/object, function image repository, two dedicated SAs/scoped grants, function/invoker bindings, monitoring service identity, private email channel and disabled frontend-error policy | Reviewed ZIP/hash and full plan, function ACTIVE/build SUCCESS, private invoker and scoped identities; no scheduled checks yet |
 | Scheduled monitoring | Two checks and two check-failure policies; enable frontend-error policy | Separate full plan with scheduling enabled, successful scheduled HTTPS/synthetic runs, at most3GET per synthetic run, trace/log linkage, exact session evidence and notification delivery |
@@ -100,8 +103,8 @@ shutdown/startup scheduling. No lifecycle schedules or budget alerts are include
 
 Restoring the previously accepted operational point means protected HTTPS, usable
 dashboards and successful scheduled checks with a verified notification channel.
-The controlled cartservice failure was not previously accepted: it remains continuation
-of #115 after restoration, not a historical success to copy into new evidence.
+The controlled cartservice failure has [recorded acceptance](../monitoring/online-shop/incident-acceptance.md);
+it was not repeated during cold recovery and is not a mandatory repeat on each restoration.
 
 ## Acceptance and milestone boundary
 
@@ -118,21 +121,21 @@ recurrence before making stronger reliability claims. Redis/Collector storage re
 non-durable. Existing artifacts and holds are retained; expired render protection blocks
 a future rollout until the normal protection gate is freshly satisfied.
 
-Only after endpoint/protection, active workload health, dashboard and #115 incident acceptance
-have sufficient linked evidence should milestone8 proceed to documentation/release review for v0.2.0.
-Governance/hardening in milestone9 and canary/progression/rollback/load in milestone10
-remain subsequent work; no roadmap scenario or release is executed by this document.
+Microservices Workload Integration and its v0.2.0 release review are complete. The
+[roadmap](roadmap.md) defines the remaining Infrastructure Lifecycle, Backup & Recovery
+and Trusted Release Promotion & Rollback milestones. Use fresh relevant baseline checks
+before future live work; historical acceptance alone does not establish present readiness.
 
 
-## Recorded incident checkpoint and remaining gates
+## Recorded incident checkpoint and completed review
 
 The [bounded cartservice exercise](../monitoring/online-shop/incident-acceptance.md) records
 passed failure/detection/operator-confirmed notification/recovery/closure and cleanup for its
 execution. Exact email receipt time is unknown. Its historical frontend-alert PromQL range
 returned no data and is not accepted as a passed query check.
 
-Milestone8 remains in progress. The [recorded repeated stop/resume](online-shop-acceptance.md)
-passed with permanent selectors, Collector coverage and monitoring maintenance handling.
-Active-environment Armor enforcement and final documentation/evidence/v0.2.0 release review
-remain pending in [#133](https://github.com/DimitryZH/secure-delivery-platform/issues/133). Resolve or explicitly accept the recorded query limit in that final review. These
-gates do not authorize new traffic, lifecycle changes, enforcement, apply or rollout.
+The [completed integration review](online-shop-acceptance.md) records repeated stop/resume,
+Armor enforcement and accepted 429/PromQL limitations; #133 is complete and v0.2.0 is published.
+The later [retained-project cold recovery](cold-recovery-and-teardown.md#verified-retained-project-recovery)
+also passed as a manual procedure. These recorded results do not authorize new traffic,
+lifecycle changes, enforcement, apply or rollout.

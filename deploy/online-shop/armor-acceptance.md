@@ -119,5 +119,7 @@ priority 2000 threshold1200/60s: retain that result separately as NOT_CONFIRMED 
 existing/live evidence proves it. No 1220-request series is included here.
 
 The recorded enforcement/WAF observations and cleanup passed; 429 verification is deferred,
-not passed. No temporary rule remains in the recorded final readback. Review/publication of platform v0.2.0 is tracked
-separately in [#133](https://github.com/DimitryZH/secure-delivery-platform/issues/133), not performed here.
+not passed. No temporary rule remains in the recorded final readback. Subsequent review
+[#133](https://github.com/DimitryZH/secure-delivery-platform/issues/133) completed and
+[platform v0.2.0](https://github.com/DimitryZH/secure-delivery-platform/releases/tag/v0.2.0) was published;
+this record preserves the enforcement execution and its limits.

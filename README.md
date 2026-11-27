@@ -70,7 +70,7 @@ Worker nodes are currently paused; screenshots and acceptance records describe c
 
 - Historical incident PromQL reconstruction returned no data; this is not interpreted as zero errors.
 - Redis and Collector buffers are ephemeral. HA, sustained-load reliability and executed release rollback are not claimed.
-- Namespace routing is not strong IAM/RBAC isolation. Cold recovery and full cloud-resource removal are planned separately.
+- Namespace routing is not strong IAM/RBAC isolation. [Retained-project cold recovery](docs/cold-recovery-and-teardown.md#verified-retained-project-recovery) passed as a manual procedure; broader cloud-resource removal remains a separate decision.
 
 See the [acceptance record](docs/online-shop-acceptance.md) for evidence and detailed limits.
 

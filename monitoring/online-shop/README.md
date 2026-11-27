@@ -75,7 +75,7 @@ At five-minute frequency there are about 8,640 synthetic runs and at most 25,920
 5. Restore one cartservice replica within the bound. Require application recovery, a subsequent successful scheduled run, incident closure based on success samples.
 6. Check final Online Shop health when workers are running. Publish sanitized timing/results. Raw responses, session correlation and email stay private.
 
-Provisioning and schedule enablement have completed. The HTTPS check passed from five locations. The synthetic check failed before any Shop GET with `synthetic_trace_context_missing`, opened incident `0.oequ1e89idz7`, and delivered the operator-confirmed failure email. The exact derived session key read back `EXISTS=0` and the owned forward was closed. The merged fix subsequently passed scheduled browsing and application correlation, and this incident closed. See [recorded synthetic/edge correlation](scheduled-correlation.md) for the retained evidence, corrected LB identity assumption and data limits. The separately authorized cartservice failure exercise remains pending.
+Provisioning and schedule enablement have completed. The HTTPS check passed from five locations. The synthetic check failed before any Shop GET with `synthetic_trace_context_missing`, opened incident `0.oequ1e89idz7`, and delivered the operator-confirmed failure email. The exact derived session key read back `EXISTS=0` and the owned forward was closed. The merged fix subsequently passed scheduled browsing and application correlation, and this incident closed. See [recorded synthetic/edge correlation](scheduled-correlation.md) for the retained evidence, corrected LB identity assumption and data limits. The separately authorized cartservice failure exercise was pending at this checkpoint; its later [recorded acceptance](incident-acceptance.md) is linked below.
 
 ## Dependency advisory review
 
@@ -118,6 +118,8 @@ receipt time is unknown. The historical frontend-alert PromQL range returned no 
 not a successful query check or zero-error observation. Raw evidence remains private.
 The [recorded repeat stop/resume](../../docs/online-shop-acceptance.md) subsequently passed.
 WAF enforcement subsequently passed recorded acceptance. 429 verification is deferred and
-historical PromQL NO_DATA is an accepted limitation; final documentation/release review remains
-open. This record does not close the integration milestone. See the [historical PromQL analysis](promql-incident-limit.md)
-and [release-review follow-up](https://github.com/DimitryZH/secure-delivery-platform/issues/133).
+historical PromQL NO_DATA is an accepted limitation. Final review
+[#133](https://github.com/DimitryZH/secure-delivery-platform/issues/133) is complete and
+[platform v0.2.0](https://github.com/DimitryZH/secure-delivery-platform/releases/tag/v0.2.0) is published.
+See the [historical PromQL analysis](promql-incident-limit.md) and
+[consolidated acceptance](../../docs/online-shop-acceptance.md) for the recorded limits.

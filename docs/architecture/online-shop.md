@@ -44,5 +44,5 @@ notification evidence and UTC-normalized mailbox receipt minutes (seconds unknow
 telemetry, incident and repeated stop/resume results to their releases. **429 verification is
 deferred** and **historical PromQL NO_DATA** remains an accepted reconstruction limitation.
 Diagrams and screenshots do not establish continuous reliability or erase either limit.
-The [cold-recovery kit and full removal stage](../online-shop-acceptance.md#next-stage-cold-recovery-and-full-cloud-removal--not-performed)
-is future work. No cloud operation or restart accompanies this visual documentation.
+The [retained-project cold recovery](../cold-recovery-and-teardown.md#verified-retained-project-recovery)
+subsequently passed as a manual procedure. Persistent application-data recovery remains future work.

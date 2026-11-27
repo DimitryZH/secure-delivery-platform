@@ -1,8 +1,9 @@
 # Microservices Workload Integration acceptance
 
 Documentation review on **2026-11-17 America/Toronto**, using retained executions only.
-Technical acceptance is recorded with two explicitly accepted limitations below; final review
-and publication remain open in [#133](https://github.com/DimitryZH/secure-delivery-platform/issues/133).
+Microservices Workload Integration is complete with the two accepted limitations below.
+Final review [#133](https://github.com/DimitryZH/secure-delivery-platform/issues/133) is complete;
+[platform v0.2.0](https://github.com/DimitryZH/secure-delivery-platform/releases/tag/v0.2.0) was published on 17 November 2026.
 No new health check was made. Nodes are left paused; recorded running results are not current availability.
 This document authorizes no traffic, apply, temporary policy rule, lifecycle operation,
 rollout, milestone closure or release publication.
@@ -80,30 +81,24 @@ raw counter and native failure/recovery evidence remain valid. The operator acce
 query is not marked passed and the unexplained original positive evaluation remains a limit.
 No new incident is required solely to populate a chart.
 
-## Follow-up: final review and platform release
+<a id="review-checklist"></a>
 
-[#133](https://github.com/DimitryZH/secure-delivery-platform/issues/133) owns canonical
-architecture/operator/access/telemetry/evidence/limit alignment and the separately authorized
-platform v0.2.0 publication after the final acceptance and limitations review. The [roadmap](roadmap.md)
-sequence is unchanged. Sample-service is retired; later governance/canary/progression/rollback/
-load scenarios remain in milestones9–10. No platform tag or milestone closure is performed here.
+## Review outcome
 
-## Review checklist
+The completed review reconciled independent trust, protected render, runtime and journey
+evidence; WAF enforcement and cleanup; repeated stop/resume; and incident/notification/recovery
+results. The 429 deferral and historical PromQL NO_DATA remain accepted limitations.
+[Release-preparation notes](releases/v0.2.0.md) preserve the historical review snapshot;
+the published release is linked above.
 
-- [x] Retained independent trust, protected render, runtime and bounded journey evidence reconciled.
-- [x] WAF preview/enforcement and exact temporary-rule cleanup recorded.
-- [x] Repeated stop/resume and bounded incident/notification/recovery evidence linked.
-- [x] 429 verification deferred explicitly; no throttle-denial success claimed.
-- [x] Historical PromQL NO_DATA accepted as a reconstruction limit, not zero errors.
-- [x] [Draft v0.2.0 notes](releases/v0.2.0.md) prepared; platform and application versions separated.
-- [ ] Review and merge documentation in #133; agree the exact future platform release commit.
-- [ ] Separately authorize tag/release publication. No tag/release is created here.
-- [ ] Prepare and validate a cold-recovery kit outside the GCP project.
-- [ ] Separately review and authorize complete cloud-resource removal after that recovery gate.
+The [roadmap](roadmap.md) defines the remaining lifecycle and trusted release promotion/rollback
+work. Sample-service is retired and is not a restoration or health gate.
+
+<a id="next-stage-cold-recovery-and-full-cloud-removal--not-performed"></a>
 
 ## Historical next-stage proposal at v0.2.0
 
-The proposal below records the state at release preparation. The subsequent
+The proposal below preserves the state at release preparation, not a current work checklist. The subsequent
 retained-project teardown and successful cold recovery are documented in
 [the verified recovery result](cold-recovery-and-teardown.md#verified-retained-project-recovery).
 
@@ -121,4 +116,4 @@ controller-managed LB resources while the cluster can reconcile them, then runti
 remaining scoped cloud resources, including persistent artifacts/trust/evidence/state only
 after verified external preservation. This is full removal, not the existing node pause.
 DNS/provider access and retained external-domain responsibilities need their own cutover plan.
-Neither the kit, a cold restore nor complete deletion has been executed or accepted here.
+At that preparation checkpoint, neither the kit, a cold restore nor complete deletion had been executed or accepted. The subsequent retained-project result is linked above; it is not complete project retirement.

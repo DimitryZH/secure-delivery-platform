@@ -143,4 +143,4 @@ Recovery reserves four minutes after the mutation window. Three attempts each bo
 The [recorded dev exercise](incident-acceptance.md) passed bounded failure/detection/notification/recovery
 criteria with its documented limits. It does not authorize another injection. In particular, the
 historical frontend-alert PromQL reconstruction returned no data and is not a passed query check.
-Milestone 8 remains open pending the gates listed in that record and the roadmap.
+[Microservices Workload Integration acceptance](../../docs/online-shop-acceptance.md) and platform v0.2.0 are complete; the [roadmap](../../docs/roadmap.md) defines subsequent work.
