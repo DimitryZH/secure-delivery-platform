@@ -113,14 +113,15 @@ The [roadmap](../../docs/roadmap.md#online-shop-integration) and
 | Final documentation and release review | Pending. Review/merge this evidence, reconcile all mandatory active-binding acceptance records, explicitly disposition the historical PromQL no-data limit, align canonical operating/security/cost limits and review v0.2.0 release notes. Publication/tagging is a separate action after milestone acceptance. |
 
 No milestone/issue closure or platform release is performed by this documentation update.
-Governance/security extensions and canary/progression/rollback/load scenarios remain in their
-roadmap milestones; they are not added to this incident's acceptance scope.
+The current roadmap defines subsequent delivery and lifecycle scope; this historical
+incident record adds no future completion requirements.
 
 
 Later checkpoint: [the repeated manual stop/resume passed recorded acceptance](../../docs/online-shop-acceptance.md).
 The [PromQL read-only analysis](promql-incident-limit.md) explains the retained constant-counter
-replay while preserving the unconfirmed historical positive evaluation. Final disposition and
-v0.2.0 publication remain in [#133](https://github.com/DimitryZH/secure-delivery-platform/issues/133);
+replay while preserving the unconfirmed historical positive evaluation. Final review
+[#133](https://github.com/DimitryZH/secure-delivery-platform/issues/133) is complete and
+[platform v0.2.0](https://github.com/DimitryZH/secure-delivery-platform/releases/tag/v0.2.0) is published;
 WAF enforcement subsequently passed; 429 verification and historical PromQL reconstruction
 are explicitly accepted limitations in the [consolidated review](../../docs/online-shop-acceptance.md).
 Earlier checkpoint statuses above are historical.

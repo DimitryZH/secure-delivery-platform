@@ -20,7 +20,7 @@ Multi-cluster, multiple services/attestors, advanced vulnerability policy, compl
 
 Implemented with offline-only coverage: review hold/reject and manual rejection/rollback contracts, including rollback preflight eligibility. Representative promotion READY and retention-driven BLOCKED were live-validated read-only; rollback execution was not validated.
 
-Automated promotion/rollback, error/latency alerting, notification routing, SLOs, tracing, and broader performance validation remain deferred. Tagging and GitHub Release publication are separate later decisions.
+The core MVP and Microservices Workload Integration are complete, with platform v0.1.0 and v0.2.0 published. Online Shop telemetry, alerts and notification routing have [recorded acceptance](../online-shop-acceptance.md). The [roadmap](../roadmap.md) defines the remaining trusted release promotion/rollback and lifecycle scope, the SRE Platform boundary and the v0.3.0 checkpoint. Automated promotion/rollback remains outside baseline completion.
 
 ## Demonstration criteria
 
